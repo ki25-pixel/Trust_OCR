@@ -122,7 +122,7 @@
       </div>
 
       <!-- Navigation Tabs -->
-      <nav class="hidden md:flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+      <nav class="hidden md:flex space-x-1 bg-slate-955 p-1 rounded-xl border border-slate-800">
         <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-white bg-blue-600 shadow">
           <i class="fa-solid fa-chart-pie mr-1.5"></i>대시보드
         </button>
@@ -996,7 +996,7 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script>
-    // Modern Target Model Only (Legacy models completely eliminated)
+    // Google Official Target Model
     const TARGET_MODEL = "gemini-3.8-flash";
 
     // Application State
@@ -1142,7 +1142,6 @@
         document.getElementById('ocr-alert-desc').textContent = "우측 상단 '설정 (Admin)' 탭에서 API Key를 직접 입력하고 저장해 주세요.";
       }
 
-      // Pre-fill input in settings if opened
       const input = document.getElementById('gemini-api-key');
       if (input && key) input.value = key;
     }
@@ -1233,7 +1232,7 @@
       showToast('API Key가 성공적으로 저장되었습니다!', 'success');
     }
 
-    // Google API Test (GET call without duplicate header conflicts)
+    // Google API Test
     async function testGoogleAPIConnection() {
       const key = getStoredApiKey() || document.getElementById('gemini-api-key').value.trim();
       if (!key) {
@@ -1251,7 +1250,10 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: "ping" }] }]
+            contents: [{ parts: [{ text: "ping" }] }],
+            generationConfig: {
+              responseMimeType: "application/json"
+            }
           })
         });
 
@@ -1402,9 +1404,12 @@
       executeHighPrecisionOCR();
     }
 
+    // Enhanced Robust JSON Extractor with 2-Stage Self-Repair
     function safeExtractJSON(rawText) {
       if (!rawText) throw new Error("Gemini 응답 내용이 비어있습니다.");
       let clean = rawText.trim();
+      
+      // Stage 1: Strip markdown code block fences and unwanted wrapper texts
       clean = clean.replace(/```json/gi, '').replace(/```/g, '').trim();
       
       const firstBrace = clean.indexOf('{');
@@ -1412,7 +1417,25 @@
       if (firstBrace !== -1 && lastBrace !== -1) {
         clean = clean.substring(firstBrace, lastBrace + 1);
       }
-      return JSON.parse(clean);
+
+      // First standard attempt
+      try {
+        return JSON.parse(clean);
+      } catch (initialErr) {
+        // Stage 2: Automatic Syntax Self-Repair
+        try {
+          let repaired = clean
+            .replace(/\/\/[^\n\r]*/g, '')                      // Strip single-line comments
+            .replace(/\/\*[\s\S]*?\*\//g, '')                 // Strip multi-line comments
+            .replace(/,\s*([\]}])/g, '$1')                    // Strip trailing commas (, } -> })
+            .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":') // Quote unquoted keys
+            .replace(/:\s*'([^']*)'/g, ': "$1"');             // Convert single quotes to double quotes
+
+          return JSON.parse(repaired);
+        } catch (repairErr) {
+          throw initialErr;
+        }
+      }
     }
 
     // High Precision OCR Executor
@@ -1472,7 +1495,10 @@
               { text: promptInstruction }
             ]
           }
-        ]
+        ],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
       };
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${TARGET_MODEL}:generateContent?key=${encodeURIComponent(activeKey)}`;
@@ -1509,7 +1535,7 @@
 
         const parsed = safeExtractJSON(rawContent);
 
-        // Update Form
+        // Update Form Fields
         document.getElementById('ocr-company-name').value = parsed.companyName || '';
         document.getElementById('ocr-representative').value = parsed.representative || '';
         document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
