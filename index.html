@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts -->
+  <!-- Google Fonts: Noto Serif KR & Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&display=swap" rel="stylesheet">
@@ -103,7 +103,7 @@
         <div>
           <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
             부동산 담보신탁 및 부속서류 통합 시스템
-            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">503 자동우회 복구판</span>
+            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">API Key 영구연동</span>
           </h1>
           <p class="text-xs text-slate-400 hidden sm:block">담보신탁계약서(31개조 및 별첨1~4 전문) · 고객거래확인서(3부) · 실제소유자확인서(2부)</p>
         </div>
@@ -127,6 +127,7 @@
         </button>
       </nav>
 
+      <!-- Top Right Status Badge -->
       <div class="flex items-center space-x-3">
         <div id="header-api-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 cursor-pointer" onclick="switchTab('settings')">
           <span id="api-status-dot" class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
@@ -144,7 +145,7 @@
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 p-6 sm:p-8 border border-cyan-500/30 shadow-2xl">
         <div class="relative z-10 max-w-3xl">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-4">
-            <i class="fa-solid fa-shield-heart text-emerald-400"></i> 503 과부하 지수 백오프 자동 복구 &amp; 예비 모델 우회 탑재
+            <i class="fa-solid fa-file-word text-emerald-400"></i> API Key 영구 유지 &amp; 워드(.docx) 다운로드 완비
           </span>
           <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">부동산 담보신탁 및 부속서류 원본 통합 생성 시스템</h2>
           <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
@@ -161,7 +162,7 @@
         </div>
       </div>
 
-      <!-- Summary Cards -->
+      <!-- Quick Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
           <span class="text-xs font-medium text-slate-400">서류 1: 담보신탁계약서</span>
@@ -179,9 +180,9 @@
           <p class="text-xs text-slate-500 mt-1">위탁자(미대상·25%자연인) / 금융기관(생략)</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">서버 과부하(503) 방어</span>
-          <div class="mt-2 text-xl font-bold text-emerald-400">지수 백오프 가동</div>
-          <p class="text-xs text-slate-500 mt-1">1.5s~3s 재시도 + 예비 모델 캐스케이드</p>
+          <span class="text-xs font-medium text-slate-400">API Key 인증 상태</span>
+          <div class="mt-2 text-xl font-bold text-emerald-400" id="stat-api-status-text">Key 미등록</div>
+          <p class="text-xs text-slate-500 mt-1">새로고침 시에도 영구 유지</p>
         </div>
       </div>
 
@@ -226,7 +227,7 @@
               Google AI Studio API Key 설정
               <span id="ocr-quick-key-status" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">미등록</span>
             </h4>
-            <p class="text-[11px] text-slate-400">등록된 키는 브라우저 새로고침이나 재접속 시에도 안전하게 영구 유지됩니다.</p>
+            <p class="text-[11px] text-slate-400">등록된 키는 브라우저 새로고침이나 재접속 시에도 안전하게 유지됩니다.</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -408,7 +409,7 @@
           </div>
         </div>
 
-        <!-- 3 Parties Search Cards -->
+        <!-- 3 Parties + Debtor Search Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           <!-- 1. 위탁자 (Trustor) -->
@@ -425,8 +426,8 @@
 
               <div id="trustor-selected-card" class="mb-2 p-2 bg-blue-950/60 border border-blue-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-blue-300" id="trustor-selected-name">(주)한국개발신탁파트너스</span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="trustor-selected-details">110111-1234567</span>
+                  <span class="font-bold text-blue-300" id="trustor-selected-name"></span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="trustor-selected-details"></span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('trustor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -452,8 +453,8 @@
 
               <div id="debtor-selected-card" class="mb-2 p-2 bg-indigo-950/60 border border-indigo-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-indigo-300" id="debtor-selected-name">(주)대한종합건설</span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="debtor-selected-details">대표: 김철수</span>
+                  <span class="font-bold text-indigo-300" id="debtor-selected-name"></span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="debtor-selected-details"></span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('debtor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -479,8 +480,8 @@
 
               <div id="beneficiary-selected-card" class="mb-2 p-2 bg-amber-950/60 border border-amber-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-amber-300" id="beneficiary-selected-name">(주)우리금융은행</span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="beneficiary-selected-details">이대표</span>
+                  <span class="font-bold text-amber-300" id="beneficiary-selected-name"></span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="beneficiary-selected-details"></span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('beneficiary')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -1360,7 +1361,6 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script>
-    // Failover model chain: 3.8-flash -> 3.7-flash -> 3-flash
     const FAILOVER_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3-flash"];
 
     // Clean neutral seed vendor database
@@ -1430,6 +1430,7 @@
 
     let currentDocSubTab = "doc1";
 
+    // 3중 안전망 API Key Getter & Setter
     function getStoredApiKey() {
       try {
         return (localStorage.getItem('gemini_ocr_api_key') || sessionStorage.getItem('gemini_ocr_api_key') || '').trim();
@@ -1443,7 +1444,9 @@
       try {
         localStorage.setItem('gemini_ocr_api_key', val);
         sessionStorage.setItem('gemini_ocr_api_key', val);
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Storage write failed", e);
+      }
     }
 
     function loadPersistentVendorDatabase() {
@@ -1483,6 +1486,7 @@
       showToast('거래처 DB가 기본 마스터로 초기화되었습니다.', 'info');
     }
 
+    // Toggle Password Visibility Eye Button
     function togglePasswordVisibility(inputId, btn) {
       const input = document.getElementById(inputId);
       if (!input) return;
@@ -1495,199 +1499,13 @@
       }
     }
 
-    // Helper: Async Sleep
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    // Resilient API Caller with Exponential Backoff on 503/429
-    async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
-      let lastError = null;
-
-      for (let mIdx = 0; mIdx < FAILOVER_MODELS.length; mIdx++) {
-        const model = FAILOVER_MODELS[mIdx];
-        const isFallback = mIdx > 0;
-
-        if (isFallback) {
-          appendDiagnosticLog(`[트래픽 분산 우회] 예비 모델 "${model}"(으)로 전환 시도 중...`, 'warn');
-          if (onStepUpdate) onStepUpdate(`서버 과부하로 예비 모델 (${model}) 우회 호출 중...`);
-        } else {
-          appendDiagnosticLog(`AI OCR 호출 시작: 모델 "${model}"...`);
-          if (onStepUpdate) onStepUpdate(`Google AI (${model}) 분석 요청 중...`);
-        }
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
-        const MAX_RETRIES = 2;
-
-        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-          try {
-            const response = await fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              appendDiagnosticLog(`[성공 200 OK] 모델 "${model}"로부터 정상 응답을 수신했습니다.`, 'success');
-              return { model, data };
-            }
-
-            const errText = await response.text();
-            let parsedMsg = errText;
-            try {
-              const j = JSON.parse(errText);
-              parsedMsg = j.error?.message || errText;
-            } catch(e) {}
-
-            // Handle Transient Overload: 503 Service Unavailable or 429 Rate Limit
-            if (response.status === 503 || response.status === 429) {
-              lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
-              if (attempt < MAX_RETRIES) {
-                const backoffMs = (attempt + 1) * 1500;
-                appendDiagnosticLog(`[서버 일시 과부하 ${response.status}] ${backoffMs / 1000}초 후 자동 재시도 중 (${attempt + 1}/${MAX_RETRIES}회)...`, 'warn');
-                if (onStepUpdate) onStepUpdate(`서버 과부하 감지: ${backoffMs / 1000}초 후 자동 재시도 (${attempt + 1}/${MAX_RETRIES})...`);
-                await sleep(backoffMs);
-                continue;
-              } else {
-                appendDiagnosticLog(`모델 "${model}" 재시도 한도 초과 (${response.status}). 다음 예비 모델로 우회합니다.`, 'warn');
-                break;
-              }
-            } else {
-              lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
-              appendDiagnosticLog(`모델 "${model}" 오류 (${response.status}): ${parsedMsg}`, 'warn');
-              break;
-            }
-          } catch (networkErr) {
-            lastError = networkErr;
-            if (attempt < MAX_RETRIES) {
-              const backoffMs = 1500;
-              appendDiagnosticLog(`네트워크 일시 단절. ${backoffMs / 1000}초 후 재시도...`, 'warn');
-              await sleep(backoffMs);
-              continue;
-            } else {
-              break;
-            }
-          }
-        }
+    // Immediate Execution before window.onload
+    (function initImmediateKeys() {
+      const k = getStoredApiKey();
+      if (k) {
+        window.userCachedApiKey = k;
       }
-
-      throw lastError || new Error("모든 AI 모델 및 재시도에서 응답을 수신하지 못했습니다.");
-    }
-
-    // Robust JSON Parser with 2-Stage Self-Repair
-    function safeExtractJSON(rawText) {
-      if (!rawText) throw new Error("Gemini 응답 내용이 비어있습니다.");
-      let clean = rawText.trim();
-      clean = clean.replace(/```json/gi, '').replace(/```/g, '').trim();
-      
-      const firstBrace = clean.indexOf('{');
-      const lastBrace = clean.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        clean = clean.substring(firstBrace, lastBrace + 1);
-      }
-
-      try {
-        return JSON.parse(clean);
-      } catch (initialErr) {
-        try {
-          let repaired = clean
-            .replace(/\/\/[^\n\r]*/g, '')
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/,\s*([\]}])/g, '$1')
-            .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":')
-            .replace(/:\s*'([^']*)'/g, ': "$1"');
-          return JSON.parse(repaired);
-        } catch (repairErr) {
-          throw initialErr;
-        }
-      }
-    }
-
-    // High Precision OCR Executor
-    async function executeHighPrecisionOCR() {
-      if (!cachedFileBase64) return;
-      const key = getStoredApiKey();
-      if (!key) {
-        showToast('API Key를 먼저 등록해 주세요.', 'warning');
-        return;
-      }
-
-      const pBar = document.getElementById('ocr-progress-bar');
-      const pFill = document.getElementById('ocr-progress-fill');
-      const badge = document.getElementById('ocr-status-badge');
-      const stepText = document.getElementById('ocr-step-text');
-      const percentText = document.getElementById('ocr-percent');
-
-      pBar.classList.remove('hidden');
-      badge.textContent = '분석 진행 중';
-      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
-
-      pFill.style.width = '30%';
-      percentText.textContent = '30%';
-      stepText.textContent = '문서 구조 분석 및 법인 정보 파싱 요청...';
-
-      const promptText = `대한민국 사업자등록증 및 등기부등본의 다음 6가지 정보를 정밀 판독하여 JSON으로만 반환하세요. 다른 설명 문장은 일체 제외하세요:
-{
-  "companyName": "회사명/상호명",
-  "representative": "대표자 성명",
-  "corpRegNo": "13자리 법인등록번호(없으면 사업자번호)",
-  "address": "본점 소재지 도로명 주소",
-  "bizNo": "10자리 사업자등록번호",
-  "bizType": "업태 및 종목"
-}`;
-
-      const payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { inlineData: { mimeType: cachedMimeType, data: cachedFileBase64 } },
-            { text: promptText }
-          ]
-        }],
-        generationConfig: { responseMimeType: "application/json" }
-      };
-
-      try {
-        pFill.style.width = '60%';
-        percentText.textContent = '60%';
-
-        // Call via Resilience Dispatcher (503 / 429 자동 재시도 및 모델 우회)
-        const result = await callWithRetryAndFailover(payload, key, (msg) => {
-          stepText.textContent = msg;
-        });
-
-        pFill.style.width = '95%';
-        percentText.textContent = '95%';
-        stepText.textContent = '추출 데이터 폼 매핑 중...';
-
-        const rawContent = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawContent) throw new Error("AI 응답 본문이 비어있습니다.");
-
-        const parsed = safeExtractJSON(rawContent);
-
-        document.getElementById('ocr-company-name').value = parsed.companyName || '';
-        document.getElementById('ocr-representative').value = parsed.representative || '';
-        document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
-        document.getElementById('ocr-address').value = parsed.address || '';
-        document.getElementById('ocr-biz-no').value = parsed.bizNo || '';
-        document.getElementById('ocr-biz-type').value = parsed.bizType || '';
-
-        pFill.style.width = '100%';
-        percentText.textContent = '100%';
-        badge.textContent = `파싱 성공 (${result.model})`;
-        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-medium';
-        appendDiagnosticLog(`[성공] ${parsed.companyName} 추출 완료 (${result.model})`, 'success');
-        showToast('서류 정보가 성공적으로 추출되었습니다!', 'success');
-        setTimeout(() => pBar.classList.add('hidden'), 500);
-      } catch (err) {
-        badge.textContent = '파싱 실패';
-        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400 font-medium';
-        appendDiagnosticLog(`OCR 실패: ${err.message}`, 'error');
-        showToast(`오류: ${err.message.substring(0, 60)}...`, 'error');
-        pBar.classList.add('hidden');
-      }
-    }
+    })();
 
     window.onload = function() {
       // 1. API Key 즉각 복원 & 인풋 필드 동기화
@@ -1700,6 +1518,7 @@
         if (quickKeyInput) quickKeyInput.value = key;
       }
 
+      // 실시간 자동 저장 바인딩
       if (apiKeyInput) {
         apiKeyInput.addEventListener('input', function() {
           const val = this.value.trim();
@@ -1739,8 +1558,66 @@
       updateDocumentPreviews();
 
       appendDiagnosticLog("부동산 담보신탁 및 부속서류 통합 자동화 시스템 로드 완료");
-      appendDiagnosticLog("503 과부하 지수 백오프 자동 복구 엔진 가동");
     };
+
+    function appendDiagnosticLog(msg, type = 'info') {
+      const terminal = document.getElementById('diagnostic-terminal');
+      if (!terminal) return;
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      const div = document.createElement('div');
+      div.className = type === 'success' ? 'text-emerald-400 font-semibold' : (type === 'warn' ? 'text-amber-400 font-semibold' : (type === 'error' ? 'text-rose-400 font-semibold' : 'text-slate-400'));
+      div.textContent = `[${timeStr}] ${msg}`;
+      terminal.appendChild(div);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function clearDiagnosticLog() {
+      document.getElementById('diagnostic-terminal').innerHTML = '<div>[로그 초기화됨]</div>';
+    }
+
+    function refreshApiKeyStatusUI() {
+      const key = getStoredApiKey();
+      const dot = document.getElementById('api-status-dot');
+      const badge = document.getElementById('active-model-name-badge');
+      const statText = document.getElementById('stat-api-status-text');
+      const quickStatus = document.getElementById('ocr-quick-key-status');
+
+      if (key && key.length > 5) {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2';
+        if (badge) {
+          badge.className = 'text-emerald-400 ml-1 font-mono font-bold';
+          badge.textContent = FAILOVER_MODELS[0];
+        }
+        if (statText) {
+          statText.textContent = "Key 등록 완료";
+          statText.className = "text-xl font-bold text-emerald-400";
+        }
+        if (quickStatus) {
+          quickStatus.textContent = "연결 유지됨";
+          quickStatus.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono";
+        }
+      } else {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 mr-2';
+        if (badge) {
+          badge.className = 'text-amber-400 ml-1 font-mono font-bold';
+          badge.textContent = 'Key 미설정';
+        }
+        if (statText) {
+          statText.textContent = "Key 미등록";
+          statText.className = "text-xl font-bold text-amber-400";
+        }
+        if (quickStatus) {
+          quickStatus.textContent = "미등록";
+          quickStatus.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono";
+        }
+      }
+
+      const input = document.getElementById('gemini-api-key');
+      if (input && key) input.value = key;
+      const qInput = document.getElementById('ocr-quick-api-input');
+      if (qInput && key) qInput.value = key;
+    }
 
     function saveQuickApiKey() {
       const input = document.getElementById('ocr-quick-api-input');
@@ -1891,6 +1768,532 @@
       selectParty(role, vendorId);
       switchTab('generator');
       showToast(`거래처가 지정되었습니다.`, 'success');
+    }
+
+    // =========================================================================
+    // DOCUMENT PREVIEWS UPDATE ENGINE (전문 매핑)
+    // =========================================================================
+    function updateDocumentPreviews() {
+      const trustor = vendorDatabase.find(v => v.id === selectedTrustorId) || {
+        companyName: "위탁자 미선택",
+        representative: "-",
+        corpRegNo: "-",
+        address: "-",
+        bizNo: "-"
+      };
+
+      const debtor = vendorDatabase.find(v => v.id === selectedDebtorId) || {
+        companyName: "채무자 미선택",
+        representative: "-",
+        corpRegNo: "-",
+        address: "-",
+        bizNo: "-",
+        bizType: "-"
+      };
+
+      const beneficiary = vendorDatabase.find(v => v.id === selectedBeneficiaryId) || {
+        companyName: "우선수익자 미선택",
+        representative: "-",
+        corpRegNo: "-",
+        address: "-",
+        bizNo: "-"
+      };
+
+      // 기준일자 일체화
+      const rawDate = document.getElementById('contract-date').value || "2026-10-04";
+      const [year, month, day] = rawDate.split('-');
+      const formattedDateKorean = `${year}년 ${month}월 ${day}일`;
+
+      const prefLimit = document.getElementById('contract-pref-limit').value || "\\3,000,000,000-";
+      const feeText = document.getElementById('contract-fee').value || "금 일천오백만원정(\\ 15,000,000-)";
+      const propertyText = document.getElementById('property-summary').value || `${trustor.address} 토지 및 지상 건물 일체`;
+
+      // 1. 담보신탁계약서
+      document.getElementById('d1-cover-trustor').textContent = trustor.companyName;
+      document.getElementById('d1-cover-debtor').textContent = debtor.companyName;
+      document.getElementById('d1-cover-beneficiary').textContent = beneficiary.companyName;
+      document.getElementById('d1-intro-trustor').textContent = trustor.companyName;
+
+      document.getElementById('d1-contract-date-display').textContent = formattedDateKorean;
+
+      document.getElementById('d1-sig-t-name').textContent = trustor.companyName;
+      document.getElementById('d1-sig-t-addr').textContent = trustor.address;
+      document.getElementById('d1-sig-t-id').textContent = trustor.corpRegNo;
+
+      document.getElementById('d1-sig-d-name').textContent = debtor.companyName;
+      document.getElementById('d1-sig-d-addr').textContent = debtor.address;
+      document.getElementById('d1-sig-d-rep').textContent = `대표이사 ${debtor.representative}`;
+      document.getElementById('d1-sig-d-id').textContent = debtor.corpRegNo;
+
+      document.getElementById('d1-sig-b-name').textContent = beneficiary.companyName;
+      document.getElementById('d1-sig-b-addr').textContent = beneficiary.address;
+      document.getElementById('d1-sig-b-rep').textContent = `대표자 ${beneficiary.representative}`;
+      document.getElementById('d1-sig-b-id').textContent = beneficiary.corpRegNo;
+
+      // 별첨 1
+      document.getElementById('d1-property-text').textContent = propertyText;
+      document.getElementById('d1-prop-owner').textContent = trustor.companyName;
+
+      // 별첨 2
+      document.getElementById('d1-b2-name').textContent = beneficiary.companyName;
+      document.getElementById('d1-b2-corpno').textContent = beneficiary.corpRegNo;
+      document.getElementById('d1-b2-addr').textContent = beneficiary.address;
+      document.getElementById('d1-b2-debt-desc').textContent = `[${debtor.companyName}]와 [${beneficiary.companyName}] 사이에 체결된 [대출약정서]에 기한 [대출원리금채권 등]`;
+      document.getElementById('d1-b2-debtor-name').textContent = debtor.companyName;
+      document.getElementById('d1-b2-limit').textContent = prefLimit;
+
+      document.getElementById('d1-b2-trustor-name').textContent = trustor.companyName;
+      document.getElementById('d1-b2-trustor-id').textContent = trustor.corpRegNo;
+      document.getElementById('d1-b2-trustor-addr').textContent = trustor.address;
+
+      document.getElementById('d1-b2-debtor-cname').textContent = debtor.companyName;
+      document.getElementById('d1-b2-debtor-cid').textContent = debtor.corpRegNo;
+      document.getElementById('d1-b2-debtor-caddr').textContent = debtor.address;
+
+      // 별첨 3
+      document.getElementById('d1-b3-fee').textContent = feeText;
+
+      // 별첨 4 특약 18조
+      document.getElementById('d1-b4-special-beneficiary').textContent = beneficiary.companyName;
+      document.getElementById('d1-b4-special-beneficiary-tax').textContent = beneficiary.companyName;
+
+      // 2. 고객거래확인서 (위탁자 & 우선수익자)
+      // 2-① 위탁자 (개인용)
+      document.getElementById('d2-1-name').textContent = trustor.companyName;
+      document.getElementById('d2-1-id').textContent = (trustor.corpRegNo && trustor.corpRegNo.length >= 6) ? trustor.corpRegNo.substring(0, 6) : "000000";
+      document.getElementById('d2-1-addr').textContent = trustor.address;
+      document.getElementById('d2-1-confirm-name').textContent = trustor.companyName;
+      document.getElementById('d2-1-date').textContent = formattedDateKorean;
+      document.getElementById('d2-1-sig-name').textContent = trustor.companyName;
+
+      // 2-② 위탁자 법인용
+      document.getElementById('d2-2-name').textContent = trustor.companyName;
+      document.getElementById('d2-2-bizno').textContent = trustor.bizNo || '-';
+      document.getElementById('d2-2-addr').textContent = trustor.address;
+      document.getElementById('d2-2-baddr').textContent = trustor.address;
+      document.getElementById('d2-2-biztype').textContent = trustor.bizType || '일반업종';
+      document.getElementById('d2-2-rep').textContent = trustor.representative;
+      document.getElementById('d2-2-rep-birth').textContent = trustor.corpRegNo ? trustor.corpRegNo.substring(0, 6) : '-';
+      document.getElementById('d2-2-date').textContent = formattedDateKorean;
+      document.getElementById('d2-2-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
+
+      // 2-③ 우선수익자용
+      document.getElementById('d2-3-name').textContent = beneficiary.companyName;
+      document.getElementById('d2-3-bizno').textContent = beneficiary.bizNo || '-';
+      document.getElementById('d2-3-addr').textContent = beneficiary.address;
+      document.getElementById('d2-3-rep').textContent = beneficiary.representative;
+      document.getElementById('d2-3-date').textContent = formattedDateKorean;
+      document.getElementById('d2-3-sig-full').textContent = `${beneficiary.companyName} 대표자 ${beneficiary.representative}`;
+
+      // 3. 실제소유자확인서 (위탁자 법인용 & 우선수익자용)
+      // 3-① 위탁자 법인용
+      document.getElementById('d3-1-name').textContent = trustor.companyName;
+      document.getElementById('d3-1-bizno').textContent = trustor.bizNo || '-';
+      document.getElementById('d3-1-owner-name').textContent = trustor.representative;
+      document.getElementById('d3-1-owner-birth').textContent = trustor.corpRegNo ? trustor.corpRegNo.substring(0, 6) : '-';
+      document.getElementById('d3-1-owner-share').textContent = "100%";
+      document.getElementById('d3-1-author-name').textContent = trustor.representative;
+      document.getElementById('d3-1-author-comp').textContent = trustor.companyName;
+      document.getElementById('d3-1-date').textContent = formattedDateKorean;
+      document.getElementById('d3-1-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
+
+      // 3-② 우선수익자용
+      document.getElementById('d3-2-name').textContent = beneficiary.companyName;
+      document.getElementById('d3-2-bizno').textContent = beneficiary.bizNo || '-';
+      document.getElementById('d3-2-author-name').textContent = beneficiary.representative;
+      document.getElementById('d3-2-author-comp').textContent = beneficiary.companyName;
+      document.getElementById('d3-2-date').textContent = formattedDateKorean;
+      document.getElementById('d3-2-sig-full').textContent = `${beneficiary.companyName} 대표자 ${beneficiary.representative}`;
+    }
+
+    function switchDocSubTab(docId) {
+      currentDocSubTab = docId;
+      document.querySelectorAll('.doc-paper').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.doc-subtab').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-slate-900', 'text-slate-400');
+      });
+
+      const activeView = document.getElementById(`doc-view-${docId.replace('doc', '')}`);
+      const activeBtn = document.getElementById(`subtab-${docId}`);
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.add('bg-blue-600', 'text-white');
+        activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
+      }
+    }
+
+    // =========================================================================
+    // WORD (.docx) EXPORT ENGINE
+    // =========================================================================
+    function getCleanWordHtml(element) {
+      const clone = element.cloneNode(true);
+      clone.querySelectorAll('.no-print').forEach(el => el.remove());
+
+      return `
+        <!DOCTYPE html>
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+              xmlns:w='urn:schemas-microsoft-com:office:word' 
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>신탁계약서류</title>
+          <style>
+            @page { size: A4; margin: 20mm 15mm 20mm 15mm; mso-page-orientation: portrait; }
+            body { font-family: 'Batang', 'Noto Serif KR', serif; font-size: 10pt; line-height: 1.6; color: #000000; }
+            h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; font-weight: bold; }
+            h2 { font-size: 14pt; margin-top: 14pt; margin-bottom: 6pt; font-weight: bold; }
+            h3 { font-size: 12pt; margin-top: 12pt; margin-bottom: 4pt; font-weight: bold; }
+            table { border-collapse: collapse; width: 100%; border: 1.5pt solid #000000; margin: 8pt 0; }
+            th, td { border: 0.75pt solid #000000; padding: 4.5pt 6pt; font-size: 9.5pt; vertical-align: middle; }
+            th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+            p { margin: 3pt 0; font-size: 9.5pt; text-align: justify; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .font-bold { font-weight: bold; }
+            .page-break { page-break-before: always; mso-special-character: line-break; }
+          </style>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+        </head>
+        <body>
+          ${clone.innerHTML}
+        </body>
+        </html>
+      `;
+    }
+
+    function saveBlobFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 300);
+    }
+
+    function downloadCurrentDocAsDocx() {
+      const activePaper = document.querySelector('.doc-paper:not(.hidden)');
+      if (!activePaper) return;
+
+      const subtabKey = currentDocSubTab;
+      let filename = "담보신탁계약서";
+      if (subtabKey === 'doc2-1') filename = "고객거래확인서_위탁자개인용";
+      else if (subtabKey === 'doc2-2') filename = "고객거래확인서_위탁자법인용";
+      else if (subtabKey === 'doc2-3') filename = "고객거래확인서_우선수익자용";
+      else if (subtabKey === 'doc3-1') filename = "실제소유자확인서_위탁자법인용";
+      else if (subtabKey === 'doc3-2') filename = "실제소유자확인서_우선수익자용";
+
+      const wordHtml = getCleanWordHtml(activePaper);
+      if (typeof htmlDocx !== 'undefined') {
+        try {
+          const converted = htmlDocx.asBlob(wordHtml);
+          saveBlobFile(converted, `${filename}.docx`);
+          showToast(`${filename}.docx 다운로드 완료!`, 'success');
+          return;
+        } catch (e) {
+          console.warn("htmlDocx conversion fallback", e);
+        }
+      }
+
+      const blob = new Blob(['\ufeff', wordHtml], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      saveBlobFile(blob, `${filename}.docx`);
+      showToast(`${filename}.docx 다운로드 완료!`, 'success');
+    }
+
+    function downloadAllDocsAsDocx() {
+      const docs = [
+        { id: 'doc-view-1', name: '1. 부동산담보신탁계약서' },
+        { id: 'doc-view-2-1', name: '2-1. 고객거래확인서_위탁자개인용' },
+        { id: 'doc-view-2-2', name: '2-2. 고객거래확인서_위탁자법인용' },
+        { id: 'doc-view-2-3', name: '2-3. 고객거래확인서_우선수익자용' },
+        { id: 'doc-view-3-1', name: '3-1. 실제소유자확인서_위탁자법인용' },
+        { id: 'doc-view-3-2', name: '3-2. 실제소유자확인서_우선수익자용' }
+      ];
+
+      let combinedInnerHtml = "";
+      docs.forEach((item, idx) => {
+        const el = document.getElementById(item.id);
+        if (el) {
+          const clone = el.cloneNode(true);
+          clone.querySelectorAll('.no-print').forEach(n => n.remove());
+          if (idx > 0) {
+            combinedInnerHtml += `<div class="page-break" style="page-break-before: always; mso-special-character: line-break;"></div>`;
+          }
+          combinedInnerHtml += clone.innerHTML;
+        }
+      });
+
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+              xmlns:w='urn:schemas-microsoft-com:office:word' 
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>신탁계약서류일체</title>
+          <style>
+            @page { size: A4; margin: 20mm 15mm 20mm 15mm; mso-page-orientation: portrait; }
+            body { font-family: 'Batang', 'Noto Serif KR', serif; font-size: 10pt; line-height: 1.6; color: #000000; }
+            h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; font-weight: bold; }
+            table { border-collapse: collapse; width: 100%; border: 1.5pt solid #000000; margin: 8pt 0; }
+            th, td { border: 0.75pt solid #000000; padding: 4.5pt 6pt; font-size: 9.5pt; vertical-align: middle; }
+            th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+            p { margin: 3pt 0; font-size: 9.5pt; text-align: justify; }
+            .page-break { page-break-before: always; mso-special-character: line-break; }
+          </style>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+        </head>
+        <body>
+          ${combinedInnerHtml}
+        </body>
+        </html>
+      `;
+
+      const filename = `신탁서류3종_통합본_${document.getElementById('contract-date').value}.docx`;
+
+      if (typeof htmlDocx !== 'undefined') {
+        try {
+          const converted = htmlDocx.asBlob(fullHtml);
+          saveBlobFile(converted, filename);
+          showToast(`서류 3종 전체 .docx 다운로드 완료!`, 'success');
+          return;
+        } catch(e) {}
+      }
+
+      const blob = new Blob(['\ufeff', fullHtml], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      saveBlobFile(blob, filename);
+      showToast(`서류 3종 전체 .docx 다운로드 완료!`, 'success');
+    }
+
+    // =========================================================================
+    // OCR & AI STUDIO API ENGINE
+    // =========================================================================
+    function switchTab(tabId) {
+      if (tabId === 'settings' && !isAdminAuthenticated) {
+        document.getElementById('admin-pw-input').value = '';
+        document.getElementById('admin-auth-error').classList.add('hidden');
+        document.getElementById('admin-auth-modal').classList.remove('hidden');
+        return;
+      }
+
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow');
+        btn.classList.add('text-slate-400', 'hover:text-white');
+      });
+      const activeBtn = document.getElementById(`nav-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
+        activeBtn.classList.remove('text-slate-400');
+      }
+
+      if (tabId === 'database') renderVendorTables();
+      if (tabId === 'generator') updateDocumentPreviews();
+      if (tabId === 'settings') refreshApiKeyStatusUI();
+    }
+
+    function verifyAdminPassword() {
+      const input = document.getElementById('admin-pw-input').value;
+      const pwd = localStorage.getItem('admin_system_pw') || 'admin123';
+      if (input === pwd) {
+        isAdminAuthenticated = true;
+        document.getElementById('admin-auth-modal').classList.add('hidden');
+        showToast('관리자 인증 완료', 'success');
+        switchTab('settings');
+      } else {
+        document.getElementById('admin-auth-error').classList.remove('hidden');
+      }
+    }
+
+    function cancelAdminAuth() {
+      document.getElementById('admin-auth-modal').classList.add('hidden');
+    }
+
+    function lockAdminSettings() {
+      isAdminAuthenticated = false;
+      switchTab('dashboard');
+      showToast('관리자 잠금 상태로 전환되었습니다.', 'warning');
+    }
+
+    function changeAdminPassword() {
+      const newPw = document.getElementById('new-admin-pw').value;
+      const confirmPw = document.getElementById('confirm-admin-pw').value;
+      if (!newPw || newPw !== confirmPw) {
+        showToast('비밀번호가 일치하지 않거나 비어 있습니다.', 'error');
+        return;
+      }
+      localStorage.setItem('admin_system_pw', newPw);
+      showToast('관리자 비밀번호가 변경되었습니다.', 'success');
+    }
+
+    function saveAdminApiKey() {
+      const k = document.getElementById('gemini-api-key').value.trim();
+      if (!k) {
+        showToast('API Key를 입력해 주세요.', 'warning');
+        return;
+      }
+      setStoredApiKey(k);
+      refreshApiKeyStatusUI();
+      appendDiagnosticLog(`[저장 완료] API Key가 로컬 저장소에 영구 보존되었습니다.`, 'success');
+      showToast('API Key가 안전하게 영구 저장되었습니다.', 'success');
+    }
+
+    async function testGoogleAPIConnection() {
+      const key = getStoredApiKey() || document.getElementById('gemini-api-key').value.trim();
+      if (!key) {
+        showToast('저장된 API Key가 없습니다.', 'warning');
+        return;
+      }
+      appendDiagnosticLog("API Key 통신 테스트 시작...");
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${FAILOVER_MODELS[0]}:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
+        });
+        if (res.ok) {
+          appendDiagnosticLog(`[성공 200 OK] 모델 ${FAILOVER_MODELS[0]} 연결 확인`, 'success');
+          showToast('API Key 정상 연결 확인!', 'success');
+          refreshApiKeyStatusUI();
+        } else {
+          appendDiagnosticLog(`연결 실패: HTTP ${res.status}`, 'error');
+          showToast(`오류: HTTP ${res.status}`, 'error');
+        }
+      } catch(e) {
+        appendDiagnosticLog(`네트워크 에러: ${e.message}`, 'error');
+      }
+    }
+
+    function setupFileUploadListeners() {
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('file-input');
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+        dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+      });
+      dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) handleSelectedFile(files[0]);
+      });
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleSelectedFile(e.target.files[0]);
+      });
+    }
+
+    async function handleSelectedFile(file) {
+      currentUploadedFile = file;
+      document.getElementById('file-preview-card').classList.remove('hidden');
+      document.getElementById('preview-filename').textContent = file.name;
+      document.getElementById('preview-file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+
+      appendDiagnosticLog(`파일 접수: ${file.name}`);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const fullData = reader.result;
+        cachedFileBase64 = fullData.split(',')[1];
+        cachedMimeType = file.type || 'application/pdf';
+        executeHighPrecisionOCR();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function executeHighPrecisionOCR() {
+      if (!cachedFileBase64) return;
+      const key = getStoredApiKey();
+      if (!key) {
+        showToast('API Key를 먼저 등록해 주세요.', 'warning');
+        return;
+      }
+
+      const pBar = document.getElementById('ocr-progress-bar');
+      const pFill = document.getElementById('ocr-progress-fill');
+      const badge = document.getElementById('ocr-status-badge');
+      pBar.classList.remove('hidden');
+      badge.textContent = '분석 진행 중';
+      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
+
+      const promptText = `대한민국 사업자등록증 및 등기부등본의 다음 6가지 정보를 정밀 판독하여 JSON으로만 반환하세요:
+{
+  "companyName": "회사명/상호명",
+  "representative": "대표자 성명",
+  "corpRegNo": "13자리 법인등록번호(없으면 사업자번호)",
+  "address": "본점 소재지 도로명 주소",
+  "bizNo": "10자리 사업자등록번호",
+  "bizType": "업태 및 종목"
+}`;
+
+      const payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: cachedMimeType, data: cachedFileBase64 } },
+            { text: promptText }
+          ]
+        }],
+        generationConfig: { responseMimeType: "application/json" }
+      };
+
+      try {
+        appendDiagnosticLog(`Gemini 3.8 Flash OCR 분석 요청...`);
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${FAILOVER_MODELS[0]}:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = JSON.parse(jsonText);
+
+        document.getElementById('ocr-company-name').value = parsed.companyName || '';
+        document.getElementById('ocr-representative').value = parsed.representative || '';
+        document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
+        document.getElementById('ocr-address').value = parsed.address || '';
+        document.getElementById('ocr-biz-no').value = parsed.bizNo || '';
+        document.getElementById('ocr-biz-type').value = parsed.bizType || '';
+
+        pFill.style.width = '100%';
+        badge.textContent = '파싱 성공';
+        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300';
+        appendDiagnosticLog(`[성공] ${parsed.companyName} 추출 완료`, 'success');
+        showToast('서류 정보가 성공적으로 추출되었습니다!', 'success');
+        setTimeout(() => pBar.classList.add('hidden'), 500);
+      } catch (err) {
+        badge.textContent = '실패';
+        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
+        appendDiagnosticLog(`OCR 실패: ${err.message}`, 'error');
+        showToast('OCR 분석 중 오류가 발생했습니다.', 'error');
+        pBar.classList.add('hidden');
+      }
     }
 
     function saveExtractedToDB() {
