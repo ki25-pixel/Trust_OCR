@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부동산 담보신탁 및 부속서류 자동화 시스템</title>
+  <title>부동산 담보신탁 및 부속서류 통합 자동화 시스템</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts: Noto Sans KR & Noto Serif KR (Batang 대체 고품질 명조) -->
+  <!-- Google Fonts: Noto Serif KR & Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
       try {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       } catch (e) {
-        console.warn("PDF.js worker fallback mode");
+        console.warn("PDF.js fallback mode enabled");
       }
     }
   </script>
@@ -66,32 +66,32 @@
       }
     }
 
-    /* Formal Korean Legal Document Paper Style */
-    .formal-paper {
+    .doc-paper {
       background: #ffffff;
-      box-shadow: 0 4px 25px -4px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 25px -3px rgba(0, 0, 0, 0.3);
       font-family: 'Noto Serif KR', 'Batang', serif;
       color: #111827;
-      line-height: 1.65;
+      line-height: 1.75;
     }
 
-    /* Official Government / Financial Document Table Grid */
-    .formal-table {
+    .doc-table {
       border-collapse: collapse;
       width: 100%;
-      border: 1.5px solid #1f2937;
+      border: 1.5px solid #111827;
+      margin-top: 4px;
+      margin-bottom: 6px;
     }
-    .formal-table th, .formal-table td {
+    .doc-table th, .doc-table td {
       border: 1px solid #4b5563;
       padding: 5px 8px;
-      font-size: 11px;
+      font-size: 11.5px;
       vertical-align: middle;
+      line-height: 1.5;
     }
-    .formal-table th {
+    .doc-table th {
       background-color: #f3f4f6;
       font-weight: 600;
       text-align: center;
-      color: #111827;
     }
 
     .terminal-scroll {
@@ -117,17 +117,17 @@
 
   <!-- Header Nav -->
   <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
           <i class="fa-solid fa-file-shield text-lg"></i>
         </div>
         <div>
           <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
-            부동산 담보신탁 및 부속서류 자동화 시스템
-            <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-semibold">정식 서식 완비</span>
+            부동산 담보신탁 및 부속서류 통합 시스템
+            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">실무 양식 전문 수록</span>
           </h1>
-          <p class="text-xs text-slate-400">담보신탁계약서(별첨1~4) · 고객거래확인서(3부) · 실제소유자확인서(2부)</p>
+          <p class="text-xs text-slate-400 hidden sm:block">담보신탁계약서(31개조 및 별첨1~4) · 고객거래확인서(3부) · 실제소유자확인서(2부)</p>
         </div>
       </div>
 
@@ -166,16 +166,15 @@
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 p-6 sm:p-8 border border-cyan-500/30 shadow-2xl">
         <div class="relative z-10 max-w-3xl">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-4">
-            <i class="fa-solid fa-check-double text-emerald-400"></i> 첨부 서식 원본 100% 반영 완료
+            <i class="fa-solid fa-check-double text-emerald-400"></i> 첨부 서식 원본 100% 매핑 및 기준일자 일체화 적용
           </span>
-          <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">부동산 담보신탁 및 부속서류 원본 통합 시스템</h2>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">부동산 담보신탁 및 부속서류 원본 통합 생성 시스템</h2>
           <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-            PDF OCR을 통해 거래처 DB를 구축하고, 첨부 서식과 실무 가이드에 따라<br class="hidden sm:inline">
-            **담보신탁계약서(별첨 1~4 포함)**, **고객거래확인서(개인·법인 3부)**, **실제소유자확인서(2부)**를 기준일자 일체화 원칙으로 완성합니다.
+            PDF OCR을 통해 거래처 DB를 구축하고, 첨부 서식 파일 그대로 **담보신탁계약서(31개조 및 별첨1~4)**, **고객거래확인서(개인·법인 3부)**, **실제소유자확인서(2부)** 전문을 일괄 생성·인쇄합니다.
           </p>
           <div class="flex flex-wrap gap-3">
             <button onclick="switchTab('generator')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2">
-              <i class="fa-solid fa-file-contract"></i> 신탁서류 3종 즉시 생성
+              <i class="fa-solid fa-file-contract"></i> 신탁서류 3종 생성기 바로가기
             </button>
             <button onclick="switchTab('ocr')" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 font-medium text-sm px-5 py-2.5 rounded-xl border border-cyan-500/30 transition-all flex items-center gap-2">
               <i class="fa-solid fa-file-arrow-up"></i> PDF 파일 OCR 추출
@@ -187,24 +186,24 @@
       <!-- Quick Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">1. 담보신탁계약서</span>
-          <div class="mt-2 text-xl font-bold text-white">표지 + 본문 + 별첨 1~4</div>
-          <p class="text-xs text-slate-500 mt-1">특약 제18조 우선수익자 보수 자동 연동</p>
+          <span class="text-xs font-medium text-slate-400">서류 1: 담보신탁계약서</span>
+          <div class="mt-2 text-xl font-bold text-white">본문 31개조 + 별첨1~4</div>
+          <p class="text-xs text-slate-500 mt-1">특약 18조 1순위 우선수익자 보수 연동</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">2. 고객거래확인서 (CDD)</span>
-          <div class="mt-2 text-xl font-bold text-white">총 3부 정식 서식</div>
-          <p class="text-xs text-slate-500 mt-1">위탁자(개인용) / 채무자 / 우선수익자</p>
+          <span class="text-xs font-medium text-slate-400">서류 2: 고객거래확인서 (CDD)</span>
+          <div class="mt-2 text-xl font-bold text-white">총 3부 개별 징구</div>
+          <p class="text-xs text-slate-500 mt-1">위탁자(개인) / 채무자 / 우선수익자</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">3. 실제소유자확인서</span>
-          <div class="mt-2 text-xl font-bold text-white">총 2부 3단계 판정</div>
-          <p class="text-xs text-slate-500 mt-1">채무자(미대상) / 금융기관(확인 생략)</p>
+          <span class="text-xs font-medium text-slate-400">서류 3: 실제소유자확인서</span>
+          <div class="mt-2 text-xl font-bold text-white">총 2부 차등 적용</div>
+          <p class="text-xs text-slate-500 mt-1">채무자(미대상·25%자연인) / 금융기관(생략)</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
           <span class="text-xs font-medium text-slate-400">기준일자 일체화 원칙</span>
-          <div class="mt-2 text-xl font-bold text-emerald-400">100% 동일 매핑</div>
-          <p class="text-xs text-slate-500 mt-1">계약체결일자 = 전체 부속서류 작성일</p>
+          <div class="mt-2 text-xl font-bold text-emerald-400">100% 동일 연동</div>
+          <p class="text-xs text-slate-500 mt-1">계약체결일자 = 부속서류 작성일자</p>
         </div>
       </div>
 
@@ -221,11 +220,11 @@
             <thead class="bg-slate-950 text-slate-400 font-medium">
               <tr>
                 <th class="p-3">관리코드</th>
-                <th class="p-3">구분 / 상호</th>
+                <th class="p-3">구분/상호</th>
                 <th class="p-3">대표자</th>
                 <th class="p-3">등록번호</th>
                 <th class="p-3">주소</th>
-                <th class="p-3 text-right">서류 지정</th>
+                <th class="p-3 text-right">빠른 지정</th>
               </tr>
             </thead>
             <tbody id="dashboard-vendor-tbody" class="divide-y divide-slate-800">
@@ -247,7 +246,7 @@
               Google AI Studio API Key 설정
               <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">필요</span>
             </h4>
-            <p id="ocr-alert-desc" class="text-[11px] text-slate-400">우측 상단 '설정 (Admin)' 탭에서 발급받으신 Gemini API Key를 등록하면 실시간 OCR이 활성화됩니다.</p>
+            <p id="ocr-alert-desc" class="text-[11px] text-slate-400">우측 상단 '설정 (Admin)' 탭에서 Gemini API Key를 등록하면 실시간 OCR이 활성화됩니다.</p>
           </div>
         </div>
         <button onclick="switchTab('settings')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shrink-0 flex items-center gap-1.5 shadow">
@@ -303,7 +302,7 @@
 
             <form id="ocr-result-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div class="sm:col-span-2">
-                <label class="block text-slate-300 mb-1">상호 / 회사명 *</label>
+                <label class="block text-slate-300 mb-1">회사명 (상호명) *</label>
                 <input type="text" id="ocr-company-name" placeholder="상호명 자동 입력" class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5 focus:outline-none focus:border-cyan-500 font-medium">
               </div>
               <div>
@@ -355,9 +354,9 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-database text-emerald-400"></i> 거래처 Data Base 마스터 관리
+            <i class="fa-solid fa-database text-emerald-400"></i> 거래처 Data Base 마스터 관리 (영구 보존)
           </h2>
-          <p class="text-xs text-slate-400 mt-1">로컬 스토리지에 영구 보존되며, 신탁서류 작성 시 실시간 검색·연동됩니다.</p>
+          <p class="text-xs text-slate-400 mt-1">로컬 스토리지에 영구 보존되며 새로고침 시에도 안전하게 유지됩니다.</p>
         </div>
         <div class="flex items-center gap-2">
           <button onclick="resetVendorDBToDefault()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 px-3 py-2.5 rounded-lg transition-all">
@@ -384,7 +383,7 @@
           <thead class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
             <tr>
               <th class="p-4">코드</th>
-              <th class="p-4">구분 / 상호</th>
+              <th class="p-4">상호/성명</th>
               <th class="p-4">대표자</th>
               <th class="p-4">법인/주민등록번호</th>
               <th class="p-4">사업자번호</th>
@@ -399,7 +398,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (정식 서식 뷰어) -->
+    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (원본 서식 전문 100% 매핑) -->
     <section id="tab-generator" class="tab-content hidden space-y-6">
       
       <!-- Top Form & Controls -->
@@ -409,7 +408,7 @@
             <h3 class="text-sm font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-sliders text-cyan-400"></i> 담보신탁 및 부속서류 계약 관계인 설정 (실무 가이드 준수)
             </h3>
-            <p class="text-xs text-slate-400 mt-0.5">계약체결일자, 위탁자, 채무자, 1순위 우선수익자 및 실제소유자 정보를 설정합니다.</p>
+            <p class="text-xs text-slate-400 mt-0.5">계약체결일자(기준일자), 위탁자, 채무자, 1순위 우선수익자 및 실제소유자 정보를 설정합니다.</p>
           </div>
           <div class="flex items-center gap-2">
             <button onclick="printCurrentDocument()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md transition-all flex items-center gap-1.5">
@@ -428,8 +427,8 @@
                 <label class="text-xs font-bold text-blue-300 flex items-center gap-1.5">
                   <i class="fa-solid fa-user-tie text-blue-400"></i> 위탁자 (개인/법인)
                 </label>
-                <button type="button" onclick="toggleSameAsTrustor()" id="btn-same-as-trustor" class="px-2.5 py-1 text-[11px] font-bold rounded-md bg-indigo-600 text-white border border-indigo-400 transition-all flex items-center gap-1">
-                  <i class="fa-solid fa-check text-[10px]"></i> <span>채무자와 동일함</span>
+                <button type="button" onclick="toggleSameAsTrustor()" id="btn-same-as-trustor" class="px-2.5 py-1 text-[11px] font-bold rounded-md bg-slate-800 text-slate-300 border border-slate-700 transition-all flex items-center gap-1">
+                  <i class="fa-solid fa-link text-[10px]"></i> <span>채무자와 동일</span>
                 </button>
               </div>
 
@@ -457,7 +456,7 @@
                 <label class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
                   <i class="fa-solid fa-building text-indigo-400"></i> 채무자 (영리법인)
                 </label>
-                <span id="debtor-sync-badge" class="text-[10px] text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/40">위탁자 연동</span>
+                <span id="debtor-sync-badge" class="hidden text-[10px] text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/40">위탁자 연동</span>
               </div>
 
               <div id="debtor-selected-card" class="mb-2 p-2 bg-indigo-950/60 border border-indigo-500/50 rounded-lg flex items-center justify-between">
@@ -510,13 +509,13 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 border-t border-slate-800 pt-3 text-xs">
           <div>
             <label class="block text-slate-300 mb-1 font-semibold text-emerald-400">
-              <i class="fa-solid fa-calendar-day mr-1"></i>계약체결일자 (모든 서류 100% 일치) *
+              <i class="fa-solid fa-calendar-day mr-1"></i>계약체결일자 (기준일자) *
             </label>
-            <input type="date" id="contract-date" onchange="updateDocumentPreviews()" class="w-full bg-slate-950 border border-emerald-500/60 text-white rounded-lg p-2 focus:outline-none font-bold">
+            <input type="date" id="contract-date" value="2026-04-09" onchange="updateDocumentPreviews()" class="w-full bg-slate-950 border border-emerald-500/60 text-white rounded-lg p-2 focus:outline-none font-bold">
           </div>
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">
-              <i class="fa-solid fa-shield-halved text-amber-400 mr-1"></i>우선수익권금액 (한도액) *
+              <i class="fa-solid fa-shield-halved text-amber-400 mr-1"></i>우선수익권금액 *
             </label>
             <input type="text" id="contract-pref-limit" value="\2,400,000,000-" oninput="updateDocumentPreviews()" class="w-full bg-slate-950 border border-slate-700 text-white rounded-lg p-2 focus:outline-none font-mono">
           </div>
@@ -541,7 +540,7 @@
       <!-- Document Selector Tabs -->
       <div class="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
         <button onclick="switchDocSubTab('doc1')" id="subtab-doc1" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-blue-600 text-white transition-all">
-          <i class="fa-solid fa-file-contract mr-1.5"></i>1. 담보신탁계약서 (본문·별첨 1~4)
+          <i class="fa-solid fa-file-contract mr-1.5"></i>1. 담보신탁계약서 (본문 31개조 및 별첨 1~4)
         </button>
         <button onclick="switchDocSubTab('doc2-1')" id="subtab-doc2-1" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-slate-900 text-slate-400 hover:text-white transition-all">
           <i class="fa-solid fa-user mr-1.5"></i>2-① 고객거래확인서 (위탁자 개인용)
@@ -565,14 +564,14 @@
         <div id="print-area" class="w-full max-w-[850px]">
           
           <!-- =================================================================== -->
-          <!-- 1. 담보신탁계약서 (첨부 1. 담보신탁계약서.docx 및 업무가이드 100% 매핑) -->
+          <!-- 1. 담보신탁계약서 (본문 제1조 ~ 제31조 및 별첨 1~4 원문 전문 수록) -->
           <!-- =================================================================== -->
-          <div id="doc-view-1" class="formal-paper p-8 sm:p-14 text-xs leading-relaxed space-y-6">
+          <div id="doc-view-1" class="doc-paper p-8 sm:p-14 text-xs leading-relaxed space-y-6">
             
             <!-- 표지 요약 -->
             <div class="text-center border-b-2 border-slate-900 pb-6 mb-8">
-              <h1 class="text-3xl font-bold tracking-tight mb-8 font-serif">부동산담보신탁계약서</h1>
-              <div class="max-w-md mx-auto border border-slate-800 divide-y divide-slate-700 text-left font-serif">
+              <h1 class="text-3xl font-bold tracking-tight mb-8">부동산담보신탁계약서</h1>
+              <div class="max-w-md mx-auto border border-slate-800 divide-y divide-slate-700 text-left">
                 <div class="grid grid-cols-3 p-2.5"><span class="font-bold">위탁자</span><span class="col-span-2 font-bold text-blue-900" id="d1-cover-trustor">고동환</span></div>
                 <div class="grid grid-cols-3 p-2.5"><span class="font-bold">채무자</span><span class="col-span-2 font-bold text-indigo-900" id="d1-cover-debtor">주식회사 제아</span></div>
                 <div class="grid grid-cols-3 p-2.5"><span class="font-bold">수탁자</span><span class="col-span-2 font-bold">한국투자부동산신탁 주식회사</span></div>
@@ -581,29 +580,100 @@
             </div>
 
             <!-- 전문 -->
-            <p class="text-justify font-serif text-[12px] leading-relaxed">
-              <strong id="d1-intro-trustor" class="text-blue-900">고동환</strong>(이하 “위탁자”이라 함)은 아래 정의된 신탁부동산을 수탁자인 <strong id="d1-intro-trustee">한국투자부동산신탁 주식회사</strong>에 신탁하고 수탁자는 이를 인수함에 있어서, 위탁자, 수탁자 및 수익자의 권리의무를 정하기 위하여 다음과 같이 부동산담보신탁계약(이하 “이 신탁계약”이라 한다)을 체결한다.
+            <p class="text-justify font-serif text-[12.5px] leading-relaxed">
+              <strong id="d1-intro-trustor" class="text-blue-900">고동환</strong>(이하 “위탁자”이라 함)은 아래 정의된 신탁부동산을 수탁자인 <strong id="d1-intro-trustee">한국투자부동산신탁</strong>에 신탁하고 수탁자는 이를 인수함에 있어서, 위탁자, 수탁자 및 수익자의 권리의무를 정하기 위하여 다음과 같이 부동산담보신탁계약(이하 “이 신탁계약”이라 한다)을 체결한다.
             </p>
 
-            <!-- 주요 조항 요약 표시 -->
-            <div class="space-y-3 text-[11px] text-justify text-slate-800 font-serif">
+            <!-- 본문 제1조 ~ 제31조 전체 원문 -->
+            <div class="space-y-4 text-[11px] text-justify text-slate-800">
               <p><strong>제1조 (신탁목적)</strong> 이 신탁계약에 따른 신탁은 채무자의 우선수익자에 대한 채무 이행을 담보하기 위하여, 위탁자는 신탁부동산의 소유권을 수탁자에게 이전하고 수탁자는 신탁부동산의 소유권을 보전 및 관리하며 이 신탁계약에서 정해진 사유 발생 시 신탁부동산을 처분하여 그 처분대가 등 신탁재산을 이 신탁계약에 정해진 바에 따라 지급하는 것을 목적으로 한다.</p>
-              <p><strong>제2조 (용어의 정의)</strong> "위탁자", "수탁자", "수익자", "우선수익자", "수익권", "우선수익권", "우선수익권금액", "피담보채권", "채무자", "신탁부동산", "신탁재산", "신탁기간", "신탁특약"의 정의는 본 계약 본문 및 별첨에 정한 바에 따른다.</p>
-              <p><strong>제3조 (신탁기간)</strong> 이 신탁계약에 따른 신탁기간은 신탁등기일로부터 우선수익자 채권변제시까지로 한다. (신탁특약 제19조 참조)</p>
-              <p><strong>제17조 (신탁보수)</strong> 담보보수는 별첨3에 적힌 산식 및 보수액으로 하며, 환가처분보수는 처분가격을 기준으로 별첨3에 적힌 산식에 따라 계산한다.</p>
+              
+              <div>
+                <strong>제2조 (용어의 정의)</strong> 이 신탁계약에서 사용하는 용어는 아래에서 정의하는 의미를 갖는다.<br>
+                1. “위탁자”란 신탁부동산을 수탁자에게 위탁하는 자를 말한다.<br>
+                2. “수탁자”란 이 신탁계약에 따라 신탁부동산을 신탁재산으로 인수하는 자를 말한다.<br>
+                3. “수익자”란 이 신탁계약에 따라 신탁재산으로부터 금전의 지급을 받거나 그 밖의 이 신탁계약상의 권리를 갖고 의무를 부담하는 자로서 별첨2에 적힌 자를 말하며, 이 신탁계약상 별도로 규정하지 않는 한 우선수익자를 포함한다.<br>
+                4. “우선수익자”란 수익자들 중에서 이 신탁계약에 따라 신탁재산으로부터 우선적으로 지급을 받을 권리를 갖고 의무를 부담하는 자로서 별첨2에 적힌 자를 말한다.<br>
+                5. “수익권”이란 이 신탁계약에 따라 수익자가 신탁재산으로부터 금전을 지급받을 권리 그 밖의 이 신탁계약상 수익자가 갖는 모든 권리를 말한다.<br>
+                6. “우선수익권”이란 이 신탁계약에 따라 우선수익자가 신탁재산으로부터 금전의 지급을 받거나 그 밖의 이 신탁계약상 우선수익자가 갖게 되는 권리를 말한다.<br>
+                7. “우선수익권금액”이란 우선수익자가 이 신탁계약에 따라 신탁부동산의 처분대금 등 신탁재산으로부터 피담보채권의 변제를 위하여 우선하여 지급받게 될 금액의 한도로서, 별첨2에 적힌 것을 말한다.<br>
+                8. “피담보채권”이란 이 신탁계약에 따라 우선수익자가 신탁재산으로 그 변제를 담보하고자 하는 채권으로서 신탁재산을 담보로 하며 이는 별첨2에 적힌 것을 말한다.<br>
+                9. “채무자”란 피담보채권에 관한 채무를 이행하여야 하는 자로서 별첨2에 적힌 자를 말한다.<br>
+                10. “신탁부동산”이란 이 신탁계약에 따라 위탁자가 수탁자에게 신탁하는 별첨1에 적힌 부동산을 말한다.<br>
+                11. “신탁재산”이란 이 신탁계약 제4조에 따라 신탁재산에 속하는 재산을 말한다.<br>
+                12. “신탁기간”은 이 신탁계약 제3조에 정의된 기간을 말한다.<br>
+                13. “신탁특약”이란 위탁자와 수탁자가 이 신탁계약에서 정하지 아니한 사항 또는 이 신탁계약과 달리 정하고자 하는 사항을 정하기 위하여 이 신탁계약의 별첨4에 첨부된 신탁특약을 말한다.
+              </div>
+
+              <p><strong>제3조 (신탁기간)</strong> 이 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 우선수익자 채권변제시까지로 한다. 다만 위 신탁기간이 만료되기 전에 제26조 제1항에 정해진 사유로 이 신탁계약에 따른 신탁이 종료된 경우에는 신탁기간도 이 신탁의 종료 시점에 종료된 것으로 본다.</p>
+              
+              <p><strong>제4조 (신탁재산의 범위)</strong> 신탁부동산과 신탁부동산의 관리, 처분, 운용, 수용, 멸실, 훼손 그 밖의 사유로 수탁자가 얻은 재산(수용보상금, 보험금 등 신탁재산에 관한 물상대위권에 기하여 취득한 금전을 포함하며, 이에 국한되지 않는다)은 신탁재산에 속한다.</p>
+
+              <p><strong>제5조 (위탁자의 변경)</strong> ① 위탁자는 수탁자 및 수익자 전원의 동의를 받아 위탁자의 지위를 제3자에게 이전할 수 있다. 이로 인한 신탁원부 등에 적힌 내용 변경 및 수익권증서 발행에 따른 비용은 위탁자가 부담한다. ② 제1항의 경우 위탁자가 여러 명일 때에는 다른 위탁자의 동의도 받아야 한다.</p>
+
+              <p><strong>제6조 (수익자 지정 및 수익권증서)</strong> ① 수탁자는 위탁자가 이 신탁계약에 따른 위탁자가 아닌 제3자를 수익자로 지정한 경우 그 지정 사실을 지체 없이 해당 수익자에게 통지하여야 한다. ② 위탁자가 제3자를 수익자로 지정한 경우 수익자는 이 신탁계약의 내용을 알고 있으며 이에 동의한다는 취지의 승낙서에 이름을 적고 도장을 찍어 수탁자에게 제출하여야 한다. ③ 수탁자는 수익자의 요청이 있는 경우 이 신탁계약에 따른 수익자의 권리를 증명하기 위한 증서로서 수익권증서를 발행하여 해당 수익자에게 교부한다.</p>
+
+              <p><strong>제7조 (우선수익권)</strong> ① 우선수익자는 이 신탁계약에 따라 수탁자가 신탁부동산을 처분하는 경우 피담보채권의 변제를 위하여 별첨2에 적힌 우선수익권금액을 한도로 신탁부동산의 처분대금 등 신탁재산으로부터 수익자보다 우선하여 지급받을 권리를 가지며, 우선수익자가 수인인 경우 우선수익자 사이의 순위는 별첨2에 적힌 순위에 따른다. ② 우선수익자의 피담보채권이 변제된 경우에는 해당 우선수익자의 우선수익권은 소멸한다.</p>
+
+              <p><strong>제8조 (수익권의 양도, 수익자의 추가 지정 또는 변경 등)</strong> ① 우선수익자는 수탁자의 사전 동의를 받아 이 신탁계약에 따른 우선수익권을 제3자에게 양도하거나 질권을 설정할 수 있다. 다만 우선수익권은 그 피담보채권과 함께 양도되어야 하며, 그 양수인이 이 신탁계약상 우선수익자의 의무를 승계하는 조건으로만 양도되어야 한다. ② 제1항의 경우를 제외하고 수익자가 수익권을 양도하거나 질권설정 등 처분행위를 하고자 하는 경우에는 수탁자의 사전 동의를 받아야 한다.</p>
+
+              <p><strong>제9조 (신탁부동산의 소유권이전의무 등)</strong> ① 위탁자는 이 신탁계약 체결 후 지체 없이 신탁부동산의 소유권이전등기 등 신탁재산의 공시에 필요한 서류를 수탁자에게 제공하고 수탁자가 합리적으로 요구하는 조치를 취하여야 한다. ② 제1항의 등기에 필요한 비용은 위탁자가 부담한다.</p>
+
+              <p><strong>제10조 (신탁부동산의 관리 등)</strong> ① 위탁자는 신탁부동산의 보존·유지·수선 등 관리에 필요한 모든 조치를 다하고 세금과 공과금 등 이에 필요한 비용을 부담한다. ② 이 신탁계약 체결일 이전에 위탁자가 신탁부동산에 관하여 체결한 임대차계약은 유효하고, 이 신탁계약 체결일 이후에도 위탁자는 신탁부동산을 타인에게 임대하거나 직접 점유 또는 사용할 수 있다. ③ 제2항에도 불구하고 위탁자는 이 신탁계약 체결일 이후 신탁부동산에 대하여 임대차계약의 체결, 저당권설정, 전세권설정 등의 처분행위를 하고자 하는 경우에는 수탁자 및 수익자의 사전 서면 동의를 받아야 한다.</p>
+
+              <p><strong>제11조 (임대차 등)</strong> ① 이 신탁계약 체결 후 위탁자가 제10조 제3항에 따라 수탁자 및 수익자의 사전 서면 동의를 받아 신탁부동산에 관한 임대차계약을 체결하는 경우에도 임대차계약은 위탁자 이름으로 체결하고, 위탁자가 임차인으로부터 임대차보증금 및 임대료 등을 직접 지급받는다. ② 제1항의 경우 위탁자는 그 임대차계약으로 인하여 수탁자에게 발생되는 손실, 비용 등을 부담하여야 한다.</p>
+
+              <p><strong>제12조 (보험계약)</strong> ① 위탁자는 수탁자가 시장상황을 고려하여 합리적으로 정한 종류, 기간, 부보금액, 방법으로 신탁부동산에 대한 보험계약을 체결하여야 하며 신탁기간 동안 이를 유지하여야 한다. ② 수탁자가 신탁부동산에 관한 보험금을 받은 경우 신탁기간의 만료 전이라도 그 보험금으로 제22조에서 정한 방법에 따라 정산할 수 있다.</p>
+
+              <p><strong>제13조 (선관주의의무 및 하자담보책임)</strong> ① 수탁자는 선량한 관리자의 주의의무로서 신탁부동산의 소유권을 보존·관리하고 그 밖의 신탁사무를 처리한다. ② 수탁자가 신탁사무를 처리하는 과정에서 수탁자의 고의 또는 과실로 인하여 위탁자 또는 수익자에게 손해가 발생하는 경우에는 그 손해를 배상할 책임이 있다.</p>
+
+              <p><strong>제14조 (신탁재산에 속하는 금전의 운용방법)</strong> ① 수탁자는 신탁재산에 속하는 금전을 「자본시장과 금융투자업에 관한 법률」 등 관계법령에서 정하는 방법에 따라 운용한다. ② 수탁자는 신탁재산을 다른 신탁재산 및 수탁자의 고유재산과 구분하여 관리하여야 한다.</p>
+
+              <p><strong>제15조 (비용 등의 부담)</strong> ① 신탁재산에 관한 세금과 공과금, 유지관리비, 지료 등 그 밖의 신탁사무의 처리에 필요한 비용 그리고 신탁사무 처리에 있어서 수탁자의 책임 없는 사유로 발생한 손실 등은 위탁자가 부담한다. ② 위탁자가 제1항의 비용 등을 지급하지 않는 경우 수탁자는 신탁재산에 속하는 금전으로 이를 지급할 수 있다.</p>
+
+              <p><strong>제16조 (신탁의 계산 및 수익의 교부)</strong> 이 신탁계약에 따른 신탁이 종료한 경우 수탁자는 지체 없이 신탁사무에 관한 최종의 계산을 하고, 수익자와 귀속권리자의 승인을 받아야 한다.</p>
+
+              <p><strong>제17조 (신탁보수)</strong> ① 신탁보수는 담보보수, 환가처분보수 및 매매계약사무보수로 구분한다. ② 담보보수는 별첨3에 적힌 산식에 의하여 계산하여 나온 금액으로 하며, 이 신탁계약에 따른 신탁이 중도에 해지되는 경우에도 담보보수는 반환하지 아니한다. ③ 환가처분보수는 환가처분 시 적용하며 제2항에서 정한 보수 외에 별도로 신탁부동산의 처분가격을 기준으로 별첨3에 적힌 산식에 의하여 계산한다.</p>
+
+              <p><strong>제18조 (신탁부동산의 처분)</strong> 수탁자는 채무자가 피담보채권에 관한 채무를 불이행하여 기한의 이익이 상실된 경우 위탁자에게 14일 이상의 기간을 부여하여 위반사유를 해결할 것을 요구하였음에도 불구하고 위탁자가 적절한 조치를 취하지 아니하는 때에는 우선수익자의 서면 요청에 의하여 신탁부동산을 처분할 수 있다.</p>
+
+              <p><strong>제19조 (처분방법)</strong> 신탁부동산의 처분은 공개시장에서 경쟁을 통하여 처분(공매)하는 것을 원칙으로 한다. 다만 공매가 되지 아니한 경우에는 다음 회차 공매 시작 전까지 직전 회차 공매 조건 이상으로 수의계약을 체결할 수 있다.</p>
+
+              <p><strong>제20조 (예정가격)</strong> 신탁부동산의 공매 시 예정가격은 수탁자가 선정하는 감정평가 전문기관의 감정평가액 이상으로 수탁자가 결정하는 것을 원칙으로 한다.</p>
+
+              <p><strong>제21조 (처분대금 납부기한)</strong> 신탁부동산의 공매는 그 매매대금을 매매계약의 체결일로부터 60일 이내에 완납하는 것을 조건으로 하여야 한다.</p>
+
+              <p><strong>제22조 (처분대금 등 정산)</strong> 수탁자가 신탁부동산을 환가하여 정산하는 경우의 순위는 1. 신탁사무 비용 및 신탁보수, 2. 신탁등기 전 소액임대차보증금, 3. 신탁등기 전 대항력 있는 임차보증금 및 근저당권, 4. 수탁자에게 대항력을 갖춘 임차보증금, 5. 우선수익자의 피담보채권, 6. 잔액이 있을 경우 수익자 교부 순서에 의한다.</p>
+
+              <p><strong>제23조 (명도의무)</strong> 위탁자는 신탁부동산의 처분이 결정된 경우 지체 없이 신탁부동산을 수탁자 또는 매수인에게 명도하여야 한다.</p>
+
+              <p><strong>제24조 (신탁해지 및 책임부담)</strong> 위탁자와 수익자는 합의하여 언제든지 신탁을 종료할 수 있다. 다만 신탁특약으로서 달리 정한 경우에는 그 특약에 따른다.</p>
+
+              <p><strong>제25조 (수탁자의 사임)</strong> 수탁자는 위탁자와 수익자의 승낙을 받은 경우 또는 정당한 사유가 있는 경우에 한하여 사임할 수 있다.</p>
+
+              <p><strong>제26조 (신탁의 종료)</strong> 이 신탁계약에 따른 신탁은 신탁기간의 만료, 신탁목적의 달성, 처분대금의 정산 완료 또는 신탁해지에 의하여 종료한다.</p>
+
+              <p><strong>제27조 (신고사항)</strong> 위탁자 또는 그 상속인은 인감, 주소, 상호, 대표자 등의 변경이 있는 경우 지체 없이 수탁자에게 신고하여야 한다.</p>
+
+              <p><strong>제28조 (소송수행)</strong> 신탁부동산에 관한 소송은 위탁자 또는 우선수익자의 책임과 비용으로 수행함을 원칙으로 한다.</p>
+
+              <p><strong>제29조 (관할법원)</strong> 이 신탁계약에 관하여 분쟁이 발생하는 경우에는 관할법원은 「민사소송법」에서 정하는 바에 따른다.</p>
+
+              <p><strong>제30조 (관계법규등 준용)</strong> 이 신탁계약에 정하지 아니한 사항은 별도의 약정이 없는 한 관계법규등에 정하는 바에 따른다.</p>
+
               <p><strong>제31조 (신탁계약과 신탁특약의 관계)</strong> 위탁자와 수탁자는 관계법규에 위반하지 않는 범위 내에서 특약을 정할 수 있으며, 신탁특약의 내용은 이 신탁계약의 내용에 우선한다.</p>
             </div>
 
-            <p class="text-center font-bold my-4 font-serif">- 이하 날인을 위한 여백 -</p>
-            <p class="text-[11px] font-serif">이 신탁계약을 증명하기 위해 계약서를 5부 작성하여 위탁자, 수탁자, 채무자, 1순위 우선수익자가 각각 1부씩 보관 및 1부는 신탁등기에 사용하며, 신탁등기용을 제외한 나머지 계약서는 수탁자 천공으로 갈음한다.</p>
+            <p class="text-center font-bold my-4">- 이하 날인을 위한 여백 -</p>
+            <p class="text-[11px]">이 신탁계약을 증명하기 위해 계약서를 5부 작성하여 위탁자, 수탁자, 채무자, 1순위 우선수익자가 각각 1부씩 보관 및 1부는 신탁등기에 사용하며, 신탁등기용을 제외한 나머지 계약서는 수탁자 천공으로 갈음한다.</p>
 
             <!-- 계약 체결일자 (기준일자) -->
-            <div class="text-center font-bold text-sm my-6 font-serif" id="d1-contract-date-display">
+            <div class="text-center font-bold text-sm my-6 text-slate-900" id="d1-contract-date-display">
               2026년 04월 09일
             </div>
 
-            <!-- 말미 서명/날인란 (4자 체계) -->
-            <div class="border border-slate-900 p-4 space-y-4 text-[11px] font-serif">
+            <!-- 날인란 (4자 체계) -->
+            <div class="border border-slate-900 p-4 space-y-4 text-[11px]">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <div class="font-bold text-blue-900 mb-1">【 위 탁 자 】</div>
@@ -637,64 +707,73 @@
               </div>
             </div>
 
-            <!-- 별첨 1. 신탁부동산의 표시 -->
-            <div class="page-break pt-8 font-serif">
+            <!-- 별첨 1. 신탁부동산의 표시 전문 -->
+            <div class="page-break pt-8">
               <h3 class="font-bold text-sm mb-3">【별첨 1】 신탁부동산의 표시</h3>
-              <div class="border border-slate-700 p-3 bg-slate-50 space-y-2 text-[11px]" id="d1-property-display">
+              <div class="border border-slate-700 p-4 bg-slate-50 space-y-1.5 text-[11px] leading-relaxed">
                 <p>1. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 13-2 대 391㎡</p>
                 <p>2. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 13-7 대 467㎡</p>
-                <p>3. 건물 : 전북특별자치도 전주시 덕진구 기린대로 662 철근콘크리트 평슬래브 5층 건물</p>
-                <p class="font-semibold text-right pt-1">(이상 소유자: <span id="d1-prop-owner">고동환</span>)</p>
+                <p>3. 건물 : 전북특별자치도 전주시 덕진구 팔복동2가 13-2, 13-7 [도로명주소] 전북특별자치도 전주시 덕진구 기린대로 662 철근콘크리트 조적조 평슬래브지붕 5층 근린생활시설 및 주택 (연면적 1,939.8㎡)</p>
+                <p>4. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 12-3 대 830㎡</p>
+                <p>5. 건물 : 전북특별자치도 전주시 덕진구 팔복동2가 12-3 [도로명주소] 기린대로 656 창고 1동 건평 100평 및 단층 창고 78.4㎡</p>
+                <p>6. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 10-11 전 33㎡</p>
+                <p>7. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 13-1 대 889㎡</p>
+                <p>8. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 14-1 전 99㎡</p>
+                <p>9. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 20-29 대 36㎡</p>
+                <p>10. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 20-30 대 7㎡</p>
+                <p class="font-semibold text-right">(이상 1~10호 소유자: <span id="d1-prop-owner">고동환</span>)</p>
+                <p>11. 토지 : 전북특별자치도 전주시 덕진구 팔복동2가 20-22 대 347㎡ (이상 공유자 고동환 지분 3470분의 165 전부)</p>
+                <p class="text-right font-bold pt-1">- 이 상 -</p>
               </div>
             </div>
 
-            <!-- 별첨 2. 우선수익자 및 수익자 등의 표시 -->
-            <div class="pt-6 font-serif">
+            <!-- 별첨 2. 우선수익자 및 수익자 등의 표시 전문 -->
+            <div class="pt-6">
               <h3 class="font-bold text-sm mb-3">【별첨 2】 우선수익자 및 수익자 등의 표시</h3>
               <div class="space-y-4">
                 <div>
                   <h4 class="font-bold text-xs mb-1 text-amber-900">가. 우선수익자</h4>
-                  <table class="formal-table">
+                  <table class="doc-table">
                     <tr><th class="w-1/4">순위</th><td colspan="2"><strong>1순위</strong></td></tr>
                     <tr><th>성명 (상호)</th><td colspan="2" id="d1-b2-name" class="font-bold">원광새마을금고</td></tr>
                     <tr><th>법인등록번호</th><td colspan="2" id="d1-b2-corpno">214944-0000846</td></tr>
                     <tr><th>주소</th><td colspan="2" id="d1-b2-addr">전북특별자치도 익산시 무왕로 1066(영등동)</td></tr>
-                    <tr><th>피담보채권</th><td colspan="2" id="d1-b2-debt-desc">[채무자]와 [우선수익자] 사이의 대출약정서에 기한 대출원리금채권 등</td></tr>
+                    <tr><th>피담보채권</th><td colspan="2" id="d1-b2-debt-desc">[주식회사 제아]와 [원광새마을금고] 사이에 체결된 [대출약정서]에 기한 [대출원리금채권 등]</td></tr>
                     <tr><th>채무자</th><td colspan="2" id="d1-b2-debtor-name" class="font-bold">주식회사 제아</td></tr>
                     <tr><th>우선수익권금액</th><td colspan="2" id="d1-b2-limit" class="font-bold text-indigo-900 text-sm">\2,400,000,000-</td></tr>
                   </table>
                 </div>
                 <div>
                   <h4 class="font-bold text-xs mb-1 text-blue-900">나. 수익자</h4>
-                  <table class="formal-table">
+                  <table class="doc-table">
                     <tr><th class="w-1/4">상호 (성명)</th><td id="d1-b2-trustor-name" class="font-bold">고동환</td></tr>
                     <tr><th>법인등록번호(생년월일)</th><td id="d1-b2-trustor-id">680517-1******</td></tr>
-                    <tr><th>주소</th><td id="d1-b2-trustor-addr">전북특별자치도 익산시 동서로 509, 109동 601호</td></tr>
+                    <tr><th>주소</th><td id="d1-b2-trustor-addr">전북특별자치도 익산시 동서로 509, 109동 601호 (어양동, 익산자이아파트)</td></tr>
                   </table>
                 </div>
                 <div>
                   <h4 class="font-bold text-xs mb-1 text-indigo-900">다. 채무자</h4>
-                  <table class="formal-table">
+                  <table class="doc-table">
                     <tr><th class="w-1/4">상호 (성명)</th><td id="d1-b2-debtor-cname" class="font-bold">주식회사 제아</td></tr>
                     <tr><th>법인등록번호</th><td id="d1-b2-debtor-cid">210111-0150989</td></tr>
-                    <tr><th>주소</th><td id="d1-b2-debtor-caddr">전북특별자치도 전주시 덕진구 기린대로 662, 4층</td></tr>
+                    <tr><th>주소</th><td id="d1-b2-debtor-caddr">전북특별자치도 전주시 덕진구 기린대로 662, 4층(팔복동2가)</td></tr>
                   </table>
                 </div>
               </div>
             </div>
 
-            <!-- 별첨 3. 신탁보수 -->
-            <div class="pt-6 font-serif">
+            <!-- 별첨 3. 신탁보수 전문 -->
+            <div class="pt-6">
               <h3 class="font-bold text-sm mb-2">【별첨 3】 신탁보수</h3>
-              <div class="border border-slate-700 p-3 space-y-3 bg-slate-50 text-[11px]">
+              <div class="border border-slate-700 p-4 space-y-3 bg-slate-50 text-[11px]">
                 <div>
                   <strong>1. 담보보수</strong><br>
-                  - 보수산정 방법 : 수익권증서상의 수익한도금액 X 약 0.2%<br>
-                  - 보수액 : <strong id="d1-b3-fee" class="text-cyan-900">금 오백만원정(\ 5,000,000-)</strong> (VAT 별도)
+                  보수산정 방법 : 수익권증서상의 수익한도금액 X 약 0.2%<br>
+                  보수액 : <strong id="d1-b3-fee" class="text-cyan-900 font-bold">금 오백만원정(\ 5,000,000-)</strong> (VAT 별도)
                 </div>
                 <div>
                   <strong>2. 환가처분보수</strong>
-                  <table class="formal-table mt-1">
+                  <table class="doc-table mt-1.5">
                     <tr><th>처분가격</th><th>보수율</th></tr>
                     <tr><td>1억원까지</td><td>8/1000</td></tr>
                     <tr><td>2억원까지</td><td>7/1000</td></tr>
@@ -707,29 +786,49 @@
               </div>
             </div>
 
-            <!-- 별첨 4. 신탁특약 (특약 제18조 연동) -->
-            <div class="page-break pt-8 font-serif">
-              <h3 class="font-bold text-sm mb-2">【별첨 4】 신탁특약 (발췌)</h3>
-              <div class="border border-slate-700 p-3 bg-slate-50 space-y-2 text-[11px]">
-                <p><strong>제18조 (신탁보수)</strong> 신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 1순위 우선수익자인 <strong id="d1-b4-special-beneficiary" class="text-amber-900 underline">원광새마을금고</strong>가 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 <strong id="d1-b4-special-beneficiary-tax" class="text-amber-900 underline">원광새마을금고</strong>에게 (세금)계산서를 발급하기로 한다.</p>
-                <p><strong>제19조 (신탁기간)</strong> 본 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 [우선수익자 채권변제시]까지로 하며, 신탁기간 만료시 우선수익자의 채무가 전액 변제되지 않은 경우, 신탁계약은 종료하지 아니한다.</p>
+            <!-- 별첨 4. 신탁특약 전문 (제1조 ~ 제19조 전체 수록) -->
+            <div class="page-break pt-8">
+              <h3 class="font-bold text-sm mb-3">【별첨 4】 신탁특약</h3>
+              <p class="text-[11px] mb-3">부동산담보신탁계약 기본계약 제31조의 규정과 관련하여, 당사자들은 다음과 같이 신탁특약을 정하고 신탁특약을 신탁본문에 우선하여 적용하기로 합의한다.</p>
+              
+              <div class="space-y-3 text-[11px] leading-relaxed text-slate-800">
+                <p><strong>제1조 (수익자의 범위)</strong> ① 신탁특약에서 수익자라 함은 [별첨 2]의 [나. 수익자] 표에 기재된 사람을 말한다. ② 신탁특약에서 수익자라 함은 우선수익자를 포함하지 아니한다.</p>
+                <p><strong>제2조 (우선수익자의 수익권 등)</strong> 우선수익자는 별첨 2의 우선수익권금액 한도 내에서 피담보채권 상당액을 신탁본문 제22조 제1항의 순위에 따라 우선 변제받을 권리를 가진다.</p>
+                <p><strong>제3조 (우선수익자가 여럿인 경우의 의사결정 등)</strong> 우선수익자로서의 일반적인 의사결정은 최선순위 우선수익자의 의사에 따른다.</p>
+                <p><strong>제4조 (우선수익자 및 수익자의 변경 등)</strong> 우선수익자는 수탁자의 사전 서면 동의 및 통지를 거쳐 지위를 양도하거나 질권을 설정할 수 있다.</p>
+                <p><strong>제5조 (수탁자에 관한 사항)</strong> 수탁자는 채무자의 기한이익 상실 여부 또는 우선수익자의 피담보채권액을 직접 실사할 의무가 없으며, 제출 자료에 기하여 환가·정산 업무를 수행한다.</p>
+                <p><strong>제6조 (추가신탁 및 공동담보)</strong> 신탁재산 전부는 우선수익자의 피담보채권 만족 및 신탁보수·비용 회수를 위하여 공동담보로 제공된 것으로 본다.</p>
+                <p><strong>제7조 (신탁재산 처분 사유 발생시 점유·사용의 제한)</strong> 처분 사유 발생 시 수탁자는 우선수익자와 협의하여 위탁자의 신탁부동산에 대한 점유·사용 권한을 제한할 수 있다.</p>
+                <p><strong>제8조 (위탁자의 신탁재산 처분 등)</strong> 위탁자는 채무 변제를 위해 필요한 경우 수탁자 및 우선수익자의 사전 서면 동의를 얻어 신탁부동산을 처분할 수 있다.</p>
+                <p><strong>제9조 (본 신탁계약 체결 전 체결된 임대차계약의 처리)</strong> 계약 체결 전 기체결된 임대차보증금 반환의무는 위탁자가 전적으로 부담한다.</p>
+                <p><strong>제10조 (공매 및 처분의 세부사항)</strong> 공매 진행 시 온비드(Onbid) 시스템을 이용하여 공매 및 처분을 진행함을 원칙으로 한다.</p>
+                <p><strong>제11조 (신탁종료 등에 관한 사항)</strong> 당사자들은 우선수익자 전원 및 수탁자의 서면 동의가 없는 한 본 신탁계약을 임의 해지할 수 없다.</p>
+                <p><strong>제12조 (소송수행)</strong> 본 신탁계약 또는 신탁재산과 관련한 소송은 위탁자 또는 우선수익자의 책임과 비용으로 수행한다.</p>
+                <p><strong>제13조 (신탁재산에 관한 조세 등)</strong> 수탁자는 고유재산으로 신탁재산 관련 조세를 대납할 의무를 부담하지 아니한다.</p>
+                <p><strong>제14조 (세무, 회계, 법무 등)</strong> 신탁재산과 관련한 제반 세무·회계 신고의무는 위탁자 및 수익자가 부담한다.</p>
+                <p><strong>제15조 (기타 법규의 준수 등)</strong> 위탁자는 본 신탁계약이 신탁법 제8조의 사해신탁에 해당하지 아니함을 보증한다.</p>
+                <p><strong>제16조 (해석의 원칙 및 전속적 관할합의)</strong> 본 신탁계약에 관한 소송은 서울중앙지방법원을 제1심 전속 관할법원으로 합의한다.</p>
+                <p><strong>제17조 (기타 신탁본문에 대한 수정 및 보완)</strong> 본문 규정과 특약 규정이 상충할 시 특약 규정이 우선한다.</p>
+                <p class="p-2 bg-amber-50 border border-amber-300 rounded font-semibold text-amber-950">
+                  <strong>제18조 (신탁보수)</strong> 신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 1순위 우선수익자인 <strong id="d1-b4-special-beneficiary" class="underline text-amber-900">원광새마을금고</strong>가 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 <strong id="d1-b4-special-beneficiary-tax" class="underline text-amber-900">원광새마을금고</strong>에게 (세금)계산서를 발급하기로 한다.
+                </p>
+                <p><strong>제19조 (신탁기간)</strong> 본 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 우선수익자 채권변제시까지로 하며, 채무가 전액 변제되지 않은 경우 신탁계약은 종료하지 아니한다.</p>
               </div>
             </div>
 
           </div>
 
           <!-- =================================================================== -->
-          <!-- 2-①. 고객거래확인서 [개인·개인사업자 用] (위탁자 고동환) -->
+          <!-- 2-①. 고객거래확인서 [개인·개인사업자 用] (위탁자 고동환) 전문 -->
           <!-- =================================================================== -->
-          <div id="doc-view-2-1" class="formal-paper hidden p-8 sm:p-12 text-xs leading-relaxed space-y-4 font-serif">
+          <div id="doc-view-2-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             
-            <!-- 상단 결재란 -->
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block font-sans">별지1.</span>
-                <h1 class="text-xl font-bold">고객거래 확인서 [개인ᆞ개인사업자 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지1.</span>
+                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [개인ᆞ개인사업자 用]</h1>
               </div>
-              <table class="border border-slate-700 text-center text-[10px] w-28 font-sans">
+              <table class="border border-slate-700 text-center text-[10px] w-28">
                 <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
@@ -739,17 +838,17 @@
               「특정 금융거래정보의 보고 및 이용 등에 관한 법률」 제5조의2에 따라 고객님께서 회사와 거래 시에는 고객확인 및 검증을 위하여 아래의 내용을 기재하셔야 하며, 제공하신 정보는 동법에서 정한 용도 외의 목적으로 사용되지 않습니다. 회사는 기재된 정보확인 및 검증을 위해 추가적인 문서 및 자료 제출을 요청할 수 있으며, 이를 거부하거나 검증이 불가능한 경우 거래가 제한되거나 거절됩니다.
             </p>
 
-            <div class="text-[11px] font-bold text-slate-900 flex justify-between">
+            <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1">
               <span>▶ 고객 기본정보</span>
               <span>고객구분(체크): ▣ 개인 &nbsp;&nbsp; □ 개인사업자</span>
             </div>
 
-            <table class="formal-table">
+            <table class="doc-table">
               <tr>
                 <th class="w-1/6">성명</th>
-                <td class="w-1/3">한글: <strong id="d2-1-name">고동환</strong></td>
-                <th class="w-1/6">주민번호 등<br><span class="text-[9px] font-normal">(앞자리7자리)</span></th>
-                <td id="d2-1-id" class="font-mono">680517-1******</td>
+                <td class="w-1/3">한글: <strong id="d2-1-name">고동환</strong><br><span class="text-[10px] text-slate-400">영문: (외국인 필수)</span></td>
+                <th class="w-1/6">주민번호 등<br><span class="text-[10px] font-normal">(앞자리7자리)</span></th>
+                <td id="d2-1-id">68.05.17</td>
               </tr>
               <tr>
                 <th>자택/직장 구분</th>
@@ -762,28 +861,56 @@
                 <td colspan="3" id="d2-1-addr">전북특별자치도 익산시 동서로 509, 109동 601호 (어양동, 익산자이아파트)</td>
               </tr>
               <tr>
+                <th>외국인정보</th>
+                <td>국적: &nbsp;&nbsp;&nbsp;&nbsp; 생년월일:</td>
+                <th>성별</th>
+                <td>□ 남 &nbsp;&nbsp; □ 여</td>
+              </tr>
+              <tr>
                 <th>직업구분</th>
-                <td colspan="3">□ 급여소득자 &nbsp;&nbsp; ▣ 개인사업자 &nbsp;&nbsp; □ 전문직 &nbsp;&nbsp; □ 주부 &nbsp;&nbsp; □ 기타</td>
+                <td colspan="3">□ 급여소득자 &nbsp;&nbsp; ▣ 개인사업자 &nbsp;&nbsp; □ 전문직 &nbsp;&nbsp; □ 주부 &nbsp;&nbsp; □ 학생 &nbsp;&nbsp; □ 기타</td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-2">▶ 거래 정보 (EDD 대상)</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 직장/사업 정보 (EDD 대상)</div>
+            <table class="doc-table">
               <tr>
-                <th class="w-1/4">거래 목적</th>
-                <td>□ 토지신탁(차입형) &nbsp;&nbsp; □ 토지신탁(관리형) &nbsp;&nbsp; ▣ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 처분신탁</td>
+                <th class="w-1/6">직장명</th>
+                <td class="w-1/3"></td>
+                <th class="w-1/6">업종</th>
+                <td></td>
               </tr>
               <tr>
-                <th>거래 자금의 원천 및 출처</th>
-                <td>▣ 사업소득 &nbsp;&nbsp; □ 퇴직소득 &nbsp;&nbsp; □ 부동산임대소득 &nbsp;&nbsp; □ 금융소득 &nbsp;&nbsp; □ 기타</td>
+                <th>부서명</th>
+                <td></td>
+                <th>직위</th>
+                <td></td>
+              </tr>
+              <tr>
+                <th>상호명(사업체)</th>
+                <td></td>
+                <th>사업자등록번호</th>
+                <td></td>
+              </tr>
+            </table>
+
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+            <table class="doc-table">
+              <tr>
+                <th class="w-1/4">거래 목적</th>
+                <td>□ 토지신탁 &nbsp;&nbsp; ▣ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 처분신탁 &nbsp;&nbsp; □ 기타</td>
+              </tr>
+              <tr>
+                <th>자금의 원천 및 출처</th>
+                <td>▣ 사업소득 &nbsp;&nbsp; □ 퇴직소득 &nbsp;&nbsp; □ 연금소득 &nbsp;&nbsp; □ 부동산임대소득 &nbsp;&nbsp; □ 금융소득 &nbsp;&nbsp; □ 기타</td>
               </tr>
               <tr>
                 <th>거래 자금의 실소유자 여부</th>
-                <td>▣ 예 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; □ 아니오 (타인 자금)</td>
+                <td>▣ 예 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; □ 아니오 (타인 자금인 경우 관계 기재)</td>
               </tr>
               <tr>
-                <th>총 자산규모 / 연소득</th>
-                <td>총 자산: ▣ 20억원 이상 &nbsp;&nbsp;&nbsp;&nbsp; 연소득: ▣ 10억원 이상</td>
+                <th>총 자산규모</th>
+                <td>□ 5억원 미만 &nbsp;&nbsp; □ 10억원 미만 &nbsp;&nbsp; ▣ 20억원 이상</td>
               </tr>
             </table>
 
@@ -792,39 +919,39 @@
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
-              <p class="font-bold" id="d2-1-date">2026년 04월 09일</p>
-              <p>[본인 작성 시] &nbsp;&nbsp; 성명 : <strong id="d2-1-sig-name" class="underline text-sm">고동환</strong> &nbsp;&nbsp; (인)</p>
+              <p class="font-bold text-slate-900" id="d2-1-date">2026년 04월 09일</p>
+              <p>[본인 작성 시] &nbsp;&nbsp; 성명 : <strong id="d2-1-sig-name" class="underline text-sm font-bold">고동환</strong> &nbsp;&nbsp; (인)</p>
             </div>
 
           </div>
 
           <!-- =================================================================== -->
-          <!-- 2-②. 고객거래확인서 [법인·단체 用] (채무자 주식회사 제아) -->
+          <!-- 2-②. 고객거래확인서 [법인·단체 用] (채무자 주식회사 제아) 전문 -->
           <!-- =================================================================== -->
-          <div id="doc-view-2-2" class="formal-paper hidden p-8 sm:p-12 text-xs leading-relaxed space-y-4 font-serif">
+          <div id="doc-view-2-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block font-sans">별지1.</span>
-                <h1 class="text-xl font-bold">고객거래 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지1.</span>
+                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1>
               </div>
-              <table class="border border-slate-700 text-center text-[10px] w-28 font-sans">
+              <table class="border border-slate-700 text-center text-[10px] w-28">
                 <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
             </div>
 
-            <div class="text-[11px] font-bold text-slate-900 flex justify-between">
+            <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1">
               <span>▶ 고객 기본정보 (채무자 법인)</span>
               <span>고객구분(체크): ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span>
             </div>
 
-            <table class="formal-table">
+            <table class="doc-table">
               <tr>
                 <th class="w-1/5">법인(단체)명</th>
-                <td class="w-1/3"><strong id="d2-2-name">주식회사 제아</strong></td>
+                <td class="w-1/3">한글: <strong id="d2-2-name">주식회사 제아</strong><br><span class="text-[10px] text-slate-400">영문:</span></td>
                 <th class="w-1/5">사업자번호 등 실명번호</th>
-                <td id="d2-2-bizno" class="font-mono">387-88-01700</td>
+                <td id="d2-2-bizno">387-88-01700</td>
               </tr>
               <tr>
                 <th>본점 주소</th>
@@ -840,8 +967,8 @@
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-2">▶ 대표자 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
+            <table class="doc-table">
               <tr>
                 <th class="w-1/5">대표자 성명</th>
                 <td class="w-1/3"><strong id="d2-2-rep">고동환</strong></td>
@@ -856,19 +983,31 @@
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-2">▶ 법인(단체) 일반 정보 / 거래 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 일반 정보 (EDD 대상)</div>
+            <table class="doc-table">
               <tr>
-                <th class="w-1/4">법인 규모 / 상장 여부</th>
-                <td>■ 중소기업 &nbsp;&nbsp;&nbsp;&nbsp; ■ 비상장</td>
+                <th class="w-1/5">설립일자</th>
+                <td class="w-1/3"></td>
+                <th class="w-1/5">법인 규모</th>
+                <td>□ 대기업 &nbsp;&nbsp; ■ 중소기업</td>
               </tr>
               <tr>
-                <th>거래 목적</th>
-                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td>
+                <th>상장 여부</th>
+                <td>□ 상장 &nbsp;&nbsp; ■ 비상장</td>
+                <th>상장 거래소</th>
+                <td>(해당 없음)</td>
+              </tr>
+            </table>
+
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+            <table class="doc-table">
+              <tr>
+                <th class="w-1/4">거래 목적</th>
+                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 대리사무 &nbsp;&nbsp; □ 기타</td>
               </tr>
               <tr>
                 <th>거래 자금의 원천 및 출처</th>
-                <td>■ 운영자금 &nbsp;&nbsp; □ 차입금 &nbsp;&nbsp; □ 유형자산처분 &nbsp;&nbsp; □ 기타</td>
+                <td>■ 운영자금 &nbsp;&nbsp; □ 구매자금 &nbsp;&nbsp; □ 차입금 &nbsp;&nbsp; □ 유형자산처분 &nbsp;&nbsp; □ 기타</td>
               </tr>
             </table>
 
@@ -877,39 +1016,40 @@
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
-              <p class="font-bold" id="d2-2-date">2026년 04월 09일</p>
-              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-2-sig-full" class="underline text-sm">주식회사 제아 대표이사 고동환</strong> &nbsp;&nbsp; (인)</p>
+              <p class="font-bold text-slate-900" id="d2-2-date">2026년 04월 09일</p>
+              <!-- 실무 가이드 법인 서명 표준 표기: [회사명] [직위] [성명] (인) -->
+              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-2-sig-full" class="underline text-sm font-bold">주식회사 제아 대표이사 고동환</strong> &nbsp;&nbsp; (인)</p>
             </div>
 
           </div>
 
           <!-- =================================================================== -->
-          <!-- 2-③. 고객거래확인서 [법인·단체 用] (우선수익자 원광새마을금고) -->
+          <!-- 2-③. 고객거래확인서 [법인·단체 用] (우선수익자 원광새마을금고) 전문 -->
           <!-- =================================================================== -->
-          <div id="doc-view-2-3" class="formal-paper hidden p-8 sm:p-12 text-xs leading-relaxed space-y-4 font-serif">
+          <div id="doc-view-2-3" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block font-sans">별지1.</span>
-                <h1 class="text-xl font-bold">고객거래 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지1.</span>
+                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1>
               </div>
-              <table class="border border-slate-700 text-center text-[10px] w-28 font-sans">
+              <table class="border border-slate-700 text-center text-[10px] w-28">
                 <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
             </div>
 
-            <div class="text-[11px] font-bold text-slate-900 flex justify-between">
+            <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1">
               <span>▶ 고객 기본정보 (1순위 우선수익자 - 금융기관)</span>
               <span>고객구분: ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span>
             </div>
 
-            <table class="formal-table">
+            <table class="doc-table">
               <tr>
                 <th class="w-1/5">법인(단체)명</th>
-                <td class="w-1/3"><strong id="d2-3-name">원광새마을금고</strong></td>
+                <td class="w-1/3">한글: <strong id="d2-3-name">원광새마을금고</strong></td>
                 <th class="w-1/5">사업자번호 등 실명번호</th>
-                <td id="d2-3-bizno" class="font-mono">403-82-02144</td>
+                <td id="d2-3-bizno">403-82-02144</td>
               </tr>
               <tr>
                 <th>본점 주소</th>
@@ -917,12 +1057,14 @@
               </tr>
               <tr>
                 <th>업종 (업태/종목)</th>
-                <td colspan="3">금융업 / 대금업</td>
+                <td>금융업</td>
+                <th>설립목적</th>
+                <td>대금업</td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-2">▶ 대표자 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
+            <table class="doc-table">
               <tr>
                 <th class="w-1/5">대표자 성명</th>
                 <td class="w-1/3"><strong id="d2-3-rep">성시종</strong></td>
@@ -937,15 +1079,15 @@
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-2">▶ 거래 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+            <table class="doc-table">
               <tr>
                 <th class="w-1/4">거래 목적</th>
-                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 (우선수익권자) &nbsp;&nbsp; □ 기타</td>
+                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 (우선수익권 담보취득) &nbsp;&nbsp; □ 기타</td>
               </tr>
               <tr>
                 <th>거래 자금의 출처</th>
-                <td>■ 금융자금 (여신 대출채권 담보)</td>
+                <td>■ 금융자금 (대출채권 피담보채권 확보)</td>
               </tr>
             </table>
 
@@ -954,23 +1096,23 @@
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
-              <p class="font-bold" id="d2-3-date">2026년 04월 09일</p>
-              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-3-sig-full" class="underline text-sm">원광새마을금고 이사장 성시종</strong> &nbsp;&nbsp; (인)</p>
+              <p class="font-bold text-slate-900" id="d2-3-date">2026년 04월 09일</p>
+              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-3-sig-full" class="underline text-sm font-bold">원광새마을금고 대표자 성시종</strong> &nbsp;&nbsp; (인)</p>
             </div>
 
           </div>
 
           <!-- =================================================================== -->
-          <!-- 3-①. 실제소유자 확인서 [법인·단체 用] (채무자 주식회사 제아 - 미대상) -->
+          <!-- 3-①. 실제소유자확인서 [법인·단체 用] (채무자 주식회사 제아 - 미대상) 전문 -->
           <!-- =================================================================== -->
-          <div id="doc-view-3-1" class="formal-paper hidden p-8 sm:p-12 text-xs leading-relaxed space-y-3 font-serif">
+          <div id="doc-view-3-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block font-sans">별지2.</span>
-                <h1 class="text-xl font-bold">실제소유자 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지2.</span>
+                <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
               </div>
-              <table class="border border-slate-700 text-center text-[10px] w-28 font-sans">
+              <table class="border border-slate-700 text-center text-[10px] w-28">
                 <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
@@ -980,59 +1122,59 @@
               「특정 금융거래정보의 보고 및 이용 등에 관한 법률 시행령」 제10조의5에 따라 고객님께서 회사와 거래 시에는 실제소유자 확인을 위하여 아래의 내용을 기재하셔야 하며, 제공하신 정보는 동법에서 정한 용도 외의 목적으로 사용되지 않습니다. 회사는 기재된 정보확인 및 검증을 위해 추가적인 문서 및 자료 제출을 요청할 수 있으며, 이를 거부하거나 검증이 불가능한 경우 거래가 제한되거나 거절됩니다.
             </p>
 
-            <div class="text-[11px] font-bold text-slate-900">▶ 법인(단체) 기본 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 기본 정보</div>
+            <table class="doc-table">
               <tr>
                 <th class="w-1/4">법인(단체)명</th>
                 <td class="w-1/4"><strong id="d3-1-name">주식회사 제아</strong></td>
                 <th class="w-1/4">사업자번호 등 실명번호</th>
-                <td class="w-1/4 font-mono" id="d3-1-bizno">387-88-01700</td>
+                <td class="w-1/4" id="d3-1-bizno">387-88-01700</td>
               </tr>
               <tr>
                 <th>실제소유자 확인 생략 여부</th>
                 <td colspan="3">
-                  □ 대상 (□ 국가·지방자치단체 □ 공공단체 □ 금융회사등 □ 사업보고서 제출대상*)<br>
-                  <strong>■ 미대상</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 자본시장법 제159조 제출대상법인
+                  □ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 □ 금융회사등 □ 사업보고서 제출대상*)<br>
+                  <strong>■ 미대상</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 자본시장법 제159조 제출대상법인
                 </td>
               </tr>
             </table>
 
             <div class="text-[11px] font-bold text-slate-900 pt-1">
-              ▶ 실제소유자 확인 정보
-              <span class="font-normal text-[10px] text-slate-600 ml-1">※ 주주명부 등 지분율 확인서류를 근거로 다음 3단계 순서에 따라 실제소유자(자연人)를 확인</span>
+              ▶ 실제소유자 확인 정보<br>
+              <span class="text-[10px] font-normal text-slate-600">※ 주주명부 등 지분율 확인서류를 근거로, 다음 3단계 순서에 따라 실제소유자(자연人)을 확인하여 주시기 바랍니다.</span>
             </div>
 
-            <table class="formal-table">
+            <table class="doc-table">
               <tr>
-                <th class="w-1/5">실제소유자 확인 방법</th>
+                <th class="w-1/4">실제소유자 확인 방법</th>
                 <td colspan="2">■ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약 &nbsp;&nbsp; □ 주식등 변동상황 명세서</td>
               </tr>
               <tr>
-                <th rowspan="3" class="w-1/5">실제소유자 구분</th>
-                <td class="w-2/3">
-                  <strong>[1단계]</strong> 1-① 25%이상의 지분을 소유한 자가 있으며, 확인서류 등으로 그 사실이 확인됩니까?
-                </td>
-                <td class="w-1/6 text-center">
-                  <strong>■ 예</strong><br>□ 아니오
+                <th rowspan="4">실제소유자 구분</th>
+                <td colspan="2">
+                  <strong>[1단계]</strong><br>
+                  1-① 25%이상의 지분을 소유한 자가 있으며, 확인서류 등으로 그 사실이 확인됩니까?<br>
+                  <strong>■ 예</strong> (“예”를 체크한 경우 “실제소유자 정보” 작성) &nbsp;&nbsp; □ 아니오
                 </td>
               </tr>
               <tr>
-                <td class="text-slate-400">
-                  <strong>[2단계]</strong> (1단계에서 확인할 수 없는 사유: 25% 이상 지분 소유자는 법인만 존재 등)<br>
-                  2-① 최대 지분 소유자 / 2-② 임원 과반수 선임 주주 / 2-③ 사실상 지배자
+                <td colspan="2">
+                  <strong>[2단계]</strong> (위의 1단계에서 확인할 수 없는 사유 : 25%이상의 지분 소유자는 법인만 존재)<br>
+                  2-① 최대 지분을 소유한 자가 있습니까? □ 예 □ 아니오<br>
+                  2-② 대표자, 임원 과반수 선임 주주가 있습니까? □ 예 □ 아니오<br>
+                  2-③ 법인 또는 단체를 사실상 지배하는 자가 있습니까? □ 예 □ 아니오
                 </td>
-                <td class="text-center text-slate-400">□ 예<br>□ 아니오</td>
               </tr>
               <tr>
-                <td class="text-slate-400">
-                  <strong>[3단계]</strong> 3-① 해당 법인 또는 단체에 선임된 대표이사가 있습니까?
+                <td colspan="2">
+                  <strong>[3단계]</strong> (위의 2단계에서 확인할 수 없는 사유 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br>
+                  3-① 해당 법인 또는 단체에 선임된 대표이사가 있습니까? □ 예 □ 아니오
                 </td>
-                <td class="text-center text-slate-400">□ 예<br>□ 아니오</td>
               </tr>
             </table>
 
             <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (자연인)</div>
-            <table class="formal-table">
+            <table class="doc-table">
               <tr>
                 <th class="w-1/4">성명</th>
                 <td class="w-1/4"><strong id="d3-1-owner-name">고동환</strong></td>
@@ -1047,13 +1189,13 @@
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보 (주주명부 등 서류제출, 확인서 작성 등 작성자 정보 기재)</div>
+            <table class="doc-table">
               <tr>
                 <th class="w-1/4">성명</th>
                 <td class="w-1/4" id="d3-1-author-name">고동환</td>
                 <th class="w-1/4">소속 부서명</th>
-                <td class="w-1/4">대표이사실</td>
+                <td class="w-1/4"></td>
               </tr>
               <tr>
                 <th>소속 회사명</th>
@@ -1063,28 +1205,28 @@
               </tr>
             </table>
 
-            <div class="bg-slate-50 p-2 border border-slate-300 rounded text-[10px] mt-2">
+            <div class="bg-slate-50 p-2.5 border border-slate-300 rounded text-[11px] mt-3">
               상기 기재한 내용이 사실과 일치하며, 실제소유자확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.
             </div>
 
-            <div class="text-right pt-4 text-[12px] space-y-1">
-              <p class="font-bold" id="d3-1-date">2026년 04월 09일</p>
-              <p>작성자 : &nbsp;&nbsp; <strong id="d3-1-sig-full" class="underline text-sm">주식회사 제아 대표이사 고동환</strong> &nbsp;&nbsp; (인)</p>
+            <div class="text-right pt-6 text-[12px] space-y-2">
+              <p class="font-bold text-slate-900" id="d3-1-date">2026년 04월 09일</p>
+              <p>작성자 : &nbsp;&nbsp; <strong id="d3-1-sig-full" class="underline text-sm font-bold">주식회사 제아 대표이사 고동환</strong> &nbsp;&nbsp; (인)</p>
             </div>
 
           </div>
 
           <!-- =================================================================== -->
-          <!-- 3-②. 실제소유자 확인서 [법인·단체 用] (우선수익자 원광새마을금고 - 금융회사 생략) -->
+          <!-- 3-②. 실제소유자확인서 [법인·단체 用] (우선수익자 원광새마을금고 - 금융회사등 생략) 전문 -->
           <!-- =================================================================== -->
-          <div id="doc-view-3-2" class="formal-paper hidden p-8 sm:p-12 text-xs leading-relaxed space-y-3 font-serif">
+          <div id="doc-view-3-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block font-sans">별지2.</span>
-                <h1 class="text-xl font-bold">실제소유자 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지2.</span>
+                <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
               </div>
-              <table class="border border-slate-700 text-center text-[10px] w-28 font-sans">
+              <table class="border border-slate-700 text-center text-[10px] w-28">
                 <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
@@ -1094,79 +1236,79 @@
               「특정 금융거래정보의 보고 및 이용 등에 관한 법률 시행령」 제10조의5에 따라 고객님께서 회사와 거래 시에는 실제소유자 확인을 위하여 아래의 내용을 기재하셔야 합니다.
             </p>
 
-            <div class="text-[11px] font-bold text-slate-900">▶ 법인(단체) 기본 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 기본 정보</div>
+            <table class="doc-table">
               <tr>
                 <th class="w-1/4">법인(단체)명</th>
                 <td class="w-1/4"><strong id="d3-2-name">원광새마을금고</strong></td>
                 <th class="w-1/4">사업자번호 등 실명번호</th>
-                <td class="w-1/4 font-mono" id="d3-2-bizno">403-82-02144</td>
+                <td class="w-1/4" id="d3-2-bizno">403-82-02144</td>
               </tr>
               <tr>
                 <th>실제소유자 확인 생략 여부</th>
                 <td colspan="3">
-                  <strong>■ 대상 (□ 국가·지방자치단체 □ 공공단체 ■ 금융회사등 □ 사업보고서 제출대상*)</strong><br>
-                  □ 미대상 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 자본시장법 제159조 제출대상법인
+                  <strong>■ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 ■ 금융회사등 □ 사업보고서 제출대상*)</strong><br>
+                  □ 미대상 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 자본시장법 제159조 제출대상법인
                 </td>
               </tr>
             </table>
 
             <div class="text-[11px] font-bold text-slate-900 pt-1">
-              ▶ 실제소유자 확인 정보 (금융회사 등 확인 생략)
+              ▶ 실제소유자 확인 정보 (금융기관 생략 대상)
             </div>
 
-            <table class="formal-table bg-slate-50 text-slate-400">
+            <table class="doc-table">
               <tr>
-                <th class="w-1/5 text-slate-600">실제소유자 확인 방법</th>
-                <td colspan="2">□ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 기타 (생략 대상 금융기관)</td>
+                <th class="w-1/4">실제소유자 확인 방법</th>
+                <td colspan="2">□ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약 &nbsp;&nbsp; □ 기타</td>
               </tr>
               <tr>
-                <th class="w-1/5 text-slate-600">실제소유자 구분</th>
-                <td colspan="2" class="p-3 text-center text-[11px]">
-                  ※ 특정금융정보법 시행령 제10조의5에 따라 금융회사 등은 실제소유자 확인이 생략됩니다.
+                <th>[1단계 ~ 3단계]</th>
+                <td colspan="2" class="text-slate-500 py-2">
+                  ※ 특정금융정보법 시행령 제10조의5에 따른 금융회사등 확인 생략 대상 법인으로 세부 단계 판정 생략
                 </td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (금융회사 생략 - 공란)</div>
-            <table class="formal-table bg-slate-50 text-slate-400">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (확인 생략 대상 - 공란 처리)</div>
+            <table class="doc-table bg-slate-50 text-slate-400">
               <tr>
-                <th class="w-1/4 text-slate-600">성명</th>
-                <td class="w-1/4">- (확인 생략) -</td>
-                <th class="w-1/4 text-slate-600">국적</th>
+                <th class="w-1/4">성명</th>
+                <td class="w-1/4">- (생략) -</td>
+                <th class="w-1/4">국적</th>
                 <td class="w-1/4">-</td>
               </tr>
               <tr>
-                <th class="text-slate-600">생년월일</th>
+                <th>생년월일</th>
                 <td>-</td>
-                <th class="text-slate-600">지분율(%)</th>
-                <td>-</td>
+                <th>지분율(%)</th>
+                <td>(1단계, 2-①인 경우 필수 기재)</td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
-            <table class="formal-table">
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보 (주주명부 등 서류제출, 확인서 작성 등 작성자 정보 기재)</div>
+            <table class="doc-table">
               <tr>
                 <th class="w-1/4">성명</th>
                 <td class="w-1/4" id="d3-2-author-name">성시종</td>
                 <th class="w-1/4">소속 부서명</th>
-                <td class="w-1/4">이사장실</td>
+                <td class="w-1/4"></td>
               </tr>
               <tr>
                 <th>소속 회사명</th>
                 <td id="d3-2-author-comp">원광새마을금고</td>
                 <th>직위/직책</th>
-                <td>대표자 / 이사장</td>
+                <td>대표자</td>
               </tr>
             </table>
 
-            <div class="bg-slate-50 p-2 border border-slate-300 rounded text-[10px] mt-2">
+            <div class="bg-slate-50 p-2.5 border border-slate-300 rounded text-[11px] mt-3">
               상기 기재한 내용이 사실과 일치하며, 실제소유자확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.
             </div>
 
-            <div class="text-right pt-6 text-[12px] space-y-1">
-              <p class="font-bold" id="d3-2-date">2026년 04월 09일</p>
-              <p>작성자 : &nbsp;&nbsp; <strong id="d3-2-sig-full" class="underline text-sm">원광새마을금고 이사장 성시종</strong> &nbsp;&nbsp; (인)</p>
+            <div class="text-right pt-6 text-[12px] space-y-2">
+              <p class="font-bold text-slate-900" id="d3-2-date">2026년 04월 09일</p>
+              <p>작성자 : &nbsp;&nbsp; <strong id="d3-2-sig-full" class="underline text-sm font-bold">원광새마을금고 대표자 성시종</strong> &nbsp;&nbsp; (인)</p>
             </div>
 
           </div>
@@ -1180,9 +1322,9 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-sliders text-purple-400"></i> 관리자 설정 &amp; Gemini 3.8 Flash API Key 관리
+            <i class="fa-solid fa-sliders text-purple-400"></i> 관리자 설정 &amp; Gemini API Key 관리
           </h2>
-          <p class="text-xs text-slate-400 mt-1">인증된 키는 브라우저 로컬 스토리지에 안전하게 보관됩니다.</p>
+          <p class="text-xs text-slate-400 mt-1">입력된 API Key는 브라우저 로컬 스토리지에 영구 보존되어 새로고침 후에도 유지됩니다.</p>
         </div>
         <button onclick="lockAdminSettings()" class="bg-slate-900 text-amber-400 text-xs border border-amber-500/30 px-3.5 py-2 rounded-xl">
           <i class="fa-solid fa-lock mr-1"></i>로그아웃
@@ -1191,12 +1333,17 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-key text-purple-400 mr-1.5"></i>Google AI Studio API Key</h3>
-          <input type="password" id="gemini-api-key" placeholder="API Key 입력" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
+          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-key text-purple-400 mr-1.5"></i>Google AI Studio API Key (영구 보존)</h3>
+          <input type="password" id="gemini-api-key" placeholder="Google AI Studio에서 발급받은 API Key를 입력하세요" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
           <div class="flex gap-2">
-            <button onclick="saveAdminApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg">저장</button>
-            <button onclick="testGoogleAPIConnection()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs px-4 py-2 rounded-lg border border-cyan-500/30">연결 테스트</button>
+            <button onclick="saveAdminApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
+              <i class="fa-solid fa-floppy-disk mr-1"></i>Key 저장 및 적용
+            </button>
+            <button onclick="testGoogleAPIConnection()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs px-4 py-2 rounded-lg border border-cyan-500/30">
+              연결 테스트
+            </button>
           </div>
+          <p class="text-[11px] text-emerald-400 mt-1">※ 입력 즉시 자동 저장되어 브라우저 새로고침 시에도 풀리지 않습니다.</p>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
@@ -1210,7 +1357,7 @@
 
   </main>
 
-  <!-- Admin Modal -->
+  <!-- Admin Auth Modal -->
   <div id="admin-auth-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4">
       <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-xl border border-amber-500/30">
@@ -1267,7 +1414,6 @@
   <script>
     const FAILOVER_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3-flash"];
 
-    // Default Seed Data Matching Attached Docs (주식회사 제아, 고동환, 원광새마을금고)
     const DEFAULT_SEED_VENDORS = [
       {
         id: "VND-2026-001",
@@ -1277,7 +1423,6 @@
         bizNo: "N/A",
         address: "전북특별자치도 익산시 동서로 509, 109동 601호 (어양동, 익산자이아파트)",
         bizType: "개인 (부동산 소유자)",
-        isIndividual: true,
         source: "실무 샘플"
       },
       {
@@ -1288,7 +1433,6 @@
         bizNo: "387-88-01700",
         address: "전북특별자치도 전주시 덕진구 기린대로 662, 4층(팔복동2가)",
         bizType: "제조업 / 의류제조및임가공 등",
-        isIndividual: false,
         source: "실무 샘플"
       },
       {
@@ -1299,8 +1443,6 @@
         bizNo: "403-82-02144",
         address: "전북특별자치도 익산시 무왕로 1066(영등동)",
         bizType: "금융업 / 대금업",
-        isIndividual: false,
-        isFinancialInst: true,
         source: "실무 샘플"
       },
       {
@@ -1311,8 +1453,6 @@
         bizNo: "116-81-33221",
         address: "서울특별시 영등포구 여의대로 66 하나금융타워 18층",
         bizType: "금융업 / 투자금융",
-        isIndividual: false,
-        isFinancialInst: true,
         source: "기본 샘플"
       },
       {
@@ -1323,7 +1463,6 @@
         bizNo: "123-81-45678",
         address: "서울특별시 강남구 테헤란로 123 신탁빌딩 10층",
         bizType: "부동산업 / 신탁 및 자산관리",
-        isIndividual: false,
         source: "기본 샘플"
       }
     ];
@@ -1334,14 +1473,12 @@
     let cachedFileBase64 = null;
     let cachedMimeType = null;
 
-    // Parties State
-    let selectedTrustorId = "VND-2026-001";     // 고동환
-    let selectedDebtorId = "VND-2026-002";      // 주식회사 제아
-    let selectedBeneficiaryId = "VND-2026-003"; // 원광새마을금고
+    let selectedTrustorId = "VND-2026-001";
+    let selectedDebtorId = "VND-2026-002";
+    let selectedBeneficiaryId = "VND-2026-003";
     let isDebtorSameAsTrustor = false;
 
-    let currentDocSubTab = "doc1";
-
+    // Load LocalStorage Database
     function loadPersistentVendorDatabase() {
       const saved = localStorage.getItem('trust_vendor_db');
       if (saved) {
@@ -1352,7 +1489,7 @@
             return;
           }
         } catch (e) {
-          console.warn("DB 복원 실패, 기본값 초기화", e);
+          console.warn("DB 로드 실패, 기본값 초기화", e);
         }
       }
       vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
@@ -1378,10 +1515,31 @@
       showToast('거래처 DB가 기본 샘플로 초기화되었습니다.', 'info');
     }
 
+    // Window Onload Initialization
     window.onload = function() {
-      // 계약체결일자 초기화 (2026-04-09 실무 샘플 매핑)
+      // 1. LocalStorage에서 API Key 즉시 복원
+      const storedKey = getStoredApiKey();
+      if (storedKey) {
+        const inputKeyEl = document.getElementById('gemini-api-key');
+        if (inputKeyEl) inputKeyEl.value = storedKey;
+      }
+
+      // API Key 입력 시 실시간 자동 저장(Auto-save) 이벤트 리스너 등록
+      const apiKeyInput = document.getElementById('gemini-api-key');
+      if (apiKeyInput) {
+        apiKeyInput.addEventListener('input', function() {
+          const val = this.value.trim();
+          if (val) {
+            localStorage.setItem('gemini_ocr_api_key', val);
+            refreshApiKeyStatusUI();
+          }
+        });
+      }
+
+      // 2. 기준일자 초기화
       document.getElementById('contract-date').value = "2026-04-09";
 
+      // 3. 거래처 DB 로드 & UI 초기화
       loadPersistentVendorDatabase();
       renderVendorTables();
       setupFileUploadListeners();
@@ -1394,6 +1552,8 @@
       updateSameAsTrustorUI();
       refreshApiKeyStatusUI();
       updateDocumentPreviews();
+
+      appendDiagnosticLog("부동산 담보신탁 및 부속서류 통합 자동화 시스템 로드 완료");
     };
 
     function appendDiagnosticLog(msg, type = 'info') {
@@ -1402,7 +1562,7 @@
       const now = new Date();
       const timeStr = now.toTimeString().split(' ')[0];
       const div = document.createElement('div');
-      div.className = type === 'success' ? 'text-emerald-400 font-semibold' : (type === 'warn' ? 'text-amber-400' : (type === 'error' ? 'text-rose-400' : 'text-slate-400'));
+      div.className = type === 'success' ? 'text-emerald-400 font-semibold' : (type === 'warn' ? 'text-amber-400 font-semibold' : (type === 'error' ? 'text-rose-400 font-semibold' : 'text-slate-400'));
       div.textContent = `[${timeStr}] ${msg}`;
       terminal.appendChild(div);
       terminal.scrollTop = terminal.scrollHeight;
@@ -1438,11 +1598,15 @@
         badge.textContent = 'Key 미설정';
         statText.textContent = "Key 미등록";
         statText.className = "text-base font-bold text-amber-400";
+        alertBox.className = "bg-gradient-to-r from-slate-900 to-indigo-950/80 border border-amber-500/40 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg";
+        document.getElementById('ocr-alert-title').innerHTML = `Google AI Studio API Key 미등록 상태 <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">설정 필요</span>`;
+        document.getElementById('ocr-alert-desc').textContent = "우측 상단 '설정 (Admin)' 탭에서 API Key를 직접 입력하고 저장해 주세요.";
       }
       const input = document.getElementById('gemini-api-key');
       if (input && key) input.value = key;
     }
 
+    // Party Selection & Autocomplete
     function toggleSameAsTrustor() {
       isDebtorSameAsTrustor = !isDebtorSameAsTrustor;
       updateSameAsTrustorUI();
@@ -1580,7 +1744,7 @@
     }
 
     // =========================================================================
-    // DOCUMENT PREVIEWS ENGINE (첨부 서식 및 실무 가이드 100% 매핑)
+    // DOCUMENT PREVIEWS UPDATE ENGINE (실무 가이드 & 첨부 양식 100% 매핑)
     // =========================================================================
     function updateDocumentPreviews() {
       const trustor = vendorDatabase.find(v => v.id === selectedTrustorId) || {
@@ -1608,7 +1772,7 @@
         bizNo: "403-82-02144"
       };
 
-      // 1. 단일 기준일자 일체화 원칙 (Single Date Principle)
+      // 1. 단일 기준일자 일체화 (Single Date Principle)
       const rawDate = document.getElementById('contract-date').value || "2026-04-09";
       const [year, month, day] = rawDate.split('-');
       const formattedDateKorean = `${year}년 ${month}월 ${day}일`;
@@ -1640,7 +1804,7 @@
 
       document.getElementById('d1-sig-b-name').textContent = beneficiary.companyName;
       document.getElementById('d1-sig-b-addr').textContent = beneficiary.address;
-      document.getElementById('d1-sig-b-rep').textContent = `대표자 ${beneficiary.representative}`;
+      document.getElementById('d1-sig-b-rep').textContent = `이사장 ${beneficiary.representative}`;
       document.getElementById('d1-sig-b-id').textContent = beneficiary.corpRegNo;
 
       // 별첨 1
@@ -1665,7 +1829,7 @@
       // 별첨 3
       document.getElementById('d1-b3-fee').textContent = feeText;
 
-      // 별첨 4 특약 제18조: 1순위 우선수익자 자동 연동
+      // 별첨 4 특약 18조: 1순위 우선수익자 자동 연동
       document.getElementById('d1-b4-special-beneficiary').textContent = beneficiary.companyName;
       document.getElementById('d1-b4-special-beneficiary-tax').textContent = beneficiary.companyName;
 
@@ -1674,7 +1838,7 @@
       // ==============================================================
       // 2-① 위탁자 (개인용)
       document.getElementById('d2-1-name').textContent = trustor.companyName;
-      document.getElementById('d2-1-id').textContent = trustor.corpRegNo;
+      document.getElementById('d2-1-id').textContent = (trustor.corpRegNo && trustor.corpRegNo.length >= 6) ? trustor.corpRegNo.substring(0, 6) : "68.05.17";
       document.getElementById('d2-1-addr').textContent = trustor.address;
       document.getElementById('d2-1-confirm-name').textContent = trustor.companyName;
       document.getElementById('d2-1-date').textContent = formattedDateKorean;
@@ -1722,7 +1886,7 @@
 
     function switchDocSubTab(docId) {
       currentDocSubTab = docId;
-      document.querySelectorAll('.formal-paper').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.doc-paper').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.doc-subtab').forEach(btn => {
         btn.classList.remove('bg-blue-600', 'text-white');
         btn.classList.add('bg-slate-900', 'text-slate-400');
@@ -1741,6 +1905,9 @@
       window.print();
     }
 
+    // =========================================================================
+    // OCR & AI STUDIO API ENGINE
+    // =========================================================================
     function switchTab(tabId) {
       if (tabId === 'settings' && !isAdminAuthenticated) {
         document.getElementById('admin-pw-input').value = '';
@@ -1806,12 +1973,16 @@
       if (!k) return;
       localStorage.setItem('gemini_ocr_api_key', k);
       refreshApiKeyStatusUI();
-      showToast('API Key가 안전하게 저장되었습니다.', 'success');
+      appendDiagnosticLog(`[저장 완료] API Key가 로컬 저장소에 영구 보존되었습니다.`, 'success');
+      showToast('API Key가 안전하게 영구 저장되었습니다.', 'success');
     }
 
     async function testGoogleAPIConnection() {
       const key = getStoredApiKey() || document.getElementById('gemini-api-key').value.trim();
-      if (!key) return;
+      if (!key) {
+        showToast('저장된 API Key가 없습니다.', 'warning');
+        return;
+      }
       appendDiagnosticLog("API Key 통신 테스트 시작...");
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${FAILOVER_MODELS[0]}:generateContent?key=${encodeURIComponent(key)}`;
@@ -2032,7 +2203,6 @@
     function deleteVendor(id) {
       if (!confirm("거래처를 삭제하시겠습니까?")) return;
       vendorDatabase = vendorDatabase.filter(v => v.id !== id);
-      saveVendorDatabaseToStorage();
       renderVendorTables();
       showToast('삭제되었습니다.', 'info');
     }
