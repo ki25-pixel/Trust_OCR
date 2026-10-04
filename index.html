@@ -115,9 +115,9 @@
         <div>
           <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
             신탁계약 관련서류 AI OCR 시스템
-            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">Gemini 3.8 Flash</span>
+            <span class="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full font-semibold">채무자 연동 지원</span>
           </h1>
-          <p class="text-xs text-slate-400 hidden sm:block">거래처 DB 구축 &amp; 신탁 3자 서류(위탁자·우선수익자) 자동 기재</p>
+          <p class="text-xs text-slate-400 hidden sm:block">거래처 DB 구축 &amp; 담보신탁 채무자 기재 및 KYC 징구 자동화</p>
         </div>
       </div>
 
@@ -170,12 +170,12 @@
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 p-6 sm:p-8 border border-cyan-500/30 shadow-2xl">
         <div class="relative z-10 max-w-3xl">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-4">
-            <i class="fa-solid fa-bolt text-emerald-400"></i> 실시간 거래처 자동완성 검색 &amp; 신탁서류 3종 생성 지원
+            <i class="fa-solid fa-building-shield text-emerald-400"></i> 부동산 담보신탁 전용 4자 구조 (위탁자·채무자·수탁자·우선수익자)
           </span>
           <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">신탁계약 관련서류 AI OCR 시스템</h2>
           <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-            PDF 사업자등록증/등기부등본을 업로드하면 AI가 핵심 정보를 자동 추출하여 거래처 DB에 영구 보존하고,<br class="hidden sm:inline">
-            **위탁자**와 **우선수익자**를 검색창에서 자동완성으로 손쉽게 지정하여 신탁계약서 및 서류 2종(KYC/실제소유자)을 즉시 완성합니다.
+            사업자등록증/등기부등본 PDF를 업로드하여 거래처 DB를 구축하고,<br class="hidden sm:inline">
+            **위탁자**와 **채무자**(동일 여부 원클릭 선택), **우선수익자**를 지정하여 담보신탁계약서 및 법정 서류 2종을 즉시 생성합니다.
           </p>
           <div class="flex flex-wrap gap-3">
             <button onclick="switchTab('ocr')" class="bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-cyan-600/30 transition-all flex items-center gap-2">
@@ -209,21 +209,21 @@
 
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl shadow-sm">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400">AI 검색 &amp; 지정</span>
-            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
-              <i class="fa-solid fa-magnifying-glass"></i>
+            <span class="text-xs font-medium text-slate-400">채무자 기재 지원</span>
+            <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
+              <i class="fa-solid fa-user-tag"></i>
             </div>
           </div>
           <div class="mt-3 flex items-baseline">
-            <span class="text-base font-bold text-cyan-300">실시간 자동완성</span>
+            <span class="text-base font-bold text-purple-300">위탁자=채무자 연동</span>
           </div>
-          <p class="text-xs text-slate-500 mt-1">상호·대표·법인번호 검색</p>
+          <p class="text-xs text-slate-500 mt-1">물상보증 개별 지정 지원</p>
         </div>
 
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-slate-400">보안 인증 상태</span>
-            <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
               <i class="fa-solid fa-lock"></i>
             </div>
           </div>
@@ -242,9 +242,9 @@
           </div>
           <div class="mt-3 flex items-baseline">
             <span class="text-2xl font-bold text-white">3종 완비</span>
-            <span class="ml-2 text-xs text-indigo-400 font-medium">위탁자·우선수익자</span>
+            <span class="ml-2 text-xs text-indigo-400 font-medium">담보신탁·KYC·실소유자</span>
           </div>
-          <p class="text-xs text-slate-500 mt-1">계약서·KYC·실제소유자확인서</p>
+          <p class="text-xs text-slate-500 mt-1">채무자 계약서 단독 반영</p>
         </div>
       </div>
 
@@ -536,15 +536,15 @@
       </div>
     </section>
 
-    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (NEW: REAL-TIME AUTOCOMPLETE SEARCH BOXES) -->
+    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (UPDATED: 3 PARTIES + DEBTOR SAME TOGGLE) -->
     <section id="tab-generator" class="tab-content hidden space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-file-contract text-blue-400"></i>
-            Step 3: 신탁계약 관련 서류 3종 자동 기재 시스템 (3자 구조)
+            Step 3: 신탁계약 관련 서류 3종 자동 기재 시스템 (담보신탁 채무자 지원)
           </h2>
-          <p class="text-xs text-slate-400 mt-1">위탁자 및 우선수익자를 **실시간 검색창(자동완성)**을 통해 검색하여 지정할 수 있습니다.</p>
+          <p class="text-xs text-slate-400 mt-1">위탁자와 채무자의 동일 여부를 원클릭으로 선택할 수 있으며, 채무자는 담보신탁계약서에만 자동 기재됩니다.</p>
         </div>
         <div class="flex items-center gap-2">
           <button onclick="printCurrentDocument()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-md transition-all flex items-center gap-1.5">
@@ -553,74 +553,114 @@
         </div>
       </div>
 
-      <!-- Dual Party Auto-complete Search Box (위탁자 & 우선수익자) -->
+      <!-- 3-Party Search & Selection Box (위탁자 + 채무자 + 우선수익자) -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
           
-          <!-- 1. 위탁자 (Trustor) Autocomplete Search Container -->
-          <div id="trustor-search-container" class="relative bg-slate-950 p-4 rounded-xl border border-blue-500/40">
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-xs font-bold text-blue-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-user-tie text-blue-400"></i> 위탁자 (갑) 검색 &amp; 지정
-              </label>
-              <span class="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">신탁 부동산 소유자</span>
-            </div>
-
-            <!-- Selected Party Info Card -->
-            <div id="trustor-selected-card" class="mb-2 p-2.5 bg-blue-950/60 border border-blue-500/50 rounded-lg flex items-center justify-between">
-              <div class="text-xs text-white truncate max-w-[85%]">
-                <span class="font-bold text-blue-300" id="trustor-selected-name">(주)한국신탁개발</span>
-                <span class="text-slate-400 text-[11px] ml-2" id="trustor-selected-details">대표: 홍길동 | 110111-1234567</span>
+          <!-- 1. 위탁자 (Trustor) Autocomplete Search Container with '채무자와 동일' Toggle -->
+          <div id="trustor-search-container" class="relative bg-slate-950 p-4 rounded-xl border border-blue-500/40 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-blue-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-user-tie text-blue-400"></i> 1. 위탁자 (갑) 지정
+                </label>
+                <!-- 채무자와 동일 토글 버튼 -->
+                <button type="button" onclick="toggleDebtorSameAsTrustor()" id="debtor-same-toggle-btn" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1">
+                  <i class="fa-solid fa-link text-[10px]"></i>
+                  <span id="debtor-same-toggle-text">채무자와 동일: ON</span>
+                </button>
               </div>
-              <button type="button" onclick="clearSelectedParty('trustor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs" title="선택 해제 및 다시 검색">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
 
-            <!-- Search Input Box & Autocomplete Results Popup -->
-            <div class="relative">
+              <!-- Selected Party Info Card -->
+              <div id="trustor-selected-card" class="mb-2 p-2.5 bg-blue-950/60 border border-blue-500/50 rounded-lg flex items-center justify-between">
+                <div class="text-xs text-white truncate max-w-[85%]">
+                  <span class="font-bold text-blue-300" id="trustor-selected-name">(주)한국신탁개발</span>
+                  <span class="text-slate-400 text-[11px] ml-1.5" id="trustor-selected-details">대표: 홍길동</span>
+                </div>
+                <button type="button" onclick="clearSelectedParty('trustor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs" title="선택 해제 및 다시 검색">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Search Input Box & Autocomplete Results Popup -->
               <div class="relative">
-                <input type="text" id="trustor-search-input" oninput="handlePartySearch('trustor')" onfocus="showPartyDropdown('trustor')" placeholder="회사명, 대표자명, 법인번호 실시간 검색..." class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 text-white text-xs rounded-lg px-3 py-2.5 pl-9 focus:outline-none transition-colors">
-                <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3 top-3 text-xs"></i>
-              </div>
-              <!-- Autocomplete Dropdown List Popup -->
-              <div id="trustor-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-30 divide-y divide-slate-800">
-                <!-- Dynamically Populated -->
+                <div class="relative">
+                  <input type="text" id="trustor-search-input" oninput="handlePartySearch('trustor')" onfocus="showPartyDropdown('trustor')" placeholder="회사명, 대표자명, 법인번호 검색..." class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 text-white text-xs rounded-lg px-3 py-2 pl-9 focus:outline-none transition-colors">
+                  <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3 top-2.5 text-xs"></i>
+                </div>
+                <div id="trustor-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-30 divide-y divide-slate-800">
+                </div>
               </div>
             </div>
+            <p class="text-[10px] text-blue-400/80 mt-2">※ 신탁부동산 소유자 / 담보신탁·KYC·실제소유자 반영</p>
           </div>
 
-          <!-- 2. 우선수익자 (Beneficiary) Autocomplete Search Container -->
-          <div id="beneficiary-search-container" class="relative bg-slate-950 p-4 rounded-xl border border-amber-500/40">
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-building-columns text-amber-400"></i> 우선수익자 (병) 검색 &amp; 지정
-              </label>
-              <span class="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">대주단 / 금융기관</span>
-            </div>
-
-            <!-- Selected Party Info Card -->
-            <div id="beneficiary-selected-card" class="mb-2 p-2.5 bg-amber-950/60 border border-amber-500/50 rounded-lg flex items-center justify-between">
-              <div class="text-xs text-white truncate max-w-[85%]">
-                <span class="font-bold text-amber-300" id="beneficiary-selected-name">(주)하나금융투자</span>
-                <span class="text-slate-400 text-[11px] ml-2" id="beneficiary-selected-details">대표: 이지훈 | 110111-8899001</span>
+          <!-- 2. 채무자 (Debtor) Autocomplete Search Container -->
+          <div id="debtor-search-container" class="relative bg-slate-950 p-4 rounded-xl border border-purple-500/40 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-user-tag text-purple-400"></i> 2. 채무자 (정) 지정
+                </label>
+                <span id="debtor-status-badge" class="text-[10px] text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 font-medium">위탁자와 동일 적용 중</span>
               </div>
-              <button type="button" onclick="clearSelectedParty('beneficiary')" class="text-slate-400 hover:text-rose-400 p-1 text-xs" title="선택 해제 및 다시 검색">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
 
-            <!-- Search Input Box & Autocomplete Results Popup -->
-            <div class="relative">
+              <!-- Selected Party Info Card -->
+              <div id="debtor-selected-card" class="mb-2 p-2.5 bg-purple-950/60 border border-purple-500/50 rounded-lg flex items-center justify-between">
+                <div class="text-xs text-white truncate max-w-[85%]">
+                  <span class="font-bold text-purple-300" id="debtor-selected-name">(주)한국신탁개발</span>
+                  <span class="text-slate-400 text-[11px] ml-1.5" id="debtor-selected-details">대표: 홍길동</span>
+                </div>
+                <button type="button" id="debtor-clear-btn" onclick="clearSelectedParty('debtor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs hidden" title="선택 해제 및 다시 검색">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Search Input Box & Autocomplete Results Popup -->
               <div class="relative">
-                <input type="text" id="beneficiary-search-input" oninput="handlePartySearch('beneficiary')" onfocus="showPartyDropdown('beneficiary')" placeholder="회사명, 대표자명, 법인번호 실시간 검색..." class="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 text-white text-xs rounded-lg px-3 py-2.5 pl-9 focus:outline-none transition-colors">
-                <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3 top-3 text-xs"></i>
-              </div>
-              <!-- Autocomplete Dropdown List Popup -->
-              <div id="beneficiary-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-30 divide-y divide-slate-800">
-                <!-- Dynamically Populated -->
+                <div class="relative">
+                  <input type="text" id="debtor-search-input" disabled oninput="handlePartySearch('debtor')" onfocus="showPartyDropdown('debtor')" placeholder="위탁자와 동일 (별도 지정 시 상단 버튼 클릭)" class="w-full bg-slate-900 border border-slate-700 focus:border-purple-500 text-white text-xs rounded-lg px-3 py-2 pl-9 focus:outline-none transition-colors opacity-60 cursor-not-allowed">
+                  <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3 top-2.5 text-xs"></i>
+                </div>
+                <div id="debtor-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-30 divide-y divide-slate-800">
+                </div>
               </div>
             </div>
+            <p class="text-[10px] text-purple-400/80 mt-2">※ 피담보채무자 / **담보신탁계약서에만 단독 반영됨**</p>
+          </div>
+
+          <!-- 3. 우선수익자 (Beneficiary) Autocomplete Search Container -->
+          <div id="beneficiary-search-container" class="relative bg-slate-950 p-4 rounded-xl border border-amber-500/40 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-building-columns text-amber-400"></i> 3. 우선수익자 (병) 지정
+                </label>
+                <span class="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">대주단 / 금융기관</span>
+              </div>
+
+              <!-- Selected Party Info Card -->
+              <div id="beneficiary-selected-card" class="mb-2 p-2.5 bg-amber-950/60 border border-amber-500/50 rounded-lg flex items-center justify-between">
+                <div class="text-xs text-white truncate max-w-[85%]">
+                  <span class="font-bold text-amber-300" id="beneficiary-selected-name">(주)하나금융투자</span>
+                  <span class="text-slate-400 text-[11px] ml-1.5" id="beneficiary-selected-details">대표: 이지훈</span>
+                </div>
+                <button type="button" onclick="clearSelectedParty('beneficiary')" class="text-slate-400 hover:text-rose-400 p-1 text-xs" title="선택 해제 및 다시 검색">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Search Input Box & Autocomplete Results Popup -->
+              <div class="relative">
+                <div class="relative">
+                  <input type="text" id="beneficiary-search-input" oninput="handlePartySearch('beneficiary')" onfocus="showPartyDropdown('beneficiary')" placeholder="금융기관명, 대표자명, 법인번호 검색..." class="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 text-white text-xs rounded-lg px-3 py-2 pl-9 focus:outline-none transition-colors">
+                  <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3 top-2.5 text-xs"></i>
+                </div>
+                <div id="beneficiary-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-30 divide-y divide-slate-800">
+                </div>
+              </div>
+            </div>
+            <p class="text-[10px] text-amber-400/80 mt-2">※ 피담보채권자 / 담보신탁·KYC·실제소유자 반영</p>
           </div>
 
         </div>
@@ -646,7 +686,7 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-2">
         <div class="flex flex-wrap items-center gap-2">
           <button onclick="switchDocSubTab('doc1')" id="subtab-doc1" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-blue-600 text-white transition-all">
-            <i class="fa-solid fa-file-pdf mr-1.5"></i>1. 부동산 신탁계약서 (3자)
+            <i class="fa-solid fa-file-pdf mr-1.5"></i>1. 부동산 담보신탁계약서 (4자)
           </button>
           <button onclick="switchDocSubTab('doc2')" id="subtab-doc2" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-slate-900 text-slate-400 hover:text-white transition-all">
             <i class="fa-solid fa-user-shield mr-1.5"></i>2. 고객거래 확인서 (KYC)
@@ -656,9 +696,9 @@
           </button>
         </div>
 
-        <!-- Target Party Switcher for Doc 2 & Doc 3 -->
+        <!-- Target Party Switcher for Doc 2 & Doc 3 (징구 대상 선택: 위탁자 vs 우선수익자만 유지) -->
         <div id="target-party-switcher" class="hidden flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
-          <span class="text-slate-400 text-[11px] font-medium px-2"><i class="fa-solid fa-file-signature text-amber-400 mr-1"></i>징구 대상 선택:</span>
+          <span class="text-slate-400 text-[11px] font-medium px-2"><i class="fa-solid fa-file-signature text-amber-400 mr-1"></i>서류 징구 대상:</span>
           <button onclick="setIssuanceTarget('trustor')" id="target-btn-trustor" class="px-3 py-1 font-semibold rounded-lg bg-blue-600 text-white transition-all shadow">
             위탁자 (갑)
           </button>
@@ -672,22 +712,22 @@
       <div class="flex justify-center bg-black/40 p-4 sm:p-8 rounded-2xl border border-slate-800 shadow-2xl min-h-[700px]">
         <div id="print-area" class="w-full max-w-[800px]">
           
-          <!-- DOC 1: 부동산 신탁계약서 (3자 체계) -->
+          <!-- DOC 1: 부동산 담보신탁계약서 (위탁자·수탁자·우선수익자·채무자 4자 체계) -->
           <div id="doc-view-1" class="document-page p-8 sm:p-12 text-slate-900 text-sm leading-relaxed space-y-6">
             <div class="text-center border-b-2 border-slate-900 pb-4">
-              <span class="text-xs font-bold tracking-widest text-slate-500 uppercase block mb-1">Standard Tripartite Trust Legal Form</span>
-              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-serif">부 동 산 신 탁 계 약 서</h1>
+              <span class="text-xs font-bold tracking-widest text-slate-500 uppercase block mb-1">Standard Collateral Trust Legal Form</span>
+              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-serif">부 동 산 담 보 신 탁 계 약 서</h1>
             </div>
 
             <p class="text-justify font-serif text-slate-800">
-              위탁자 <strong id="d1-trustor-name" class="text-blue-900 bg-blue-50 px-1 border-b border-blue-400">(주)한국신탁개발</strong> (이하 "갑"이라 한다), 수탁자 <strong>(주)글로벌신탁자산운용</strong> (이하 "을"이라 한다) 및 우선수익자 <strong id="d1-beneficiary-name" class="text-amber-900 bg-amber-50 px-1 border-b border-amber-400">(주)하나금융투자</strong> (이하 "병"이라 한다)는 아래 기재의 신탁재산에 대하여 다음과 같이 신탁계약을 체결한다.
+              위탁자 <strong id="d1-trustor-name" class="text-blue-900 bg-blue-50 px-1 border-b border-blue-400">(주)한국신탁개발</strong> (이하 "갑"이라 한다), 수탁자 <strong>(주)글로벌신탁자산운용</strong> (이하 "을"이라 한다), 우선수익자 <strong id="d1-beneficiary-name" class="text-amber-900 bg-amber-50 px-1 border-b border-amber-400">(주)하나금융투자</strong> (이하 "병"이라 한다) 및 채무자 <strong id="d1-debtor-name" class="text-purple-900 bg-purple-50 px-1 border-b border-purple-400">(주)한국신탁개발</strong> (이하 "정"이라 한다)는 아래 기재의 신탁재산 및 피담보채무에 대하여 다음과 같이 담보신탁계약을 체결한다.
             </p>
 
-            <!-- 당사자 인적사항 Table -->
+            <!-- 당사자 인적사항 Table (4자 구조 완비) -->
             <div class="border border-slate-900 p-4 bg-slate-50 space-y-3 text-xs font-serif">
               <h4 class="font-bold text-slate-900 border-b border-slate-400 pb-1">【 신탁계약 당사자 인적사항 (거래처 DB 연동) 】</h4>
               
-              <!-- 갑: 위탁자 -->
+              <!-- 1. 갑: 위탁자 -->
               <div class="space-y-1">
                 <span class="font-bold text-blue-900 bg-blue-100 px-1.5 py-0.5 rounded text-[11px]">1. 위탁자 ("갑")</span>
                 <div class="grid grid-cols-2 gap-x-4 pl-2 font-sans text-slate-800">
@@ -698,7 +738,7 @@
                 </div>
               </div>
 
-              <!-- 을: 수탁자 -->
+              <!-- 2. 을: 수탁자 -->
               <div class="space-y-1 pt-1 border-t border-slate-200">
                 <span class="font-bold text-slate-900 bg-slate-200 px-1.5 py-0.5 rounded text-[11px]">2. 수탁자 ("을")</span>
                 <div class="grid grid-cols-2 gap-x-4 pl-2 font-sans text-slate-800">
@@ -709,7 +749,7 @@
                 </div>
               </div>
 
-              <!-- 병: 우선수익자 -->
+              <!-- 3. 병: 우선수익자 -->
               <div class="space-y-1 pt-1 border-t border-slate-200">
                 <span class="font-bold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded text-[11px]">3. 우선수익자 ("병")</span>
                 <div class="grid grid-cols-2 gap-x-4 pl-2 font-sans text-slate-800">
@@ -719,56 +759,81 @@
                   <div>주소: <span id="d1-benef-addr">서울특별시 영등포구 여의대로 66</span></div>
                 </div>
               </div>
+
+              <!-- 4. 정: 채무자 (NEW: 담보신탁계약서 전용) -->
+              <div class="space-y-1 pt-1 border-t border-slate-200">
+                <span class="font-bold text-purple-900 bg-purple-100 px-1.5 py-0.5 rounded text-[11px]">4. 채무자 ("정")</span>
+                <div class="grid grid-cols-2 gap-x-4 pl-2 font-sans text-slate-800">
+                  <div>상호명: <span id="d1-debtor-comp" class="font-bold">(주)한국신탁개발</span></div>
+                  <div>대표자: <span id="d1-debtor-rep" class="font-bold">홍길동</span></div>
+                  <div>법인번호: <span id="d1-debtor-corpno">110111-1234567</span></div>
+                  <div>주소: <span id="d1-debtor-addr">서울특별시 강남구 테헤란로 123</span></div>
+                </div>
+              </div>
             </div>
 
             <!-- Clauses -->
             <div class="space-y-3 font-serif text-xs leading-relaxed text-slate-800">
               <h3 class="font-bold text-sm text-slate-900">제1조 (신탁목적 및 평가가액)</h3>
-              <p>본 신탁의 목적은 위탁자 "갑"의 부동산 자산을 관리하고 우선수익자 "병"의 채권을 확보함에 있다. 본 신탁계약의 평가 재산가액은 <strong id="d1-amount-val" class="font-sans font-bold text-slate-900">5,000,000,000 원</strong>으로 산정한다.</p>
+              <p>본 신탁은 위탁자 "갑"이 채무자 "정"의 우선수익자 "병"에 대한 여신거래 상의 채무를 담보하기 위하여 부동산을 신탁하고, 수탁자 "을"은 이를 인수하여 관리·보존 및 처분함을 목적으로 한다. 신탁재산 평가가액은 <strong id="d1-amount-val" class="font-sans font-bold text-slate-900">5,000,000,000 원</strong>으로 정한다.</p>
               
-              <h3 class="font-bold text-sm text-slate-900">제2조 (우선수익자의 지정 및 신탁한도금액)</h3>
-              <p>1. 본 신탁의 우선수익자는 "병"(<span id="d1-benef-name-inline" class="font-sans font-bold">(주)하나금융투자</span>)으로 지정한다.</p>
-              <p>2. 우선수익자의 신탁한도금액은 <strong id="d1-pref-limit-val" class="font-sans font-bold text-slate-900">6,500,000,000 원</strong>으로 정하며, 수탁자는 신탁재산 처분 시 위 금액 범위 내에서 우선수익자에게 우선 변제한다.</p>
+              <h3 class="font-bold text-sm text-slate-900">제2조 (피담보채무 및 우선수익한도금액)</h3>
+              <p>1. 피담보채무는 채무자 "정"(<span id="d1-debtor-name-inline" class="font-sans font-bold">(주)한국신탁개발</span>)이 우선수익자 "병"에 대하여 현재 및 장래에 부담하는 대출원리금 및 일체의 부대채무로 한다.</p>
+              <p>2. 우선수익자 "병"의 신탁한도금액은 <strong id="d1-pref-limit-val" class="font-sans font-bold text-slate-900">6,500,000,000 원</strong>으로 정하며, 수탁자는 신탁부동산 환가 시 위 금액 한도 내에서 우선수익자에게 우선 배당한다.</p>
 
               <h3 class="font-bold text-sm text-slate-900">제3조 (신탁기간)</h3>
-              <p>신탁기간은 본 계약 체결일(<span id="d1-date-val" class="font-sans font-bold">2026년 08월 27일</span>)로부터 3년간으로 한다.</p>
+              <p>신탁기간은 본 계약 체결일(<span id="d1-date-val" class="font-sans font-bold">2026년 08월 27일</span>)로부터 채무자 "정"의 피담보채무가 전액 변제되는 날까지로 한다.</p>
             </div>
 
-            <!-- Signatures Section -->
-            <div class="pt-6 border-t border-slate-400 grid grid-cols-3 gap-4 text-[11px] font-serif">
-              <div class="space-y-1.5 border-r border-slate-300 pr-3">
-                <p class="font-bold text-blue-900">위탁자 ("갑"):</p>
-                <p class="truncate">상호: <span id="d1-sig-t-comp" class="font-sans font-bold">(주)한국신탁개발</span></p>
-                <p class="truncate">대표: <span id="d1-sig-t-rep" class="font-sans font-bold">홍길동</span></p>
-                <div class="pt-2 flex items-center justify-between">
+            <!-- Signatures Section (4자 서명 날인란) -->
+            <div class="pt-6 border-t border-slate-400 grid grid-cols-4 gap-3 text-[11px] font-serif">
+              <!-- 위탁자 -->
+              <div class="space-y-1.5 border-r border-slate-300 pr-2">
+                <p class="font-bold text-blue-900 truncate">위탁자 ("갑"):</p>
+                <p class="truncate text-[10px]">상호: <span id="d1-sig-t-comp" class="font-sans font-bold">(주)한국신탁</span></p>
+                <p class="truncate text-[10px]">대표: <span id="d1-sig-t-rep" class="font-sans font-bold">홍길동</span></p>
+                <div class="pt-1 flex items-center justify-between">
                   <span>(인)</span>
-                  <span class="w-8 h-8 border border-dashed border-blue-600 rounded-full flex items-center justify-center text-[9px] text-blue-600 font-sans">갑인</span>
+                  <span class="w-7 h-7 border border-dashed border-blue-600 rounded-full flex items-center justify-center text-[8px] text-blue-600 font-sans">갑인</span>
                 </div>
               </div>
 
-              <div class="space-y-1.5 border-r border-slate-300 pr-3">
-                <p class="font-bold text-slate-900">수탁자 ("을"):</p>
-                <p class="truncate">상호: (주)글로벌신탁자산</p>
-                <p class="truncate">대표: 김신탁</p>
-                <div class="pt-2 flex items-center justify-between">
+              <!-- 수탁자 -->
+              <div class="space-y-1.5 border-r border-slate-300 pr-2">
+                <p class="font-bold text-slate-900 truncate">수탁자 ("을"):</p>
+                <p class="truncate text-[10px]">상호: (주)글로벌신탁</p>
+                <p class="truncate text-[10px]">대표: 김신탁</p>
+                <div class="pt-1 flex items-center justify-between">
                   <span>(인)</span>
-                  <span class="w-8 h-8 border border-red-600 rounded-full flex items-center justify-center text-[9px] text-red-600 font-sans font-bold">을인</span>
+                  <span class="w-7 h-7 border border-red-600 rounded-full flex items-center justify-center text-[8px] text-red-600 font-sans font-bold">을인</span>
                 </div>
               </div>
 
+              <!-- 우선수익자 -->
+              <div class="space-y-1.5 border-r border-slate-300 pr-2">
+                <p class="font-bold text-amber-900 truncate">우선수익자 ("병"):</p>
+                <p class="truncate text-[10px]">상호: <span id="d1-sig-b-comp" class="font-sans font-bold">(주)하나금융</span></p>
+                <p class="truncate text-[10px]">대표: <span id="d1-sig-b-rep" class="font-sans font-bold">이지훈</span></p>
+                <div class="pt-1 flex items-center justify-between">
+                  <span>(인)</span>
+                  <span class="w-7 h-7 border border-dashed border-amber-600 rounded-full flex items-center justify-center text-[8px] text-amber-600 font-sans">병인</span>
+                </div>
+              </div>
+
+              <!-- 채무자 (NEW) -->
               <div class="space-y-1.5">
-                <p class="font-bold text-amber-900">우선수익자 ("병"):</p>
-                <p class="truncate">상호: <span id="d1-sig-b-comp" class="font-sans font-bold">(주)하나금융투자</span></p>
-                <p class="truncate">대표: <span id="d1-sig-b-rep" class="font-sans font-bold">이지훈</span></p>
-                <div class="pt-2 flex items-center justify-between">
+                <p class="font-bold text-purple-900 truncate">채무자 ("정"):</p>
+                <p class="truncate text-[10px]">상호: <span id="d1-sig-d-comp" class="font-sans font-bold">(주)한국신탁</span></p>
+                <p class="truncate text-[10px]">대표: <span id="d1-sig-d-rep" class="font-sans font-bold">홍길동</span></p>
+                <div class="pt-1 flex items-center justify-between">
                   <span>(인)</span>
-                  <span class="w-8 h-8 border border-dashed border-amber-600 rounded-full flex items-center justify-center text-[9px] text-amber-600 font-sans">병인</span>
+                  <span class="w-7 h-7 border border-dashed border-purple-600 rounded-full flex items-center justify-center text-[8px] text-purple-600 font-sans">정인</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- DOC 2: 고객거래 확인서 -->
+          <!-- DOC 2: 고객거래 확인서 (채무자는 징구 비대상, 위탁자 vs 우선수익자만 전환) -->
           <div id="doc-view-2" class="document-page hidden p-8 sm:p-12 text-slate-900 text-sm leading-relaxed space-y-6">
             <div class="text-center border-b-2 border-slate-900 pb-4">
               <span class="text-xs font-bold tracking-widest text-slate-500 uppercase block mb-1">Financial Customer Due Diligence (KYC)</span>
@@ -805,7 +870,7 @@
                 </tr>
                 <tr>
                   <td class="border border-slate-900 bg-slate-100 p-2 font-bold">신탁 관련 지위</td>
-                  <td id="d2-role-text" class="border border-slate-900 p-2 font-sans font-bold text-blue-800">부동산 신탁 위탁자 (갑)</td>
+                  <td id="d2-role-text" class="border border-slate-900 p-2 font-sans font-bold text-blue-800">부동산 담보신탁 위탁자 (갑)</td>
                   <td class="border border-slate-900 bg-slate-100 p-2 font-bold">자금의 출처</td>
                   <td class="border border-slate-900 p-2 font-sans">법인 자본금 및 영업이익</td>
                 </tr>
@@ -815,6 +880,7 @@
             <div class="bg-slate-50 p-4 border border-slate-300 rounded text-xs leading-relaxed">
               <p class="font-bold text-slate-900 mb-1">■ 고객 확인 사항</p>
               <p class="text-slate-700">본 법인은 위 작성 내용이 사실과 다름없음을 확인하며, 제출한 서류가 위조 또는 변조되었을 경우 금융거래 제한 등의 조치를 받아들이는 데 동의합니다.</p>
+              <p class="text-[11px] text-slate-500 mt-2">※ 피담보채무자("정")는 특정금융정보법 상 신탁 당사자 의무 징구 대상(위탁자·수탁자·우선수익자)이 아니므로 별도 징구하지 않습니다.</p>
             </div>
 
             <div class="text-right pt-6 text-xs font-serif space-y-2">
@@ -824,7 +890,7 @@
             </div>
           </div>
 
-          <!-- DOC 3: 실제소유자 확인서 -->
+          <!-- DOC 3: 실제소유자 확인서 (채무자는 징구 비대상, 위탁자 vs 우선수익자만 전환) -->
           <div id="doc-view-3" class="document-page hidden p-8 sm:p-12 text-slate-900 text-sm leading-relaxed space-y-6">
             <div class="text-center border-b-2 border-slate-900 pb-4">
               <span class="text-xs font-bold tracking-widest text-slate-500 uppercase block mb-1">Beneficial Ownership Statement</span>
@@ -895,7 +961,7 @@
               <i class="fa-solid fa-user-shield text-[10px]"></i> 관리자 인증 완료
             </span>
           </h2>
-          <p class="text-xs text-slate-400 mt-1">Google AI Studio API Key는 브라우저 로컬 저장소(localStorage)에 안전하게 암호화 보관됩니다.</p>
+          <p class="text-xs text-slate-400 mt-1">Google AI Studio API Key는 브라우저 로컬 저장소(localStorage)에 안전하게 보관됩니다.</p>
         </div>
         <button onclick="lockAdminSettings()" class="bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs border border-amber-500/30 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
           <i class="fa-solid fa-lock"></i> 관리자 잠금 (로그아웃)
@@ -1119,9 +1185,13 @@
     let cachedMimeType = null;
     let cachedRasterBase64 = null;
 
+    // Parties State (위탁자, 채무자, 우선수익자)
     let selectedTrustorId = "VND-2026-001";
+    let selectedDebtorId = "VND-2026-001";
     let selectedBeneficiaryId = "VND-2026-002";
-    let currentIssuanceTarget = "trustor";
+    let isDebtorSameAsTrustor = true; // 기본값: 위탁자 = 채무자 동일
+
+    let currentIssuanceTarget = "trustor"; // Doc 2 (KYC) & Doc 3 (실소유자) 징구 대상
     let currentDocSubTab = "doc1";
 
     // Initialize Persistent Database from localStorage
@@ -1159,6 +1229,9 @@
       renderVendorTables();
       selectParty('trustor', 'VND-2026-001');
       selectParty('beneficiary', 'VND-2026-002');
+      if (isDebtorSameAsTrustor) {
+        selectParty('debtor', 'VND-2026-001');
+      }
       appendDiagnosticLog("거래처 DB가 기본 샘플 목록으로 초기화되었습니다.", 'warn');
       showToast('거래처 DB가 기본 상태로 복원되었습니다.', 'info');
     }
@@ -1178,12 +1251,15 @@
       // 3. Initialize Search Inputs and Cards with Defaults
       selectParty('trustor', selectedTrustorId || vendorDatabase[0]?.id);
       selectParty('beneficiary', selectedBeneficiaryId || vendorDatabase[1]?.id);
+      if (isDebtorSameAsTrustor) {
+        syncDebtorWithTrustor();
+      }
 
       refreshApiKeyStatusUI();
 
       appendDiagnosticLog("신탁계약 관련서류 AI OCR 시스템 준비 완료");
       appendDiagnosticLog(`영구 로컬 DB 로드 완료 (총 ${vendorDatabase.length}개 거래처)`);
-      appendDiagnosticLog("위탁자 및 우선수익자 실시간 검색/자동완성 모듈 활성화");
+      appendDiagnosticLog("담보신탁 채무자 관리 및 위탁자 연동 모듈 활성화됨");
     };
 
     // Terminal Logging
@@ -1247,22 +1323,80 @@
     }
 
     // ==========================================
-    // REAL-TIME AUTOCOMPLETE SEARCH LOGIC
+    // DEBTOR = TRUSTOR TOGGLE & AUTOCOMPLETE
     // ==========================================
 
+    function toggleDebtorSameAsTrustor() {
+      isDebtorSameAsTrustor = !isDebtorSameAsTrustor;
+      const btn = document.getElementById('debtor-same-toggle-btn');
+      const text = document.getElementById('debtor-same-toggle-text');
+      const badge = document.getElementById('debtor-status-badge');
+      const input = document.getElementById('debtor-search-input');
+      const clearBtn = document.getElementById('debtor-clear-btn');
+
+      if (isDebtorSameAsTrustor) {
+        btn.className = "px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1";
+        text.textContent = "채무자와 동일: ON";
+        badge.textContent = "위탁자와 동일 적용 중";
+        badge.className = "text-[10px] text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 font-medium";
+        input.disabled = true;
+        input.className = "w-full bg-slate-900 border border-slate-700 focus:border-purple-500 text-white text-xs rounded-lg px-3 py-2 pl-9 focus:outline-none transition-colors opacity-60 cursor-not-allowed";
+        input.placeholder = "위탁자와 동일 (별도 지정 시 상단 버튼 클릭)";
+        clearBtn.classList.add('hidden');
+
+        syncDebtorWithTrustor();
+        showToast('채무자가 위탁자와 동일하게 자동 연동되었습니다.', 'info');
+      } else {
+        btn.className = "px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-1";
+        text.textContent = "채무자와 동일: OFF (별도 지정)";
+        badge.textContent = "별도 채무자 개별 지정 모드";
+        badge.className = "text-[10px] text-purple-300 bg-purple-950 px-2 py-0.5 rounded border border-purple-800 font-medium";
+        input.disabled = false;
+        input.className = "w-full bg-slate-900 border border-slate-700 focus:border-purple-500 text-white text-xs rounded-lg px-3 py-2 pl-9 focus:outline-none transition-colors opacity-100 cursor-text";
+        input.placeholder = "채무자 회사명, 대표자명, 법인번호 검색...";
+        clearBtn.classList.remove('hidden');
+
+        showToast('채무자를 별도로 검색해 지정할 수 있습니다.', 'info');
+      }
+    }
+
+    function syncDebtorWithTrustor() {
+      if (!isDebtorSameAsTrustor) return;
+      selectedDebtorId = selectedTrustorId;
+      const trustor = vendorDatabase.find(v => v.id === selectedTrustorId);
+      
+      const nameEl = document.getElementById('debtor-selected-name');
+      const detailsEl = document.getElementById('debtor-selected-details');
+      const cardEl = document.getElementById('debtor-selected-card');
+      const inputEl = document.getElementById('debtor-search-input');
+
+      if (trustor) {
+        nameEl.textContent = trustor.companyName;
+        detailsEl.textContent = `대표: ${trustor.representative}`;
+        cardEl.classList.remove('hidden');
+        inputEl.value = `${trustor.companyName} (위탁자와 동일)`;
+      } else {
+        nameEl.textContent = "(위탁자 미선택)";
+        detailsEl.textContent = "-";
+        inputEl.value = "";
+      }
+      updateDocumentPreviews();
+    }
+
     function showPartyDropdown(role) {
+      if (role === 'debtor' && isDebtorSameAsTrustor) return;
       handlePartySearch(role);
       document.getElementById(`${role}-dropdown`).classList.remove('hidden');
     }
 
     function handlePartySearch(role) {
+      if (role === 'debtor' && isDebtorSameAsTrustor) return;
       const input = document.getElementById(`${role}-search-input`);
       const dropdown = document.getElementById(`${role}-dropdown`);
       const q = (input.value || '').trim().toLowerCase();
 
-      // Filter vendors from Master Database
       const matches = vendorDatabase.filter(v => {
-        if (!q) return true; // show all when query is empty on focus
+        if (!q) return true;
         return (v.companyName && v.companyName.toLowerCase().includes(q)) ||
                (v.representative && v.representative.toLowerCase().includes(q)) ||
                (v.corpRegNo && v.corpRegNo.toLowerCase().includes(q)) ||
@@ -1311,11 +1445,15 @@
 
       if (role === 'trustor') {
         selectedTrustorId = vendor.id;
+        if (isDebtorSameAsTrustor) {
+          syncDebtorWithTrustor();
+        }
+      } else if (role === 'debtor') {
+        selectedDebtorId = vendor.id;
       } else {
         selectedBeneficiaryId = vendor.id;
       }
 
-      // Update Input and Card Display
       const nameEl = document.getElementById(`${role}-selected-name`);
       const detailsEl = document.getElementById(`${role}-selected-details`);
       const cardEl = document.getElementById(`${role}-selected-card`);
@@ -1323,19 +1461,21 @@
       const dropdownEl = document.getElementById(`${role}-dropdown`);
 
       nameEl.textContent = vendor.companyName;
-      detailsEl.textContent = `대표: ${vendor.representative} | ${vendor.corpRegNo}`;
+      detailsEl.textContent = `대표: ${vendor.representative}`;
       cardEl.classList.remove('hidden');
 
       inputEl.value = vendor.companyName;
       dropdownEl.classList.add('hidden');
 
-      // Update All 3 Contracts Immediately
       updateDocumentPreviews();
     }
 
     function clearSelectedParty(role) {
       if (role === 'trustor') {
         selectedTrustorId = "";
+        if (isDebtorSameAsTrustor) syncDebtorWithTrustor();
+      } else if (role === 'debtor') {
+        selectedDebtorId = "";
       } else {
         selectedBeneficiaryId = "";
       }
@@ -1349,14 +1489,17 @@
       updateDocumentPreviews();
     }
 
-    // Close Dropdowns on Click Outside
     function setupAutocompleteOutsideClick() {
       document.addEventListener('click', (e) => {
         const tContainer = document.getElementById('trustor-search-container');
+        const dContainer = document.getElementById('debtor-search-container');
         const bContainer = document.getElementById('beneficiary-search-container');
 
         if (tContainer && !tContainer.contains(e.target)) {
           document.getElementById('trustor-dropdown')?.classList.add('hidden');
+        }
+        if (dContainer && !dContainer.contains(e.target)) {
+          document.getElementById('debtor-dropdown')?.classList.add('hidden');
         }
         if (bContainer && !bContainer.contains(e.target)) {
           document.getElementById('beneficiary-dropdown')?.classList.add('hidden');
@@ -1367,7 +1510,7 @@
     function setAsPartyAndGenerate(vendorId, role) {
       selectParty(role, vendorId);
       switchTab('generator');
-      showToast(`[${role === 'trustor' ? '위탁자' : '우선수익자'}] 지정 완료`, 'success');
+      showToast(`[${role === 'trustor' ? '위탁자' : (role === 'debtor' ? '채무자' : '우선수익자')}] 지정 완료`, 'success');
     }
 
     // ==========================================
@@ -1630,6 +1773,7 @@
     function safeExtractJSON(rawText) {
       if (!rawText) throw new Error("Gemini 응답 내용이 비어있습니다.");
       let clean = rawText.trim();
+      
       clean = clean.replace(/```json/gi, '').replace(/```/g, '').trim();
       
       const firstBrace = clean.indexOf('{');
@@ -1693,14 +1837,14 @@
             }
 
             const errText = await response.text();
-            let parsedErr = errText;
+            let parsedMsg = errText;
             try {
               const j = JSON.parse(errText);
-              parsedErr = j.error?.message || errText;
+              parsedMsg = j.error?.message || errText;
             } catch(e) {}
 
             if (response.status === 503 || response.status === 429) {
-              lastError = new Error(`HTTP ${response.status} (${model}): ${parsedErr}`);
+              lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
               if (attempt < MAX_RETRIES) {
                 const backoffMs = (attempt + 1) * 1500;
                 appendDiagnosticLog(`[서버 일시 과부하 ${response.status}] ${backoffMs / 1000}초 후 자동 재시도 중 (${attempt + 1}/${MAX_RETRIES}회)...`, 'warn');
@@ -1712,8 +1856,8 @@
                 break;
               }
             } else {
-              lastError = new Error(`HTTP ${response.status} (${model}): ${parsedErr}`);
-              appendDiagnosticLog(`모델 "${model}" 오류 (${response.status}): ${parsedErr}`, 'warn');
+              lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
+              appendDiagnosticLog(`모델 "${model}" 오류 (${response.status}): ${parsedMsg}`, 'warn');
               break;
             }
           } catch (networkErr) {
@@ -1894,7 +2038,6 @@
       appendDiagnosticLog("입력 폼 초기화 완료");
     }
 
-    // Save Extracted Data into Persistent Database & Auto Select
     function saveExtractedToDB() {
       const company = document.getElementById('ocr-company-name').value.trim();
       const rep = document.getElementById('ocr-representative').value.trim();
@@ -1939,10 +2082,7 @@
         appendDiagnosticLog(`신규 거래처 등록: ${company} (${newId})`);
       }
 
-      // Persist to LocalStorage
       saveVendorDatabaseToStorage();
-
-      // Refresh Tables & Dropdowns
       renderVendorTables();
 
       // Automatically Select as Trustor in Search Box
@@ -1962,12 +2102,15 @@
             <td class="p-3 text-slate-300">${v.representative}</td>
             <td class="p-3 font-mono text-slate-300">${v.corpRegNo}</td>
             <td class="p-3 truncate max-w-xs text-slate-400">${v.address}</td>
-            <td class="p-3 text-right">
+            <td class="p-3 text-right space-x-1">
               <button onclick="setAsPartyAndGenerate('${v.id}', 'trustor')" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2 py-1 rounded text-[11px] transition-all">
-                위탁자지정
+                위탁자
               </button>
-              <button onclick="setAsPartyAndGenerate('${v.id}', 'beneficiary')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white px-2 py-1 rounded text-[11px] transition-all ml-1">
-                우선수익자지정
+              <button onclick="setAsPartyAndGenerate('${v.id}', 'debtor')" class="bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white px-2 py-1 rounded text-[11px] transition-all">
+                채무자
+              </button>
+              <button onclick="setAsPartyAndGenerate('${v.id}', 'beneficiary')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white px-2 py-1 rounded text-[11px] transition-all">
+                우선수익자
               </button>
             </td>
           </tr>
@@ -1993,6 +2136,9 @@
             <td class="p-4 text-center space-x-1">
               <button onclick="setAsPartyAndGenerate('${v.id}', 'trustor')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-semibold shadow transition-all">
                 위탁자
+              </button>
+              <button onclick="setAsPartyAndGenerate('${v.id}', 'debtor')" class="bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1 rounded text-xs font-semibold shadow transition-all">
+                채무자
               </button>
               <button onclick="setAsPartyAndGenerate('${v.id}', 'beneficiary')" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1 rounded text-xs font-semibold shadow transition-all">
                 우선수익자
@@ -2032,6 +2178,7 @@
       renderVendorTables();
 
       if (selectedTrustorId === id) selectParty('trustor', vendorDatabase[0]?.id || "");
+      if (selectedDebtorId === id) selectParty('debtor', vendorDatabase[0]?.id || "");
       if (selectedBeneficiaryId === id) selectParty('beneficiary', vendorDatabase[1]?.id || "");
 
       showToast(`[${name}] 거래처가 삭제되었습니다.`, 'info');
@@ -2062,6 +2209,10 @@
         address: "-"
       };
 
+      // If Debtor is same as Trustor, always use trustor info
+      const effectiveDebtorId = isDebtorSameAsTrustor ? selectedTrustorId : selectedDebtorId;
+      const debtor = vendorDatabase.find(v => v.id === effectiveDebtorId) || trustor;
+
       const beneficiary = vendorDatabase.find(v => v.id === selectedBeneficiaryId) || {
         companyName: "(우선수익자 미선택)",
         representative: "-",
@@ -2079,31 +2230,45 @@
         if (parts.length === 3) dateStr = `${parts[0]}년 ${parts[1]}월 ${parts[2]}일`;
       }
 
-      // Doc 1 (신탁계약서 3자)
+      // 1. Doc 1: 부동산 담보신탁계약서 (4자 체계)
       document.getElementById('d1-trustor-name').textContent = trustor.companyName;
       document.getElementById('d1-beneficiary-name').textContent = beneficiary.companyName;
       document.getElementById('d1-benef-name-inline').textContent = beneficiary.companyName;
+      document.getElementById('d1-debtor-name').textContent = debtor.companyName;
+      document.getElementById('d1-debtor-name-inline').textContent = debtor.companyName;
 
+      // 위탁자 인적사항
       document.getElementById('d1-trustor-comp').textContent = trustor.companyName;
       document.getElementById('d1-trustor-rep').textContent = trustor.representative;
       document.getElementById('d1-trustor-corpno').textContent = trustor.corpRegNo;
       document.getElementById('d1-trustor-addr').textContent = trustor.address;
 
+      // 우선수익자 인적사항
       document.getElementById('d1-benef-comp').textContent = beneficiary.companyName;
       document.getElementById('d1-benef-rep').textContent = beneficiary.representative;
       document.getElementById('d1-benef-corpno').textContent = beneficiary.corpRegNo;
       document.getElementById('d1-benef-addr').textContent = beneficiary.address;
 
+      // 채무자 인적사항 (NEW)
+      document.getElementById('d1-debtor-comp').textContent = debtor.companyName;
+      document.getElementById('d1-debtor-rep').textContent = debtor.representative;
+      document.getElementById('d1-debtor-corpno').textContent = debtor.corpRegNo;
+      document.getElementById('d1-debtor-addr').textContent = debtor.address;
+
+      // 조항 금액
       document.getElementById('d1-amount-val').textContent = amountVal;
       document.getElementById('d1-pref-limit-val').textContent = prefLimitVal;
       document.getElementById('d1-date-val').textContent = dateStr;
 
+      // 서명란 (4자 서명)
       document.getElementById('d1-sig-t-comp').textContent = trustor.companyName;
       document.getElementById('d1-sig-t-rep').textContent = trustor.representative;
       document.getElementById('d1-sig-b-comp').textContent = beneficiary.companyName;
       document.getElementById('d1-sig-b-rep').textContent = beneficiary.representative;
+      document.getElementById('d1-sig-d-comp').textContent = debtor.companyName;
+      document.getElementById('d1-sig-d-rep').textContent = debtor.representative;
 
-      // Doc 2 & 3 (징구 대상 전환)
+      // 2. Doc 2 (KYC) & Doc 3 (실제소유자) - 채무자는 비반영, 위탁자 vs 우선수익자만 징구
       const targetParty = (currentIssuanceTarget === 'trustor') ? trustor : beneficiary;
       const targetRoleLabel = (currentIssuanceTarget === 'trustor') ? "위탁자 (갑)" : "우선수익자 (병)";
       const badgeStyle = (currentIssuanceTarget === 'trustor') 
@@ -2117,7 +2282,7 @@
       document.getElementById('d2-corpno').textContent = targetParty.corpRegNo;
       document.getElementById('d2-rep').textContent = targetParty.representative;
       document.getElementById('d2-address').textContent = targetParty.address;
-      document.getElementById('d2-role-text').textContent = `부동산 신탁 ${targetRoleLabel}`;
+      document.getElementById('d2-role-text').textContent = `부동산 담보신탁 ${targetRoleLabel}`;
       document.getElementById('d2-date').textContent = dateStr;
       document.getElementById('d2-sig-comp').textContent = targetParty.companyName;
       document.getElementById('d2-sig-rep').textContent = targetParty.representative;
@@ -2178,7 +2343,7 @@
       const addr = document.getElementById('modal-address').value.trim();
 
       const newId = `VND-2026-${String(vendorDatabase.length + 1).padStart(3, '0')}`;
-      vendorDatabase.unshift({
+      const newVendor = {
         id: newId,
         companyName: company,
         representative: rep,
@@ -2187,11 +2352,13 @@
         bizNo: 'N/A',
         bizType: '수동 등록',
         source: '수동 등록'
-      });
+      };
 
+      vendorDatabase.unshift(newVendor);
       saveVendorDatabaseToStorage();
       renderVendorTables();
       closeAddVendorModal();
+
       showToast(`신규 거래처 [${company}] 수동 등록 완료 (영구 보존)`, 'success');
     }
 
