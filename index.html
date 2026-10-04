@@ -9,19 +9,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts -->
+  <!-- Google Fonts: Noto Serif KR & Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <!-- PDF.js for Preview -->
+  <!-- PDF.js for Visual Preview Rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if (typeof pdfjsLib !== 'undefined') {
       try {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       } catch (e) {
-        console.warn("PDF.js fallback mode enabled");
+        console.warn("PDF.js worker fallback mode");
       }
     }
   </script>
@@ -103,7 +103,7 @@
         <div>
           <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
             부동산 담보신탁 및 부속서류 통합 시스템
-            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">Word(.docx) 지원</span>
+            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">API Key 영구연동</span>
           </h1>
           <p class="text-xs text-slate-400 hidden sm:block">담보신탁계약서(31개조 및 별첨1~4 전문) · 고객거래확인서(3부) · 실제소유자확인서(2부)</p>
         </div>
@@ -127,8 +127,9 @@
         </button>
       </nav>
 
+      <!-- Top Right Status Badge -->
       <div class="flex items-center space-x-3">
-        <div id="header-api-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+        <div id="header-api-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 cursor-pointer" onclick="switchTab('settings')">
           <span id="api-status-dot" class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
           API: <span id="active-model-name-badge" class="text-amber-400 ml-1 font-mono font-bold">Key 미설정</span>
         </div>
@@ -144,7 +145,7 @@
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 p-6 sm:p-8 border border-cyan-500/30 shadow-2xl">
         <div class="relative z-10 max-w-3xl">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-4">
-            <i class="fa-solid fa-file-word text-emerald-400"></i> 전 서식 워드(.docx) 다운로드 &amp; 담보신탁 전문 수록
+            <i class="fa-solid fa-file-word text-emerald-400"></i> API Key 영구 유지 &amp; 워드(.docx) 다운로드 완비
           </span>
           <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">부동산 담보신탁 및 부속서류 원본 통합 생성 시스템</h2>
           <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
@@ -179,9 +180,9 @@
           <p class="text-xs text-slate-500 mt-1">위탁자(미대상·25%자연인) / 금융기관(생략)</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">다운로드 포맷</span>
-          <div class="mt-2 text-xl font-bold text-emerald-400">Microsoft Word (.docx)</div>
-          <p class="text-xs text-slate-500 mt-1">단일 서식 및 3종 일괄 다운로드 지원</p>
+          <span class="text-xs font-medium text-slate-400">API Key 인증 상태</span>
+          <div class="mt-2 text-xl font-bold text-emerald-400" id="stat-api-status-text">Key 미등록</div>
+          <p class="text-xs text-slate-500 mt-1">새로고침 시에도 영구 유지</p>
         </div>
       </div>
 
@@ -214,22 +215,32 @@
 
     <!-- TAB 2: AI OCR EXTRACTOR -->
     <section id="tab-ocr" class="tab-content hidden space-y-6">
-      <div id="ocr-api-alert" class="bg-gradient-to-r from-slate-900 to-indigo-950/80 border border-amber-500/40 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+      
+      <!-- OCR Quick API Key Bar -->
+      <div id="ocr-api-quick-bar" class="bg-gradient-to-r from-slate-900 to-indigo-950/80 border border-cyan-500/40 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30">
-            <i class="fa-solid fa-shield-halved"></i>
+          <div class="w-10 h-10 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg border border-cyan-500/30">
+            <i class="fa-solid fa-key"></i>
           </div>
           <div>
-            <h4 id="ocr-alert-title" class="text-xs font-bold text-white flex items-center gap-2">
+            <h4 class="text-xs font-bold text-white flex items-center gap-2">
               Google AI Studio API Key 설정
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">필요</span>
+              <span id="ocr-quick-key-status" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">미등록</span>
             </h4>
-            <p id="ocr-alert-desc" class="text-[11px] text-slate-400">우측 상단 '설정 (Admin)' 탭에서 Gemini API Key를 등록하면 실시간 OCR이 활성화됩니다.</p>
+            <p class="text-[11px] text-slate-400">등록된 키는 브라우저 새로고침이나 재접속 시에도 안전하게 유지됩니다.</p>
           </div>
         </div>
-        <button onclick="switchTab('settings')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shrink-0 flex items-center gap-1.5 shadow">
-          <i class="fa-solid fa-gear"></i> 관리자 설정 이동
-        </button>
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <input type="password" id="ocr-quick-api-input" placeholder="Gemini API Key 입력" autocomplete="off" spellcheck="false" class="bg-slate-950 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 pr-8 w-60 sm:w-72 focus:outline-none focus:border-cyan-500 font-mono">
+            <button type="button" onclick="togglePasswordVisibility('ocr-quick-api-input', this)" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-white text-xs">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <button onclick="saveQuickApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition-all shrink-0">
+            저장
+          </button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -363,7 +374,7 @@
               <th class="p-4">코드</th>
               <th class="p-4">상호/성명</th>
               <th class="p-4">대표자</th>
-              <th class="p-4">등록번호</th>
+              <th class="p-4">법인/주민등록번호</th>
               <th class="p-4">사업자번호</th>
               <th class="p-4">주소</th>
               <th class="p-4 text-center">신탁 서류 지정</th>
@@ -376,7 +387,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (실무 전문 수록 & .docx 다운로드) -->
+    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (전문 수록 & DOCX 다운로드) -->
     <section id="tab-generator" class="tab-content hidden space-y-6">
       
       <!-- Top Form & Controls -->
@@ -415,8 +426,8 @@
 
               <div id="trustor-selected-card" class="mb-2 p-2 bg-blue-950/60 border border-blue-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-blue-300" id="trustor-selected-name">(주)한국개발신탁파트너스</span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="trustor-selected-details">110111-1234567</span>
+                  <span class="font-bold text-blue-300" id="trustor-selected-name"></span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="trustor-selected-details"></span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('trustor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -442,8 +453,8 @@
 
               <div id="debtor-selected-card" class="mb-2 p-2 bg-indigo-950/60 border border-indigo-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-indigo-300" id="debtor-selected-name">(주)대한종합건설</span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="debtor-selected-details">대표: 김철수</span>
+                  <span class="font-bold text-indigo-300" id="debtor-selected-name"></span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="debtor-selected-details"></span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('debtor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -469,8 +480,8 @@
 
               <div id="beneficiary-selected-card" class="mb-2 p-2 bg-amber-950/60 border border-amber-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-amber-300" id="beneficiary-selected-name">(주)우리금융은행</span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="beneficiary-selected-details">이대표</span>
+                  <span class="font-bold text-amber-300" id="beneficiary-selected-name"></span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="beneficiary-selected-details"></span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('beneficiary')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -688,7 +699,7 @@
             <div class="page-break pt-8">
               <h3 class="font-bold text-sm mb-3">【별첨 1】 신탁부동산의 표시</h3>
               <div class="border border-slate-700 p-4 bg-slate-50 space-y-2 text-[11px] leading-relaxed">
-                <p id="d1-property-text">1. 토지 및 건물 : [위탁자 소유 부동산 목록]</p>
+                <p id="d1-property-text">1. 토지 및 건물 : [신탁부동산 요약 표시]</p>
                 <p class="font-semibold text-right pt-2">(이상 소유자: <span id="d1-prop-owner"></span>)</p>
                 <p class="text-right font-bold">- 이 상 -</p>
               </div>
@@ -1265,7 +1276,14 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
           <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-key text-purple-400 mr-1.5"></i>Google AI Studio API Key (영구 보존)</h3>
-          <input type="password" id="gemini-api-key" placeholder="Google AI Studio에서 발급받은 API Key를 입력하세요" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
+          
+          <div class="relative">
+            <input type="password" id="gemini-api-key" placeholder="Google AI Studio API Key 입력" autocomplete="off" spellcheck="false" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 pr-9 focus:outline-none focus:border-cyan-500 font-mono">
+            <button type="button" onclick="togglePasswordVisibility('gemini-api-key', this)" class="absolute right-3 top-3 text-slate-400 hover:text-white text-xs">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+
           <div class="flex gap-2">
             <button onclick="saveAdminApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
               <i class="fa-solid fa-floppy-disk mr-1"></i>Key 저장 및 적용
@@ -1345,7 +1363,7 @@
   <script>
     const FAILOVER_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3-flash"];
 
-    // Clean neutral seed vendor database (No sample hardcoded person/jeonju properties)
+    // Clean neutral seed vendor database
     const DEFAULT_SEED_VENDORS = [
       {
         id: "VND-2026-001",
@@ -1412,32 +1430,47 @@
 
     let currentDocSubTab = "doc1";
 
-    // API Key Storage Helper
+    // 3중 안전망 API Key Getter & Setter
     function getStoredApiKey() {
-      return (localStorage.getItem('gemini_ocr_api_key') || '').trim();
+      try {
+        return (localStorage.getItem('gemini_ocr_api_key') || sessionStorage.getItem('gemini_ocr_api_key') || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function setStoredApiKey(k) {
+      const val = (k || '').trim();
+      try {
+        localStorage.setItem('gemini_ocr_api_key', val);
+        sessionStorage.setItem('gemini_ocr_api_key', val);
+      } catch (e) {
+        console.warn("Storage write failed", e);
+      }
     }
 
     function loadPersistentVendorDatabase() {
-      const saved = localStorage.getItem('trust_vendor_db');
-      if (saved) {
-        try {
+      try {
+        const saved = localStorage.getItem('trust_vendor_db');
+        if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             vendorDatabase = parsed;
             return;
           }
-        } catch (e) {
-          console.warn("DB 로드 실패, 기본값 초기화", e);
         }
-      }
+      } catch (e) {}
       vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
       saveVendorDatabaseToStorage();
     }
 
     function saveVendorDatabaseToStorage() {
-      localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase));
+      try {
+        localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase));
+      } catch (e) {}
       const count = vendorDatabase.length;
-      document.getElementById('stat-total-vendors').textContent = count;
+      const statEl = document.getElementById('stat-total-vendors');
+      if (statEl) statEl.textContent = count;
       const b = document.getElementById('db-count-badge');
       if (b) b.textContent = count;
     }
@@ -1453,19 +1486,55 @@
       showToast('거래처 DB가 기본 마스터로 초기화되었습니다.', 'info');
     }
 
-    // Window Onload Initialization
+    // Toggle Password Visibility Eye Button
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = `<i class="fa-solid fa-eye-slash"></i>`;
+      } else {
+        input.type = 'password';
+        btn.innerHTML = `<i class="fa-solid fa-eye"></i>`;
+      }
+    }
+
+    // Immediate Execution before window.onload
+    (function initImmediateKeys() {
+      const k = getStoredApiKey();
+      if (k) {
+        window.userCachedApiKey = k;
+      }
+    })();
+
     window.onload = function() {
-      // 1. API Key 복원 및 실시간 자동 저장 바인딩
+      // 1. API Key 즉각 복원 & 인풋 필드 동기화
       const key = getStoredApiKey();
       const apiKeyInput = document.getElementById('gemini-api-key');
-      if (apiKeyInput && key) {
-        apiKeyInput.value = key;
+      const quickKeyInput = document.getElementById('ocr-quick-api-input');
+      
+      if (key) {
+        if (apiKeyInput) apiKeyInput.value = key;
+        if (quickKeyInput) quickKeyInput.value = key;
       }
+
+      // 실시간 자동 저장 바인딩
       if (apiKeyInput) {
         apiKeyInput.addEventListener('input', function() {
           const val = this.value.trim();
           if (val) {
-            localStorage.setItem('gemini_ocr_api_key', val);
+            setStoredApiKey(val);
+            if (quickKeyInput) quickKeyInput.value = val;
+            refreshApiKeyStatusUI();
+          }
+        });
+      }
+      if (quickKeyInput) {
+        quickKeyInput.addEventListener('input', function() {
+          const val = this.value.trim();
+          if (val) {
+            setStoredApiKey(val);
+            if (apiKeyInput) apiKeyInput.value = val;
             refreshApiKeyStatusUI();
           }
         });
@@ -1512,7 +1581,7 @@
       const dot = document.getElementById('api-status-dot');
       const badge = document.getElementById('active-model-name-badge');
       const statText = document.getElementById('stat-api-status-text');
-      const alertBox = document.getElementById('ocr-api-alert');
+      const quickStatus = document.getElementById('ocr-quick-key-status');
 
       if (key && key.length > 5) {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2';
@@ -1522,9 +1591,12 @@
         }
         if (statText) {
           statText.textContent = "Key 등록 완료";
-          statText.className = "text-base font-bold text-emerald-400";
+          statText.className = "text-xl font-bold text-emerald-400";
         }
-        if (alertBox) alertBox.classList.add('hidden');
+        if (quickStatus) {
+          quickStatus.textContent = "연결 유지됨";
+          quickStatus.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono";
+        }
       } else {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 mr-2';
         if (badge) {
@@ -1533,12 +1605,32 @@
         }
         if (statText) {
           statText.textContent = "Key 미등록";
-          statText.className = "text-base font-bold text-amber-400";
+          statText.className = "text-xl font-bold text-amber-400";
         }
-        if (alertBox) alertBox.classList.remove('hidden');
+        if (quickStatus) {
+          quickStatus.textContent = "미등록";
+          quickStatus.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono";
+        }
       }
+
       const input = document.getElementById('gemini-api-key');
       if (input && key) input.value = key;
+      const qInput = document.getElementById('ocr-quick-api-input');
+      if (qInput && key) qInput.value = key;
+    }
+
+    function saveQuickApiKey() {
+      const input = document.getElementById('ocr-quick-api-input');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) {
+        showToast('API Key를 입력해 주세요.', 'warning');
+        return;
+      }
+      setStoredApiKey(val);
+      refreshApiKeyStatusUI();
+      appendDiagnosticLog(`[저장 완료] API Key가 안전하게 영구 저장되었습니다.`, 'success');
+      showToast('API Key가 성공적으로 저장되었습니다! (새로고침 유지)', 'success');
     }
 
     // Party Selection & Autocomplete
@@ -1679,7 +1771,7 @@
     }
 
     // =========================================================================
-    // DOCUMENT PREVIEWS UPDATE ENGINE (실무 가이드 & 첨부 양식 100% 매핑)
+    // DOCUMENT PREVIEWS UPDATE ENGINE (전문 매핑)
     // =========================================================================
     function updateDocumentPreviews() {
       const trustor = vendorDatabase.find(v => v.id === selectedTrustorId) || {
@@ -1707,7 +1799,7 @@
         bizNo: "-"
       };
 
-      // 1. 단일 기준일자 일체화 (Single Date Principle)
+      // 기준일자 일체화
       const rawDate = document.getElementById('contract-date').value || "2026-10-04";
       const [year, month, day] = rawDate.split('-');
       const formattedDateKorean = `${year}년 ${month}월 ${day}일`;
@@ -1716,9 +1808,7 @@
       const feeText = document.getElementById('contract-fee').value || "금 일천오백만원정(\\ 15,000,000-)";
       const propertyText = document.getElementById('property-summary').value || `${trustor.address} 토지 및 지상 건물 일체`;
 
-      // ==============================================================
-      // 서류 1: 부동산 담보신탁계약서 (본문 31개조 및 별첨 1~4 전문 매핑)
-      // ==============================================================
+      // 1. 담보신탁계약서
       document.getElementById('d1-cover-trustor').textContent = trustor.companyName;
       document.getElementById('d1-cover-debtor').textContent = debtor.companyName;
       document.getElementById('d1-cover-beneficiary').textContent = beneficiary.companyName;
@@ -1726,7 +1816,6 @@
 
       document.getElementById('d1-contract-date-display').textContent = formattedDateKorean;
 
-      // 계약서 말미 서명란 (4자 체계)
       document.getElementById('d1-sig-t-name').textContent = trustor.companyName;
       document.getElementById('d1-sig-t-addr').textContent = trustor.address;
       document.getElementById('d1-sig-t-id').textContent = trustor.corpRegNo;
@@ -1764,13 +1853,11 @@
       // 별첨 3
       document.getElementById('d1-b3-fee').textContent = feeText;
 
-      // 별첨 4 특약 18조: 1순위 우선수익자 자동 연동
+      // 별첨 4 특약 18조
       document.getElementById('d1-b4-special-beneficiary').textContent = beneficiary.companyName;
       document.getElementById('d1-b4-special-beneficiary-tax').textContent = beneficiary.companyName;
 
-      // ==============================================================
-      // 서류 2: 고객거래확인서 (위탁자 & 우선수익자 총 3부)
-      // ==============================================================
+      // 2. 고객거래확인서 (위탁자 & 우선수익자)
       // 2-① 위탁자 (개인용)
       document.getElementById('d2-1-name').textContent = trustor.companyName;
       document.getElementById('d2-1-id').textContent = (trustor.corpRegNo && trustor.corpRegNo.length >= 6) ? trustor.corpRegNo.substring(0, 6) : "000000";
@@ -1790,7 +1877,7 @@
       document.getElementById('d2-2-date').textContent = formattedDateKorean;
       document.getElementById('d2-2-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
 
-      // 2-③ 1순위 우선수익자용
+      // 2-③ 우선수익자용
       document.getElementById('d2-3-name').textContent = beneficiary.companyName;
       document.getElementById('d2-3-bizno').textContent = beneficiary.bizNo || '-';
       document.getElementById('d2-3-addr').textContent = beneficiary.address;
@@ -1798,10 +1885,8 @@
       document.getElementById('d2-3-date').textContent = formattedDateKorean;
       document.getElementById('d2-3-sig-full').textContent = `${beneficiary.companyName} 대표자 ${beneficiary.representative}`;
 
-      // ==============================================================
-      // 서류 3: 실제소유자확인서 (위탁자 법인용 & 우선수익자용)
-      // ==============================================================
-      // 3-① 위탁자 법인용 (미대상, 주주명부 기준)
+      // 3. 실제소유자확인서 (위탁자 법인용 & 우선수익자용)
+      // 3-① 위탁자 법인용
       document.getElementById('d3-1-name').textContent = trustor.companyName;
       document.getElementById('d3-1-bizno').textContent = trustor.bizNo || '-';
       document.getElementById('d3-1-owner-name').textContent = trustor.representative;
@@ -1812,7 +1897,7 @@
       document.getElementById('d3-1-date').textContent = formattedDateKorean;
       document.getElementById('d3-1-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
 
-      // 3-② 우선수익자용 (금융회사등 확인 생략, 실소유자 공란)
+      // 3-② 우선수익자용
       document.getElementById('d3-2-name').textContent = beneficiary.companyName;
       document.getElementById('d3-2-bizno').textContent = beneficiary.bizNo || '-';
       document.getElementById('d3-2-author-name').textContent = beneficiary.representative;
@@ -1859,7 +1944,6 @@
             h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; font-weight: bold; }
             h2 { font-size: 14pt; margin-top: 14pt; margin-bottom: 6pt; font-weight: bold; }
             h3 { font-size: 12pt; margin-top: 12pt; margin-bottom: 4pt; font-weight: bold; }
-            h4 { font-size: 10.5pt; font-weight: bold; }
             table { border-collapse: collapse; width: 100%; border: 1.5pt solid #000000; margin: 8pt 0; }
             th, td { border: 0.75pt solid #000000; padding: 4.5pt 6pt; font-size: 9.5pt; vertical-align: middle; }
             th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
@@ -1923,7 +2007,6 @@
         }
       }
 
-      // Word MSO HTML Blob fallback
       const blob = new Blob(['\ufeff', wordHtml], {
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
@@ -1941,7 +2024,6 @@
         { id: 'doc-view-3-2', name: '3-2. 실제소유자확인서_우선수익자용' }
       ];
 
-      // Combine all docs with page breaks into one master docx
       let combinedInnerHtml = "";
       docs.forEach((item, idx) => {
         const el = document.getElementById(item.id);
@@ -2072,8 +2154,11 @@
 
     function saveAdminApiKey() {
       const k = document.getElementById('gemini-api-key').value.trim();
-      if (!k) return;
-      localStorage.setItem('gemini_ocr_api_key', k);
+      if (!k) {
+        showToast('API Key를 입력해 주세요.', 'warning');
+        return;
+      }
+      setStoredApiKey(k);
       refreshApiKeyStatusUI();
       appendDiagnosticLog(`[저장 완료] API Key가 로컬 저장소에 영구 보존되었습니다.`, 'success');
       showToast('API Key가 안전하게 영구 저장되었습니다.', 'success');
@@ -2143,7 +2228,7 @@
       if (!cachedFileBase64) return;
       const key = getStoredApiKey();
       if (!key) {
-        showToast('관리자 설정에서 API Key를 먼저 등록해 주세요.', 'warning');
+        showToast('API Key를 먼저 등록해 주세요.', 'warning');
         return;
       }
 
