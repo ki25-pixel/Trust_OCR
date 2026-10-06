@@ -9,19 +9,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts: Noto Serif KR & Noto Sans KR -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <!-- PDF.js for Visual Preview Rendering -->
+  <!-- PDF.js for Preview -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if (typeof pdfjsLib !== 'undefined') {
       try {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       } catch (e) {
-        console.warn("PDF.js worker fallback mode");
+        console.warn("PDF.js fallback mode enabled");
       }
     }
   </script>
@@ -103,7 +103,7 @@
         <div>
           <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
             부동산 담보신탁 및 부속서류 통합 시스템
-            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">API Key 영구연동</span>
+            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">Word(.docx) 지원</span>
           </h1>
           <p class="text-xs text-slate-400 hidden sm:block">담보신탁계약서(31개조 및 별첨1~4 전문) · 고객거래확인서(3부) · 실제소유자확인서(2부)</p>
         </div>
@@ -127,9 +127,8 @@
         </button>
       </nav>
 
-      <!-- Top Right Status Badge -->
       <div class="flex items-center space-x-3">
-        <div id="header-api-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 cursor-pointer" onclick="switchTab('settings')">
+        <div id="header-api-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
           <span id="api-status-dot" class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
           API: <span id="active-model-name-badge" class="text-amber-400 ml-1 font-mono font-bold">Key 미설정</span>
         </div>
@@ -145,7 +144,7 @@
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 p-6 sm:p-8 border border-cyan-500/30 shadow-2xl">
         <div class="relative z-10 max-w-3xl">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-4">
-            <i class="fa-solid fa-file-word text-emerald-400"></i> API Key 영구 유지 &amp; 워드(.docx) 다운로드 완비
+            <i class="fa-solid fa-file-word text-emerald-400"></i> 전 서식 워드(.docx) 다운로드 &amp; 담보신탁 전문 수록
           </span>
           <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">부동산 담보신탁 및 부속서류 원본 통합 생성 시스템</h2>
           <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
@@ -180,9 +179,9 @@
           <p class="text-xs text-slate-500 mt-1">위탁자(미대상·25%자연인) / 금융기관(생략)</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">API Key 인증 상태</span>
-          <div class="mt-2 text-xl font-bold text-emerald-400" id="stat-api-status-text">Key 미등록</div>
-          <p class="text-xs text-slate-500 mt-1">새로고침 시에도 영구 유지</p>
+          <span class="text-xs font-medium text-slate-400">다운로드 포맷</span>
+          <div class="mt-2 text-xl font-bold text-emerald-400">Microsoft Word (.docx)</div>
+          <p class="text-xs text-slate-500 mt-1">단일 서식 및 3종 일괄 다운로드 지원</p>
         </div>
       </div>
 
@@ -202,6 +201,7 @@
                 <th class="p-3">구분/상호</th>
                 <th class="p-3">대표자</th>
                 <th class="p-3">등록번호</th>
+                <th class="p-3">사업자번호</th>
                 <th class="p-3">주소</th>
                 <th class="p-3 text-right">빠른 지정</th>
               </tr>
@@ -215,32 +215,22 @@
 
     <!-- TAB 2: AI OCR EXTRACTOR -->
     <section id="tab-ocr" class="tab-content hidden space-y-6">
-      
-      <!-- OCR Quick API Key Bar -->
-      <div id="ocr-api-quick-bar" class="bg-gradient-to-r from-slate-900 to-indigo-950/80 border border-cyan-500/40 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+      <div id="ocr-api-alert" class="bg-gradient-to-r from-slate-900 to-indigo-950/80 border border-amber-500/40 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg border border-cyan-500/30">
-            <i class="fa-solid fa-key"></i>
+          <div class="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30">
+            <i class="fa-solid fa-shield-halved"></i>
           </div>
           <div>
-            <h4 class="text-xs font-bold text-white flex items-center gap-2">
+            <h4 id="ocr-alert-title" class="text-xs font-bold text-white flex items-center gap-2">
               Google AI Studio API Key 설정
-              <span id="ocr-quick-key-status" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">미등록</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">필요</span>
             </h4>
-            <p class="text-[11px] text-slate-400">등록된 키는 브라우저 새로고침이나 재접속 시에도 안전하게 유지됩니다.</p>
+            <p id="ocr-alert-desc" class="text-[11px] text-slate-400">우측 상단 '설정 (Admin)' 탭에서 Gemini API Key를 등록하면 실시간 OCR이 활성화됩니다.</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <div class="relative">
-            <input type="password" id="ocr-quick-api-input" placeholder="Gemini API Key 입력" autocomplete="off" spellcheck="false" class="bg-slate-950 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 pr-8 w-60 sm:w-72 focus:outline-none focus:border-cyan-500 font-mono">
-            <button type="button" onclick="togglePasswordVisibility('ocr-quick-api-input', this)" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-white text-xs">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-          <button onclick="saveQuickApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition-all shrink-0">
-            저장
-          </button>
-        </div>
+        <button onclick="switchTab('settings')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shrink-0 flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-gear"></i> 관리자 설정 이동
+        </button>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -387,7 +377,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (전문 수록 & DOCX 다운로드) -->
+    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (실무 전문 수록 & .docx 다운로드) -->
     <section id="tab-generator" class="tab-content hidden space-y-6">
       
       <!-- Top Form & Controls -->
@@ -409,7 +399,7 @@
           </div>
         </div>
 
-        <!-- 3 Parties + Debtor Search Cards -->
+        <!-- 3 Parties Search Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           <!-- 1. 위탁자 (Trustor) -->
@@ -426,8 +416,8 @@
 
               <div id="trustor-selected-card" class="mb-2 p-2 bg-blue-950/60 border border-blue-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-blue-300" id="trustor-selected-name"></span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="trustor-selected-details"></span>
+                  <span class="font-bold text-blue-300" id="trustor-selected-name">(주)한국개발신탁파트너스</span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="trustor-selected-details">110111-1234567</span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('trustor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -453,8 +443,8 @@
 
               <div id="debtor-selected-card" class="mb-2 p-2 bg-indigo-950/60 border border-indigo-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-indigo-300" id="debtor-selected-name"></span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="debtor-selected-details"></span>
+                  <span class="font-bold text-indigo-300" id="debtor-selected-name">(주)대한종합건설</span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="debtor-selected-details">대표: 김철수</span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('debtor')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -480,8 +470,8 @@
 
               <div id="beneficiary-selected-card" class="mb-2 p-2 bg-amber-950/60 border border-amber-500/50 rounded-lg flex items-center justify-between">
                 <div class="text-xs text-white truncate max-w-[85%]">
-                  <span class="font-bold text-amber-300" id="beneficiary-selected-name"></span>
-                  <span class="text-slate-400 text-[11px] ml-1" id="beneficiary-selected-details"></span>
+                  <span class="font-bold text-amber-300" id="beneficiary-selected-name">(주)우리금융은행</span>
+                  <span class="text-slate-400 text-[11px] ml-1" id="beneficiary-selected-details">이대표</span>
                 </div>
                 <button type="button" onclick="clearSelectedParty('beneficiary')" class="text-slate-400 hover:text-rose-400 p-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -552,12 +542,8 @@
       <div class="flex justify-center bg-black/50 p-2 sm:p-6 rounded-2xl border border-slate-800 shadow-2xl min-h-[850px]">
         <div id="print-area" class="w-full max-w-[850px]">
           
-          <!-- =================================================================== -->
           <!-- 1. 담보신탁계약서 (본문 제1조 ~ 제31조 및 별첨 1~4 전문 수록) -->
-          <!-- =================================================================== -->
           <div id="doc-view-1" class="doc-paper p-8 sm:p-14 text-xs leading-relaxed space-y-6">
-            
-            <!-- 표지 요약 -->
             <div class="text-center border-b-2 border-slate-900 pb-6 mb-8">
               <h1 class="text-3xl font-bold tracking-tight mb-8">부동산담보신탁계약서</h1>
               <div class="max-w-md mx-auto border border-slate-800 divide-y divide-slate-700 text-left">
@@ -568,12 +554,10 @@
               </div>
             </div>
 
-            <!-- 전문 -->
             <p class="text-justify font-serif text-[12px] leading-relaxed">
               <strong id="d1-intro-trustor" class="text-blue-900 font-bold"></strong>(이하 “위탁자”이라 함)은 아래 정의된 신탁부동산을 수탁자인 <strong id="d1-intro-trustee">한국투자부동산신탁</strong>에 신탁하고 수탁자는 이를 인수함에 있어서, 위탁자, 수탁자 및 수익자의 권리의무를 정하기 위하여 다음과 같이 부동산담보신탁계약(이하 “이 신탁계약”이라 한다)을 체결한다.
             </p>
 
-            <!-- 본문 제1조 ~ 제31조 전문 수록 -->
             <div class="space-y-4 text-[11px] text-justify text-slate-800 leading-relaxed">
               <p><strong>제1조 (신탁목적)</strong> 이 신탁계약에 따른 신탁은 채무자의 우선수익자에 대한 채무 이행을 담보하기 위하여, 위탁자는 신탁부동산의 소유권을 수탁자에게 이전하고 수탁자는 신탁부동산의 소유권을 보전 및 관리하며 이 신탁계약에서 정해진 사유 발생 시 신탁부동산을 처분하여 그 처분대가 등 신탁재산을 이 신탁계약에 정해진 바에 따라 지급하는 것을 목적으로 한다.</p>
               
@@ -656,11 +640,9 @@
             <p class="text-center font-bold my-4">- 이하 날인을 위한 여백 -</p>
             <p class="text-[11px]">이 신탁계약을 증명하기 위해 계약서를 5부 작성하여 위탁자, 수탁자, 채무자, 1순위 우선수익자가 각각 1부씩 보관 및 1부는 신탁등기에 사용하며, 신탁등기용을 제외한 나머지 계약서는 수탁자 천공으로 갈음한다.</p>
 
-            <!-- 계약 체결일자 (기준일자) -->
             <div class="text-center font-bold text-sm my-6 text-slate-900" id="d1-contract-date-display">
             </div>
 
-            <!-- 날인란 (4자 체계) -->
             <div class="border border-slate-900 p-4 space-y-4 text-[11px]">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -695,17 +677,17 @@
               </div>
             </div>
 
-            <!-- 별첨 1. 신탁부동산의 표시 (동적 구성) -->
+            <!-- 별첨 1. 신탁부동산의 표시 -->
             <div class="page-break pt-8">
               <h3 class="font-bold text-sm mb-3">【별첨 1】 신탁부동산의 표시</h3>
               <div class="border border-slate-700 p-4 bg-slate-50 space-y-2 text-[11px] leading-relaxed">
-                <p id="d1-property-text">1. 토지 및 건물 : [신탁부동산 요약 표시]</p>
+                <p id="d1-property-text">1. 토지 및 건물 : [위탁자 소유 부동산 목록]</p>
                 <p class="font-semibold text-right pt-2">(이상 소유자: <span id="d1-prop-owner"></span>)</p>
                 <p class="text-right font-bold">- 이 상 -</p>
               </div>
             </div>
 
-            <!-- 별첨 2. 우선수익자 및 수익자 등의 표시 (가, 나, 다목) -->
+            <!-- 별첨 2. 우선수익자 및 수익자 등의 표시 -->
             <div class="pt-6">
               <h3 class="font-bold text-sm mb-3">【별첨 2】 우선수익자 및 수익자 등의 표시</h3>
               <div class="space-y-4">
@@ -764,7 +746,7 @@
               </div>
             </div>
 
-            <!-- 별첨 4. 신탁특약 전문 (제1조 ~ 제19조 전체 수록) -->
+            <!-- 별첨 4. 신탁특약 전문 -->
             <div class="page-break pt-8">
               <h3 class="font-bold text-sm mb-3">【별첨 4】 신탁특약</h3>
               <p class="text-[11px] mb-3">부동산담보신탁계약 기본계약 제31조의 규정과 관련하여, 당사자들은 다음과 같이 신탁특약을 정하고 신탁특약을 신탁본문에 우선하여 적용하기로 합의한다.</p>
@@ -796,9 +778,7 @@
 
           </div>
 
-          <!-- =================================================================== -->
           <!-- 2-①. 고객거래확인서 [개인·개인사업자 用] (위탁자 개인용) 전문 -->
-          <!-- =================================================================== -->
           <div id="doc-view-2-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
@@ -824,7 +804,7 @@
               <tr>
                 <th class="w-1/6">성명</th>
                 <td class="w-1/3">한글: <strong id="d2-1-name"></strong><br><span class="text-[10px] text-slate-400">영문: (외국인 필수)</span></td>
-                <th class="w-1/6">주민번호 등<br><span class="text-[10px] font-normal">(앞자리7자리)</span></th>
+                <th class="w-1/6">생년월일/등록번호</th>
                 <td id="d2-1-id"></td>
               </tr>
               <tr>
@@ -895,9 +875,7 @@
             </div>
           </div>
 
-          <!-- =================================================================== -->
           <!-- 2-②. 고객거래확인서 [법인·단체 用] (위탁자 법인용) 전문 -->
-          <!-- =================================================================== -->
           <div id="doc-view-2-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
@@ -974,9 +952,7 @@
             </div>
           </div>
 
-          <!-- =================================================================== -->
           <!-- 2-③. 고객거래확인서 [법인·단체 用] (우선수익자 금융기관용) 전문 -->
-          <!-- =================================================================== -->
           <div id="doc-view-2-3" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
@@ -1051,9 +1027,7 @@
             </div>
           </div>
 
-          <!-- =================================================================== -->
           <!-- 3-①. 실제소유자확인서 [법인·단체 用] (위탁자 법인) 전문 -->
-          <!-- =================================================================== -->
           <div id="doc-view-3-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
@@ -1162,9 +1136,7 @@
             </div>
           </div>
 
-          <!-- =================================================================== -->
           <!-- 3-②. 실제소유자확인서 [법인·단체 用] (우선수익자용 - 금융회사등 생략) 전문 -->
-          <!-- =================================================================== -->
           <div id="doc-view-3-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
@@ -1266,7 +1238,7 @@
           <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-sliders text-purple-400"></i> 관리자 설정 &amp; Gemini API Key 관리
           </h2>
-          <p class="text-xs text-slate-400 mt-1">입력된 API Key는 브라우저 로컬 스토리지에 영구 보존되어 새로고침 후에도 유지됩니다.</p>
+          <p class="text-xs text-slate-400 mt-1">입력된 API Key는 브라우저 다중 저장소에 영구 보존되어 새로고침 후에도 유지됩니다.</p>
         </div>
         <button onclick="lockAdminSettings()" class="bg-slate-900 text-amber-400 text-xs border border-amber-500/30 px-3.5 py-2 rounded-xl">
           <i class="fa-solid fa-lock mr-1"></i>로그아웃
@@ -1276,14 +1248,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
           <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-key text-purple-400 mr-1.5"></i>Google AI Studio API Key (영구 보존)</h3>
-          
-          <div class="relative">
-            <input type="password" id="gemini-api-key" placeholder="Google AI Studio API Key 입력" autocomplete="off" spellcheck="false" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 pr-9 focus:outline-none focus:border-cyan-500 font-mono">
-            <button type="button" onclick="togglePasswordVisibility('gemini-api-key', this)" class="absolute right-3 top-3 text-slate-400 hover:text-white text-xs">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-
+          <input type="password" id="gemini-api-key" placeholder="Google AI Studio에서 발급받은 API Key를 입력하세요" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
           <div class="flex gap-2">
             <button onclick="saveAdminApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
               <i class="fa-solid fa-floppy-disk mr-1"></i>Key 저장 및 적용
@@ -1399,7 +1364,7 @@
         id: "VND-2026-004",
         companyName: "이신탁 (개인)",
         representative: "이신탁",
-        corpRegNo: "750101-1******",
+        corpRegNo: "110111-5678901",
         bizNo: "N/A",
         address: "서울특별시 송파구 올림픽로 88",
         bizType: "개인 (부동산 소유자)",
@@ -1430,53 +1395,68 @@
 
     let currentDocSubTab = "doc1";
 
-    // 3중 안전망 API Key Getter & Setter
-    function getStoredApiKey() {
-      try {
-        return (localStorage.getItem('gemini_ocr_api_key') || sessionStorage.getItem('gemini_ocr_api_key') || '').trim();
-      } catch (e) {
-        return '';
+    // Multi-tier Storage Manager (LocalStorage + SessionStorage + Cookie + Memory Fallback)
+    const StorageManager = {
+      KEY_NAME: 'gemini_ocr_api_key',
+      getApiKey: function() {
+        let key = '';
+        try { key = localStorage.getItem(this.KEY_NAME) || ''; } catch(e) {}
+        if (!key) {
+          try { key = sessionStorage.getItem(this.KEY_NAME) || ''; } catch(e) {}
+        }
+        if (!key) {
+          try {
+            const match = document.cookie.match(new RegExp('(^| )' + this.KEY_NAME + '=([^;]+)'));
+            if (match) key = decodeURIComponent(match[2]);
+          } catch(e) {}
+        }
+        if (!key && window.__globalApiKey) {
+          key = window.__globalApiKey;
+        }
+        return (key || '').trim();
+      },
+      setApiKey: function(val) {
+        const clean = (val || '').trim();
+        window.__globalApiKey = clean;
+        try { localStorage.setItem(this.KEY_NAME, clean); } catch(e) {}
+        try { sessionStorage.setItem(this.KEY_NAME, clean); } catch(e) {}
+        try {
+          document.cookie = this.KEY_NAME + '=' + encodeURIComponent(clean) + '; path=/; max-age=31536000; SameSite=Lax';
+        } catch(e) {}
       }
-    }
+    };
 
-    function setStoredApiKey(k) {
-      const val = (k || '').trim();
-      try {
-        localStorage.setItem('gemini_ocr_api_key', val);
-        sessionStorage.setItem('gemini_ocr_api_key', val);
-      } catch (e) {
-        console.warn("Storage write failed", e);
-      }
+    function getStoredApiKey() {
+      return StorageManager.getApiKey();
     }
 
     function loadPersistentVendorDatabase() {
-      try {
-        const saved = localStorage.getItem('trust_vendor_db');
-        if (saved) {
+      const saved = localStorage.getItem('trust_vendor_db');
+      if (saved) {
+        try {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             vendorDatabase = parsed;
             return;
           }
+        } catch (e) {
+          console.warn("DB 로드 실패, 기본값 초기화", e);
         }
-      } catch (e) {}
+      }
       vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
       saveVendorDatabaseToStorage();
     }
 
     function saveVendorDatabaseToStorage() {
-      try {
-        localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase));
-      } catch (e) {}
+      try { localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase)); } catch(e) {}
       const count = vendorDatabase.length;
-      const statEl = document.getElementById('stat-total-vendors');
-      if (statEl) statEl.textContent = count;
+      document.getElementById('stat-total-vendors').textContent = count;
       const b = document.getElementById('db-count-badge');
       if (b) b.textContent = count;
     }
 
     function resetVendorDBToDefault() {
-      if (!confirm("거래처 DB를 기본 5개 마스터 데이터로 초기화하시겠습니까?")) return;
+      if (!confirm("거래처 DB를 기본 마스터 데이터로 초기화하시겠습니까?")) return;
       vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
       saveVendorDatabaseToStorage();
       renderVendorTables();
@@ -1486,57 +1466,23 @@
       showToast('거래처 DB가 기본 마스터로 초기화되었습니다.', 'info');
     }
 
-    // Toggle Password Visibility Eye Button
-    function togglePasswordVisibility(inputId, btn) {
-      const input = document.getElementById(inputId);
-      if (!input) return;
-      if (input.type === 'password') {
-        input.type = 'text';
-        btn.innerHTML = `<i class="fa-solid fa-eye-slash"></i>`;
-      } else {
-        input.type = 'password';
-        btn.innerHTML = `<i class="fa-solid fa-eye"></i>`;
-      }
-    }
-
-    // Immediate Execution before window.onload
-    (function initImmediateKeys() {
-      const k = getStoredApiKey();
-      if (k) {
-        window.userCachedApiKey = k;
-      }
-    })();
-
+    // Window Onload Initialization
     window.onload = function() {
-      // 1. API Key 즉각 복원 & 인풋 필드 동기화
+      // 1. API Key 복원 및 실시간 자동 저장 바인딩
       const key = getStoredApiKey();
       const apiKeyInput = document.getElementById('gemini-api-key');
-      const quickKeyInput = document.getElementById('ocr-quick-api-input');
-      
-      if (key) {
-        if (apiKeyInput) apiKeyInput.value = key;
-        if (quickKeyInput) quickKeyInput.value = key;
+      if (apiKeyInput && key) {
+        apiKeyInput.value = key;
       }
-
-      // 실시간 자동 저장 바인딩
       if (apiKeyInput) {
-        apiKeyInput.addEventListener('input', function() {
-          const val = this.value.trim();
-          if (val) {
-            setStoredApiKey(val);
-            if (quickKeyInput) quickKeyInput.value = val;
-            refreshApiKeyStatusUI();
-          }
-        });
-      }
-      if (quickKeyInput) {
-        quickKeyInput.addEventListener('input', function() {
-          const val = this.value.trim();
-          if (val) {
-            setStoredApiKey(val);
-            if (apiKeyInput) apiKeyInput.value = val;
-            refreshApiKeyStatusUI();
-          }
+        ['input', 'change', 'paste', 'blur', 'keyup'].forEach(evName => {
+          apiKeyInput.addEventListener(evName, function() {
+            const val = this.value.trim();
+            if (val) {
+              StorageManager.setApiKey(val);
+              refreshApiKeyStatusUI();
+            }
+          });
         });
       }
 
@@ -1581,7 +1527,7 @@
       const dot = document.getElementById('api-status-dot');
       const badge = document.getElementById('active-model-name-badge');
       const statText = document.getElementById('stat-api-status-text');
-      const quickStatus = document.getElementById('ocr-quick-key-status');
+      const alertBox = document.getElementById('ocr-api-alert');
 
       if (key && key.length > 5) {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2';
@@ -1591,12 +1537,9 @@
         }
         if (statText) {
           statText.textContent = "Key 등록 완료";
-          statText.className = "text-xl font-bold text-emerald-400";
+          statText.className = "text-base font-bold text-emerald-400";
         }
-        if (quickStatus) {
-          quickStatus.textContent = "연결 유지됨";
-          quickStatus.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono";
-        }
+        if (alertBox) alertBox.classList.add('hidden');
       } else {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 mr-2';
         if (badge) {
@@ -1605,32 +1548,12 @@
         }
         if (statText) {
           statText.textContent = "Key 미등록";
-          statText.className = "text-xl font-bold text-amber-400";
+          statText.className = "text-base font-bold text-amber-400";
         }
-        if (quickStatus) {
-          quickStatus.textContent = "미등록";
-          quickStatus.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono";
-        }
+        if (alertBox) alertBox.classList.remove('hidden');
       }
-
       const input = document.getElementById('gemini-api-key');
       if (input && key) input.value = key;
-      const qInput = document.getElementById('ocr-quick-api-input');
-      if (qInput && key) qInput.value = key;
-    }
-
-    function saveQuickApiKey() {
-      const input = document.getElementById('ocr-quick-api-input');
-      if (!input) return;
-      const val = input.value.trim();
-      if (!val) {
-        showToast('API Key를 입력해 주세요.', 'warning');
-        return;
-      }
-      setStoredApiKey(val);
-      refreshApiKeyStatusUI();
-      appendDiagnosticLog(`[저장 완료] API Key가 안전하게 영구 저장되었습니다.`, 'success');
-      showToast('API Key가 성공적으로 저장되었습니다! (새로고침 유지)', 'success');
     }
 
     // Party Selection & Autocomplete
@@ -1771,7 +1694,7 @@
     }
 
     // =========================================================================
-    // DOCUMENT PREVIEWS UPDATE ENGINE (전문 매핑)
+    // DOCUMENT PREVIEWS UPDATE ENGINE (실무 가이드 & 원본 서식 100% 매핑)
     // =========================================================================
     function updateDocumentPreviews() {
       const trustor = vendorDatabase.find(v => v.id === selectedTrustorId) || {
@@ -1808,7 +1731,7 @@
       const feeText = document.getElementById('contract-fee').value || "금 일천오백만원정(\\ 15,000,000-)";
       const propertyText = document.getElementById('property-summary').value || `${trustor.address} 토지 및 지상 건물 일체`;
 
-      // 1. 담보신탁계약서
+      // 1. 담보신탁계약서 본문 및 별첨 매핑
       document.getElementById('d1-cover-trustor').textContent = trustor.companyName;
       document.getElementById('d1-cover-debtor').textContent = debtor.companyName;
       document.getElementById('d1-cover-beneficiary').textContent = beneficiary.companyName;
@@ -1830,11 +1753,9 @@
       document.getElementById('d1-sig-b-rep').textContent = `대표자 ${beneficiary.representative}`;
       document.getElementById('d1-sig-b-id').textContent = beneficiary.corpRegNo;
 
-      // 별첨 1
       document.getElementById('d1-property-text').textContent = propertyText;
       document.getElementById('d1-prop-owner').textContent = trustor.companyName;
 
-      // 별첨 2
       document.getElementById('d1-b2-name').textContent = beneficiary.companyName;
       document.getElementById('d1-b2-corpno').textContent = beneficiary.corpRegNo;
       document.getElementById('d1-b2-addr').textContent = beneficiary.address;
@@ -1850,15 +1771,12 @@
       document.getElementById('d1-b2-debtor-cid').textContent = debtor.corpRegNo;
       document.getElementById('d1-b2-debtor-caddr').textContent = debtor.address;
 
-      // 별첨 3
       document.getElementById('d1-b3-fee').textContent = feeText;
 
-      // 별첨 4 특약 18조
       document.getElementById('d1-b4-special-beneficiary').textContent = beneficiary.companyName;
       document.getElementById('d1-b4-special-beneficiary-tax').textContent = beneficiary.companyName;
 
-      // 2. 고객거래확인서 (위탁자 & 우선수익자)
-      // 2-① 위탁자 (개인용)
+      // 2. 고객거래확인서 (위탁자 & 우선수익자만 징구)
       document.getElementById('d2-1-name').textContent = trustor.companyName;
       document.getElementById('d2-1-id').textContent = (trustor.corpRegNo && trustor.corpRegNo.length >= 6) ? trustor.corpRegNo.substring(0, 6) : "000000";
       document.getElementById('d2-1-addr').textContent = trustor.address;
@@ -1866,7 +1784,6 @@
       document.getElementById('d2-1-date').textContent = formattedDateKorean;
       document.getElementById('d2-1-sig-name').textContent = trustor.companyName;
 
-      // 2-② 위탁자 법인용
       document.getElementById('d2-2-name').textContent = trustor.companyName;
       document.getElementById('d2-2-bizno').textContent = trustor.bizNo || '-';
       document.getElementById('d2-2-addr').textContent = trustor.address;
@@ -1877,7 +1794,6 @@
       document.getElementById('d2-2-date').textContent = formattedDateKorean;
       document.getElementById('d2-2-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
 
-      // 2-③ 우선수익자용
       document.getElementById('d2-3-name').textContent = beneficiary.companyName;
       document.getElementById('d2-3-bizno').textContent = beneficiary.bizNo || '-';
       document.getElementById('d2-3-addr').textContent = beneficiary.address;
@@ -1886,7 +1802,6 @@
       document.getElementById('d2-3-sig-full').textContent = `${beneficiary.companyName} 대표자 ${beneficiary.representative}`;
 
       // 3. 실제소유자확인서 (위탁자 법인용 & 우선수익자용)
-      // 3-① 위탁자 법인용
       document.getElementById('d3-1-name').textContent = trustor.companyName;
       document.getElementById('d3-1-bizno').textContent = trustor.bizNo || '-';
       document.getElementById('d3-1-owner-name').textContent = trustor.representative;
@@ -1897,7 +1812,6 @@
       document.getElementById('d3-1-date').textContent = formattedDateKorean;
       document.getElementById('d3-1-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
 
-      // 3-② 우선수익자용
       document.getElementById('d3-2-name').textContent = beneficiary.companyName;
       document.getElementById('d3-2-bizno').textContent = beneficiary.bizNo || '-';
       document.getElementById('d3-2-author-name').textContent = beneficiary.representative;
@@ -1944,6 +1858,7 @@
             h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; font-weight: bold; }
             h2 { font-size: 14pt; margin-top: 14pt; margin-bottom: 6pt; font-weight: bold; }
             h3 { font-size: 12pt; margin-top: 12pt; margin-bottom: 4pt; font-weight: bold; }
+            h4 { font-size: 10.5pt; font-weight: bold; }
             table { border-collapse: collapse; width: 100%; border: 1.5pt solid #000000; margin: 8pt 0; }
             th, td { border: 0.75pt solid #000000; padding: 4.5pt 6pt; font-size: 9.5pt; vertical-align: middle; }
             th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
@@ -2154,14 +2069,11 @@
 
     function saveAdminApiKey() {
       const k = document.getElementById('gemini-api-key').value.trim();
-      if (!k) {
-        showToast('API Key를 입력해 주세요.', 'warning');
-        return;
-      }
-      setStoredApiKey(k);
+      if (!k) return;
+      StorageManager.setApiKey(k);
       refreshApiKeyStatusUI();
-      appendDiagnosticLog(`[저장 완료] API Key가 로컬 저장소에 영구 보존되었습니다.`, 'success');
-      showToast('API Key가 안전하게 영구 저장되었습니다.', 'success');
+      appendDiagnosticLog(`[저장 완료] API Key가 안전하게 보존되었습니다.`, 'success');
+      showToast('API Key가 안전하게 저장되었습니다.', 'success');
     }
 
     async function testGoogleAPIConnection() {
@@ -2228,7 +2140,7 @@
       if (!cachedFileBase64) return;
       const key = getStoredApiKey();
       if (!key) {
-        showToast('API Key를 먼저 등록해 주세요.', 'warning');
+        showToast('관리자 설정에서 API Key를 먼저 등록해 주세요.', 'warning');
         return;
       }
 
