@@ -103,9 +103,9 @@
         <div>
           <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
             부동산 담보신탁 및 부속서류 통합 시스템
-            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">Gemini 3.8 Flash</span>
+            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">클라우드 동기화</span>
           </h1>
-          <p class="text-xs text-slate-400 hidden sm:block">담보신탁계약서(31개조 및 별첨1~4 전문) · 고객거래확인서(3부) · 실제소유자확인서(2부)</p>
+          <p class="text-xs text-slate-400 hidden sm:block">Google 스프레드시트 중앙 DB 연동 · 전 기기 실시간 동기화</p>
         </div>
       </div>
 
@@ -128,9 +128,9 @@
       </nav>
 
       <div class="flex items-center space-x-3">
-        <div id="header-api-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-          <span id="api-status-dot" class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
-          API: <span id="active-model-name-badge" class="text-amber-400 ml-1 font-mono font-bold">Key 미설정</span>
+        <div id="header-cloud-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+          <span id="cloud-status-dot" class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
+          동기화: <span id="cloud-status-text" class="text-amber-400 ml-1 font-mono font-bold">로컬 모드</span>
         </div>
       </div>
     </div>
@@ -144,11 +144,11 @@
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 p-6 sm:p-8 border border-cyan-500/30 shadow-2xl">
         <div class="relative z-10 max-w-3xl">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-4">
-            <i class="fa-solid fa-file-word text-emerald-400"></i> 전 서식 워드(.docx) 다운로드 &amp; 담보신탁 전문 수록
+            <i class="fa-solid fa-cloud text-emerald-400"></i> Google 스프레드시트 중앙 DB 기반 멀티 디바이스 실시간 연동
           </span>
           <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">부동산 담보신탁 및 부속서류 원본 통합 생성 시스템</h2>
           <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-            PDF OCR을 통해 거래처 DB를 구축하고, **담보신탁계약서(31개조 및 별첨1~4 전문)**, **고객거래확인서(위탁자·우선수익자 3부)**, **실제소유자확인서(2부)**를 거래처 DB 기반으로 생성하여 **.docx 파일**로 즉시 다운로드합니다.
+            사무실 PC에서 OCR로 추출한 거래처 정보와 API Key가 구글 시트에 자동 저장되어, 모바일 및 다른 컴퓨터에서도 동일하게 동기화됩니다.
           </p>
           <div class="flex flex-wrap gap-3">
             <button onclick="switchTab('generator')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2">
@@ -164,24 +164,24 @@
       <!-- Quick Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
+          <span class="text-xs font-medium text-slate-400">중앙 DB 거래처 마스터</span>
+          <div class="mt-2 text-xl font-bold text-white" id="stat-total-vendors">5</div>
+          <p class="text-xs text-slate-500 mt-1">Google Sheet 실시간 연동</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
           <span class="text-xs font-medium text-slate-400">서류 1: 담보신탁계약서</span>
-          <div class="mt-2 text-xl font-bold text-white">본문 31개조 + 별첨1~4</div>
-          <p class="text-xs text-slate-500 mt-1">특약 18조 1순위 우선수익자 보수 연동</p>
+          <div class="mt-2 text-xl font-bold text-white">31개조 및 별첨1~4</div>
+          <p class="text-xs text-slate-500 mt-1">특약 18조 우선수익자 자동 연동[cite: 3]</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">서류 2: 고객거래확인서 (CDD)</span>
+          <span class="text-xs font-medium text-slate-400">서류 2, 3: CDD 및 실소유자</span>
           <div class="mt-2 text-xl font-bold text-white">위탁자 &amp; 우선수익자</div>
-          <p class="text-xs text-slate-500 mt-1">개인용/법인용 분리 (채무자 징구 제외)</p>
+          <p class="text-xs text-slate-500 mt-1">채무자 징구 배제 실무 반영[cite: 2]</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">서류 3: 실제소유자확인서</span>
-          <div class="mt-2 text-xl font-bold text-white">위탁자 법인 &amp; 금융기관</div>
-          <p class="text-xs text-slate-500 mt-1">위탁자(미대상·25%자연인) / 금융기관(생략)</p>
-        </div>
-        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
-          <span class="text-xs font-medium text-slate-400">다운로드 포맷</span>
-          <div class="mt-2 text-xl font-bold text-emerald-400">Microsoft Word (.docx)</div>
-          <p class="text-xs text-slate-500 mt-1">단일 서식 및 3종 일괄 다운로드 지원</p>
+          <span class="text-xs font-medium text-slate-400">다운로드 지원 포맷</span>
+          <div class="mt-2 text-xl font-bold text-emerald-400">Word (.docx)</div>
+          <p class="text-xs text-slate-500 mt-1">단일 및 3종 전체 다운로드</p>
         </div>
       </div>
 
@@ -212,7 +212,7 @@
       </div>
     </section>
 
-    <!-- TAB 2: AI OCR EXTRACTOR (상단 Key 설정 배너 완전 제거) -->
+    <!-- TAB 2: AI OCR EXTRACTOR (상단 Key 설정 배너 완전 삭제) -->
     <section id="tab-ocr" class="tab-content hidden space-y-6">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -312,7 +312,7 @@
           <div class="border-t border-slate-800 pt-3 flex justify-end gap-2">
             <button type="button" onclick="clearOCRForm()" class="px-3 py-2 bg-slate-800 text-slate-300 text-xs rounded-lg">초기화</button>
             <button type="button" onclick="saveExtractedToDB()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-lg shadow-lg">
-              <i class="fa-solid fa-cloud-arrow-up mr-1"></i>거래처 DB에 영구 저장
+              <i class="fa-solid fa-cloud-arrow-up mr-1"></i>클라우드 DB에 영구 저장
             </button>
           </div>
         </div>
@@ -324,13 +324,13 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-database text-emerald-400"></i> 거래처 Data Base 마스터 관리 (영구 보존)
+            <i class="fa-solid fa-database text-emerald-400"></i> 거래처 Data Base 마스터 관리 (Google Sheet 연동)
           </h2>
-          <p class="text-xs text-slate-400 mt-1">로컬 스토리지에 영구 보존되며 새로고침 시에도 안전하게 유지됩니다.</p>
+          <p class="text-xs text-slate-400 mt-1">중앙 클라우드 시트에 보존되어 어느 기기에서 접속하든 동일하게 동기화됩니다.</p>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="resetVendorDBToDefault()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 px-3 py-2.5 rounded-lg transition-all">
-            <i class="fa-solid fa-rotate-left mr-1"></i>기본 DB 초기화
+          <button onclick="syncFromCloudDB()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs border border-cyan-500/30 px-3 py-2.5 rounded-lg transition-all flex items-center gap-1">
+            <i class="fa-solid fa-rotate mr-1"></i>클라우드 시트 불러오기
           </button>
           <button onclick="openAddVendorModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-md transition-all">
             <i class="fa-solid fa-plus mr-1"></i>신규 거래처 등록
@@ -368,7 +368,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR -->
+    <!-- TAB 4: TRUST DOCUMENT AUTO-GENERATOR (전문 수록 및 Word .docx 다운로드) -->
     <section id="tab-generator" class="tab-content hidden space-y-6">
       
       <!-- Top Form & Controls -->
@@ -378,7 +378,7 @@
             <h3 class="text-sm font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-file-word text-blue-400"></i> 신탁서류 3종 자동 생성 및 Word(.docx) 다운로드
             </h3>
-            <p class="text-xs text-slate-400 mt-0.5">거래처 DB의 실시간 검색 결과를 바인딩하여 정식 서식 원본을 생성합니다.</p>
+            <p class="text-xs text-slate-400 mt-0.5">중앙 DB의 실시간 검색 결과를 바인딩하여 정식 서식 전문을 생성합니다.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <button onclick="downloadCurrentDocAsDocx()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md transition-all flex items-center gap-1.5">
@@ -552,86 +552,86 @@
             </p>
 
             <div class="space-y-4 text-[11px] text-justify text-slate-800 leading-relaxed">
-              <p><strong>제1조 (신탁목적)</strong> 이 신탁계약에 따른 신탁은 채무자의 우선수익자에 대한 채무 이행을 담보하기 위하여, 위탁자는 신탁부동산의 소유권을 수탁자에게 이전하고 수탁자는 신탁부동산의 소유권을 보전 및 관리하며 이 신탁계약에서 정해진 사유 발생 시 신탁부동산을 처분하여 그 처분대가 등 신탁재산을 이 신탁계약에 정해진 바에 따라 지급하는 것을 목적으로 한다.</p>
+              <p><strong>제1조 (신탁목적)</strong> 이 신탁계약에 따른 신탁은 채무자의 우선수익자에 대한 채무 이행을 담보하기 위하여, 위탁자는 신탁부동산의 소유권을 수탁자에게 이전하고 수탁자는 신탁부동산의 소유권을 보전 및 관리하며 이 신탁계약에서 정해진 사유 발생 시 신탁부동산을 처분하여 그 처분대가 등 신탁재산을 이 신탁계약에 정해진 바에 따라 지급하는 것을 목적으로 한다.[cite: 3]</p>
               
               <div>
-                <strong>제2조 (용어의 정의)</strong> 이 신탁계약에서 사용하는 용어는 아래에서 정의하는 의미를 갖는다.<br>
-                1. “위탁자”란 신탁부동산을 수탁자에게 위탁하는 자를 말한다.<br>
-                2. “수탁자”란 이 신탁계약에 따라 신탁부동산을 신탁재산으로 인수하는 자를 말한다.<br>
-                3. “수익자”란 이 신탁계약에 따라 신탁재산으로부터 금전의 지급을 받거나 그 밖의 이 신탁계약상의 권리를 갖고 의무를 부담하는 자로서 별첨2에 적힌 자를 말하며, 이 신탁계약상 별도로 규정하지 않는 한 우선수익자를 포함한다.<br>
-                4. “우선수익자”란 수익자들 중에서 이 신탁계약에 따라 신탁재산으로부터 우선적으로 지급을 받을 권리를 갖고 의무를 부담하는 자로서 별첨2에 적힌 자를 말한다.<br>
-                5. “수익권”이란 이 신탁계약에 따라 수익자가 신탁재산으로부터 금전을 지급받을 권리 그 밖의 이 신탁계약상 수익자가 갖는 모든 권리를 말한다.<br>
-                6. “우선수익권”이란 이 신탁계약에 따라 우선수익자가 신탁재산으로부터 금전의 지급을 받거나 그 밖의 이 신탁계약상 우선수익자가 갖게 되는 권리를 말한다.<br>
-                7. “우선수익권금액”이란 우선수익자가 이 신탁계약에 따라 신탁부동산의 처분대금 등 신탁재산으로부터 피담보채권의 변제를 위하여 우선하여 지급받게 될 금액의 한도로서, 별첨2에 적힌 것을 말한다.<br>
-                8. “피담보채권”이란 이 신탁계약에 따라 우선수익자가 신탁재산으로 그 변제를 담보하고자 하는 채권으로서 신탁재산을 담보로 하며 이는 별첨2에 적힌 것을 말한다.<br>
-                9. “채무자”란 피담보채권에 관한 채무를 이행하여야 하는 자로서 별첨2에 적힌 자를 말한다.<br>
-                10. “신탁부동산”이란 이 신탁계약에 따라 위탁자가 수탁자에게 신탁하는 별첨1에 적힌 부동산을 말한다.<br>
-                11. “신탁재산”이란 이 신탁계약 제4조에 따라 신탁재산에 속하는 재산을 말한다.<br>
-                12. “신탁기간”은 이 신탁계약 제3조에 정의된 기간을 말한다.<br>
-                13. “신탁특약”이란 위탁자와 수탁자가 이 신탁계약에서 정하지 아니한 사항 또는 이 신탁계약과 달리 정하고자 하는 사항을 정하기 위하여 이 신탁계약의 별첨4에 첨부된 신탁특약을 말한다.
+                <strong>제2조 (용어의 정의)</strong> 이 신탁계약에서 사용하는 용어는 아래에서 정의하는 의미를 갖는다.[cite: 3]<br>
+                1. “위탁자”란 신탁부동산을 수탁자에게 위탁하는 자를 말한다.[cite: 3]<br>
+                2. “수탁자”란 이 신탁계약에 따라 신탁부동산을 신탁재산으로 인수하는 자를 말한다.[cite: 3]<br>
+                3. “수익자”란 이 신탁계약에 따라 신탁재산으로부터 금전의 지급을 받거나 그 밖의 이 신탁계약상의 권리를 갖고 의무를 부담하는 자로서 별첨2에 적힌 자를 말하며, 이 신탁계약상 별도로 규정하지 않는 한 우선수익자를 포함한다.[cite: 3]<br>
+                4. “우선수익자”란 수익자들 중에서 이 신탁계약에 따라 신탁재산으로부터 우선적으로 지급을 받을 권리를 갖고 의무를 부담하는 자로서 별첨2에 적힌 자를 말한다.[cite: 3]<br>
+                5. “수익권”이란 이 신탁계약에 따라 수익자가 신탁재산으로부터 금전을 지급받을 권리 그 밖의 이 신탁계약상 수익자가 갖는 모든 권리를 말한다.[cite: 3]<br>
+                6. “우선수익권”이란 이 신탁계약에 따라 우선수익자가 신탁재산으로부터 금전의 지급을 받거나 그 밖의 이 신탁계약상 우선수익자가 갖게 되는 권리를 말한다.[cite: 3]<br>
+                7. “우선수익권금액”이란 우선수익자가 이 신탁계약에 따라 신탁부동산의 처분대금 등 신탁재산으로부터 피담보채권의 변제를 위하여 우선하여 지급받게 될 금액의 한도로서, 별첨2에 적힌 것을 말한다.[cite: 3]<br>
+                8. “피담보채권”이란 이 신탁계약에 따라 우선수익자가 신탁재산으로 그 변제를 담보하고자 하는 채권으로서 신탁재산을 담보로 하며 이는 별첨2에 적힌 것을 말한다.[cite: 3]<br>
+                9. “채무자”란 피담보채권에 관한 채무를 이행하여야 하는 자로서 별첨2에 적힌 자를 말한다.[cite: 3]<br>
+                10. “신탁부동산”이란 이 신탁계약에 따라 위탁자가 수탁자에게 신탁하는 별첨1에 적힌 부동산을 말한다.[cite: 3]<br>
+                11. “신탁재산”이란 이 신탁계약 제4조에 따라 신탁재산에 속하는 재산을 말한다.[cite: 3]<br>
+                12. “신탁기간”은 이 신탁계약 제3조에 정의된 기간을 말한다.[cite: 3]<br>
+                13. “신탁특약”이란 위탁자와 수탁자가 이 신탁계약에서 정하지 아니한 사항 또는 이 신탁계약과 달리 정하고자 하는 사항을 정하기 위하여 이 신탁계약의 별첨4에 첨부된 신탁특약을 말한다.[cite: 3]
               </div>
 
-              <p><strong>제3조 (신탁기간)</strong> 이 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 우선수익자 채권변제시까지로 한다. 다만 위 신탁기간이 만료되기 전에 제26조 제1항에 정해진 사유로 이 신탁계약에 따른 신탁이 종료된 경우에는 신탁기간도 이 신탁의 종료 시점에 종료된 것으로 본다.</p>
+              <p><strong>제3조 (신탁기간)</strong> 이 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 우선수익자 채권변제시까지로 한다. 다만 위 신탁기간이 만료되기 전에 제26조 제1항에 정해진 사유로 이 신탁계약에 따른 신탁이 종료된 경우에는 신탁기간도 이 신탁의 종료 시점에 종료된 것으로 본다.[cite: 3]</p>
               
-              <p><strong>제4조 (신탁재산의 범위)</strong> 신탁부동산과 신탁부동산의 관리, 처분, 운용, 수용, 멸실, 훼손 그 밖의 사유로 수탁자가 얻은 재산(수용보상금, 보험금 등 신탁재산에 관한 물상대위권에 기하여 취득한 금전을 포함하며, 이에 국한되지 않는다)은 신탁재산에 속한다.</p>
+              <p><strong>제4조 (신탁재산의 범위)</strong> 신탁부동산과 신탁부동산의 관리, 처분, 운용, 수용, 멸실, 훼손 그 밖의 사유로 수탁자가 얻은 재산(수용보상금, 보험금 등 신탁재산에 관한 물상대위권에 기하여 취득한 금전을 포함하며, 이에 국한되지 않는다)은 신탁재산에 속한다.[cite: 3]</p>
 
-              <p><strong>제5조 (위탁자의 변경)</strong> ① 위탁자는 수탁자 및 수익자 전원의 동의를 받아 위탁자의 지위를 제3자에게 이전할 수 있다. 이로 인한 신탁원부 등에 적힌 내용 변경 및 수익권증서 발행에 따른 비용은 위탁자가 부담한다. ② 제1항의 경우 위탁자가 여러 명일 때에는 다른 위탁자의 동의도 받아야 한다.</p>
+              <p><strong>제5조 (위탁자의 변경)</strong> ① 위탁자는 수탁자 및 수익자 전원의 동의를 받아 위탁자의 지위를 제3자에게 이전할 수 있다. 이로 인한 신탁원부 등에 적힌 내용 변경 및 수익권증서 발행에 따른 비용은 위탁자가 부담한다.[cite: 3] ② 제1항의 경우 위탁자가 여러 명일 때에는 다른 위탁자의 동의도 받아야 한다.[cite: 3]</p>
 
-              <p><strong>제6조 (수익자 지정 및 수익권증서)</strong> ① 수탁자는 위탁자가 이 신탁계약에 따른 위탁자가 아닌 제3자를 수익자로 지정한 경우 그 지정 사실을 지체 없이 해당 수익자에게 통지하여야 한다. ② 위탁자가 제3자를 수익자로 지정한 경우 수익자는 이 신탁계약의 내용을 알고 있으며 이에 동의한다는 취지의 승낙서에 이름을 적고 도장을 찍어 수탁자에게 제출하여야 한다. ③ 수탁자는 수익자의 요청이 있는 경우 이 신탁계약에 따른 수익자의 권리를 증명하기 위한 증서로서 수익권증서를 발행하여 해당 수익자에게 교부한다.</p>
+              <p><strong>제6조 (수익자 지정 및 수익권증서)</strong> ① 수탁자는 위탁자가 이 신탁계약에 따른 위탁자가 아닌 제3자를 수익자로 지정한 경우 그 지정 사실을 지체 없이 해당 수익자에게 통지하여야 한다.[cite: 3] ② 위탁자가 제3자를 수익자로 지정한 경우 수익자는 이 신탁계약의 내용을 알고 있으며 이에 동의한다는 취지의 승낙서에 이름을 적고 도장을 찍어 수탁자에게 제출하여야 한다.[cite: 3] ③ 수탁자는 수익자의 요청이 있는 경우 이 신탁계약에 따른 수익자의 권리를 증명하기 위한 증서로서 수익권증서를 발행하여 해당 수익자에게 교부한다.[cite: 3]</p>
 
-              <p><strong>제7조 (우선수익권)</strong> ① 우선수익자는 이 신탁계약에 따라 수탁자가 신탁부동산을 처분하는 경우 피담보채권의 변제를 위하여 별첨2에 적힌 우선수익권금액을 한도로 신탁부동산의 처분대금 등 신탁재산으로부터 수익자보다 우선하여 지급받을 권리를 가지며, 우선수익자가 수인인 경우 우선수익자 사이의 순위는 별첨2에 적힌 순위에 따른다. ② 우선수익자의 피담보채권이 변제된 경우에는 해당 우선수익자의 우선수익권은 소멸한다.</p>
+              <p><strong>제7조 (우선수익권)</strong> ① 우선수익자는 이 신탁계약에 따라 수탁자가 신탁부동산을 처분하는 경우 피담보채권의 변제를 위하여 별첨2에 적힌 우선수익권금액을 한도로 신탁부동산의 처분대금 등 신탁재산으로부터 수익자보다 우선하여 지급받을 권리를 가지며, 우선수익자가 수인인 경우 우선수익자 사이의 순위는 별첨2에 적힌 순위에 따른다.[cite: 3] ② 우선수익자의 피담보채권이 변제된 경우에는 해당 우선수익자의 우선수익권은 소멸한다.[cite: 3]</p>
 
-              <p><strong>제8조 (수익권의 양도, 수익자의 추가 지정 또는 변경 등)</strong> ① 우선수익자는 수탁자의 사전 동의를 받아 이 신탁계약에 따른 우선수익권을 제3자에게 양도하거나 질권을 설정할 수 있다. 다만 우선수익권은 그 피담보채권과 함께 양도되어야 하며, 그 양수인이 이 신탁계약상 우선수익자의 의무를 승계하는 조건으로만 양도되어야 한다. ② 제1항의 경우를 제외하고 수익자가 수익권을 양도하거나 질권설정 등 처분행위를 하고자 하는 경우에는 수탁자의 사전 동의를 받아야 한다.</p>
+              <p><strong>제8조 (수익권의 양도, 수익자의 추가 지정 또는 변경 등)</strong> ① 우선수익자는 수탁자의 사전 동의를 받아 이 신탁계약에 따른 우선수익권을 제3자에게 양도하거나 질권을 설정할 수 있다. 다만 우선수익권은 그 피담보채권과 함께 양도되어야 하며, 그 양수인이 이 신탁계약상 우선수익자의 의무를 승계하는 조건으로만 양도되어야 한다.[cite: 3] ② 제1항의 경우를 제외하고 수익자가 수익권을 양도하거나 질권설정 등 처분행위를 하고자 하는 경우에는 수탁자의 사전 동의를 받아야 한다.[cite: 3]</p>
 
-              <p><strong>제9조 (신탁부동산의 소유권이전의무 등)</strong> ① 위탁자는 이 신탁계약 체결 후 지체 없이 신탁부동산의 소유권이전등기 등 신탁재산의 공시에 필요한 서류를 수탁자에게 제공하고 수탁자가 합리적으로 요구하는 조치를 취하여야 한다. ② 제1항의 등기에 필요한 비용은 위탁자가 부담한다.</p>
+              <p><strong>제9조 (신탁부동산의 소유권이전의무 등)</strong> ① 위탁자는 이 신탁계약 체결 후 지체 없이 신탁부동산의 소유권이전등기 등 신탁재산의 공시에 필요한 서류를 수탁자에게 제공하고 수탁자가 합리적으로 요구하는 조치를 취하여야 한다.[cite: 3] ② 제1항의 등기에 필요한 비용은 위탁자가 부담한다.[cite: 3]</p>
 
-              <p><strong>제10조 (신탁부동산의 관리 등)</strong> ① 위탁자는 신탁부동산의 보존·유지·수선 등 관리에 필요한 모든 조치를 다하고 세금과 공과금 등 이에 필요한 비용을 부담한다. ② 이 신탁계약 체결일 이전에 위탁자가 신탁부동산에 관하여 체결한 임대차계약은 유효하고, 이 신탁계약 체결일 이후에도 위탁자는 신탁부동산을 타인에게 임대하거나 직접 점유 또는 사용할 수 있다. ③ 제2항에도 불구하고 위탁자는 이 신탁계약 체결일 이후 신탁부동산에 대하여 임대차계약의 체결, 저당권설정, 전세권설정 등의 처분행위를 하고자 하는 경우에는 수탁자 및 수익자의 사전 서면 동의를 받아야 한다.</p>
+              <p><strong>제10조 (신탁부동산의 관리 등)</strong> ① 위탁자는 신탁부동산의 보존·유지·수선 등 관리에 필요한 모든 조치를 다하고 세금과 공과금 등 이에 필요한 비용을 부담한다.[cite: 3] ② 이 신탁계약 체결일 이전에 위탁자가 신탁부동산에 관하여 체결한 임대차계약은 유효하고, 이 신탁계약 체결일 이후에도 위탁자는 신탁부동산을 타인에게 임대하거나 직접 점유 또는 사용할 수 있다.[cite: 3] ③ 제2항에도 불구하고 위탁자는 이 신탁계약 체결일 이후 신탁부동산에 대하여 임대차계약의 체결, 저당권설정, 전세권설정 등의 처분행위를 하고자 하는 경우에는 수탁자 및 수익자의 사전 서면 동의를 받아야 한다.[cite: 3]</p>
 
-              <p><strong>제11조 (임대차 등)</strong> ① 이 신탁계약 체결 후 위탁자가 제10조 제3항에 따라 수탁자 및 수익자의 사전 서면 동의를 받아 신탁부동산에 관한 임대차계약을 체결하는 경우에도 임대차계약은 위탁자 이름으로 체결하고, 위탁자가 임차인으로부터 임대차보증금 및 임대료 등을 직접 지급받는다. ② 제1항의 경우 위탁자는 그 임대차계약으로 인하여 수탁자에게 발생되는 손실, 비용 등을 부담하여야 한다.</p>
+              <p><strong>제11조 (임대차 등)</strong> ① 이 신탁계약 체결 후 위탁자가 제10조 제3항에 따라 수탁자 및 수익자의 사전 서면 동의를 받아 신탁부동산에 관한 임대차계약을 체결하는 경우에도 임대차계약은 위탁자 이름으로 체결하고, 위탁자가 임차인으로부터 임대차보증금 및 임대료 등을 직접 지급받는다.[cite: 3] ② 제1항의 경우 위탁자는 그 임대차계약으로 인하여 수탁자에게 발생되는 손실, 비용 등을 부담하여야 한다.[cite: 3]</p>
 
-              <p><strong>제12조 (보험계약)</strong> ① 위탁자는 수탁자가 시장상황을 고려하여 합리적으로 정한 종류, 기간, 부보금액, 방법으로 신탁부동산에 대한 보험계약을 체결하여야 하며 신탁기간 동안 이를 유지하여야 한다. ② 수탁자가 신탁부동산에 관한 보험금을 받은 경우 신탁기간의 만료 전이라도 그 보험금으로 제22조에서 정한 방법에 따라 정산할 수 있다.</p>
+              <p><strong>제12조 (보험계약)</strong> ① 위탁자는 수탁자가 시장상황을 고려하여 합리적으로 정한 종류, 기간, 부보금액, 방법으로 신탁부동산에 대한 보험계약을 체결하여야 하며 신탁기간 동안 이를 유지하여야 한다.[cite: 3] ② 수탁자가 신탁부동산에 관한 보험금을 받은 경우 신탁기간의 만료 전이라도 그 보험금으로 제22조에서 정한 방법에 따라 정산할 수 있다.[cite: 3]</p>
 
-              <p><strong>제13조 (선관주의의무 및 하자담보책임)</strong> ① 수탁자는 선량한 관리자의 주의의무로서 신탁부동산의 소유권을 보존·관리하고 그 밖의 신탁사무를 처리한다. ② 수탁자가 신탁사무를 처리하는 과정에서 수탁자의 고의 또는 과실로 인하여 위탁자 또는 수익자에게 손해가 발생하는 경우에는 그 손해를 배상할 책임이 있다.</p>
+              <p><strong>제13조 (선관주의의무 및 하자담보책임)</strong> ① 수탁자는 선량한 관리자의 주의의무로서 신탁부동산의 소유권을 보존·관리하고 그 밖의 신탁사무를 처리한다.[cite: 3] ② 수탁자가 신탁사무를 처리하는 과정에서 수탁자의 고의 또는 과실로 인하여 위탁자 또는 수익자에게 손해가 발생하는 경우에는 그 손해를 배상할 책임이 있다.[cite: 3]</p>
 
-              <p><strong>제14조 (신탁재산에 속하는 금전의 운용방법)</strong> ① 수탁자는 신탁재산에 속하는 금전을 「자본시장과 금융투자업에 관한 법률」 등 관계법령에서 정하는 방법에 따라 운용한다. ② 수탁자는 신탁재산을 다른 신탁재산 및 수탁자의 고유재산과 구분하여 관리하여야 한다.</p>
+              <p><strong>제14조 (신탁재산에 속하는 금전의 운용방법)</strong> ① 수탁자는 신탁재산에 속하는 금전을 「자본시장과 금융투자업에 관한 법률」 등 관계법령에서 정하는 방법에 따라 운용한다.[cite: 3] ② 수탁자는 신탁재산을 다른 신탁재산 및 수탁자의 고유재산과 구분하여 관리하여야 한다.[cite: 3]</p>
 
-              <p><strong>제15조 (비용 등의 부담)</strong> ① 신탁재산에 관한 세금과 공과금, 유지관리비, 지료 등 그 밖의 신탁사무의 처리에 필요한 비용 그리고 신탁사무 처리에 있어서 수탁자의 책임 없는 사유로 발생한 손실 등은 위탁자가 부담한다. ② 위탁자가 제1항의 비용 등을 지급하지 않는 경우 수탁자는 신탁재산에 속하는 금전으로 이를 지급할 수 있다.</p>
+              <p><strong>제15조 (비용 등의 부담)</strong> ① 신탁재산에 관한 세금과 공과금, 유지관리비, 지료 등 그 밖의 신탁사무의 처리에 필요한 비용 그리고 신탁사무 처리에 있어서 수탁자의 고의나 과실이 없는 사유로 발생한 손실 등은 위탁자가 부담한다.[cite: 3] ② 위탁자가 제1항의 비용 등을 지급하지 않는 경우 수탁자는 신탁재산에 속하는 금전으로 이를 지급할 수 있다.[cite: 3]</p>
 
-              <p><strong>제16조 (신탁의 계산 및 수익의 교부)</strong> 이 신탁계약에 따른 신탁이 종료한 경우 수탁자는 지체 없이 신탁사무에 관한 최종의 계산을 하고, 수익자와 귀속권리자의 승인을 받아야 한다.</p>
+              <p><strong>제16조 (신탁의 계산 및 수익의 교부)</strong> 이 신탁계약에 따른 신탁이 종료한 경우 수탁자는 지체 없이 신탁사무에 관한 최종의 계산을 하고, 수익자와 귀속권리자의 승인을 받아야 한다.[cite: 3]</p>
 
-              <p><strong>제17조 (신탁보수)</strong> ① 신탁보수는 담보보수, 환가처분보수 및 매매계약사무보수로 구분한다. ② 담보보수는 별첨3에 적힌 산식에 의하여 계산하여 나온 금액으로 하며, 이 신탁계약에 따른 신탁이 중도에 해지되는 경우에도 담보보수는 반환하지 아니한다. ③ 환가처분보수는 환가처분 시 적용하며 제2항에서 정한 보수 외에 별도로 신탁부동산의 처분가격을 기준으로 별첨3에 적힌 산식에 의하여 계산한다.</p>
+              <p><strong>제17조 (신탁보수)</strong> ① 신탁보수는 담보보수, 환가처분보수 및 매매계약사무보수로 구분한다.[cite: 3] ② 담보보수는 별첨3에 적힌 산식에 의하여 계산하여 나온 금액으로 하며, 이 신탁계약에 따른 신탁이 중도에 해지되는 경우에도 담보보수는 반환하지 아니한다.[cite: 3] ③ 환가처분보수는 환가처분 시 적용하며 제2항에서 정한 보수 외에 별도로 신탁부동산의 처분가격을 기준으로 별첨3에 적힌 산식에 의하여 계산한다.[cite: 3]</p>
 
-              <p><strong>제18조 (신탁부동산의 처분)</strong> 수탁자는 채무자가 피담보채권에 관한 채무를 불이행하여 기한의 이익이 상실된 경우 위탁자에게 14일 이상의 기간을 부여하여 위반사유를 해결할 것을 요구하였음에도 불구하고 적절한 조치를 취하지 아니하는 때에는 우선수익자의 서면 요청에 의하여 신탁부동산을 처분할 수 있다.</p>
+              <p><strong>제18조 (신탁부동산의 처분)</strong> 수탁자는 채무자가 피담보채권에 관한 채무를 불이행하여 기한의 이익이 상실된 경우 위탁자에게 14일 이상의 기간을 부여하여 위반사유를 해결할 것을 요구하였음에도 불구하고 적절한 조치를 취하지 아니하는 때에는 우선수익자의 서면 요청에 의하여 신탁부동산을 처분할 수 있다.[cite: 3]</p>
 
-              <p><strong>제19조 (처분방법)</strong> 신탁부동산의 처분은 공개시장에서 경쟁을 통하여 처분(공매)하는 것을 원칙으로 한다. 다만 공매가 되지 아니한 경우에는 다음 회차 공매 시작 전까지 직전 회차 공매 조건 이상으로 수의계약을 체결할 수 있다.</p>
+              <p><strong>제19조 (처분방법)</strong> 신탁부동산의 처분은 공개시장에서 경쟁을 통하여 처분(공매)하는 것을 원칙으로 한다.[cite: 3] 다만 공매가 되지 아니한 경우에는 다음 회차 공매 시작 전까지 직전 회차 공매 조건 이상으로 수의계약을 체결할 수 있다.[cite: 3]</p>
 
-              <p><strong>제20조 (예정가격)</strong> 신탁부동산의 공매 시 예정가격은 수탁자가 선정하는 감정평가 전문기관의 감정평가액 이상으로 수탁자가 결정하는 것을 원칙으로 한다.</p>
+              <p><strong>제20조 (예정가격)</strong> 신탁부동산의 공매 시 예정가격은 수탁자가 선정하는 감정평가 전문기관의 감정평가액 이상으로 수탁자가 결정하는 것을 원칙으로 한다.[cite: 3]</p>
 
-              <p><strong>제21조 (처분대금 납부기한)</strong> 신탁부동산의 공매는 그 매매대금을 매매계약의 체결일로부터 60일 이내에 완납하는 것을 조건으로 하여야 한다.</p>
+              <p><strong>제21조 (처분대금 납부기한)</strong> 신탁부동산의 공매는 그 매매대금을 매매계약의 체결일로부터 60일 이내에 완납하는 것을 조건으로 하여야 한다.[cite: 3]</p>
 
-              <p><strong>제22조 (처분대금 등 정산)</strong> 수탁자가 신탁부동산을 환가하여 정산하는 경우의 순위는 1. 신탁사무 비용 및 신탁보수, 2. 신탁등기 전 소액임대차보증금, 3. 신탁등기 전 대항력 있는 임차보증금 및 근저당권, 4. 대항력을 갖춘 임차보증금, 5. 우선수익자의 피담보채권, 6. 잔액이 있을 경우 수익자 교부 순서에 의한다.</p>
+              <p><strong>제22조 (처분대금 등 정산)</strong> 수탁자가 신탁부동산을 환가하여 정산하는 경우의 순위는 1. 신탁사무 비용 및 신탁보수, 2. 신탁등기 전 소액임대차보증금, 3. 신탁등기 전 대항력 있는 임차보증금 및 근저당권, 4. 대항력을 갖춘 임차보증금, 5. 우선수익자의 피담보채권, 6. 잔액이 있을 경우 수익자 교부 순서에 의한다.[cite: 3]</p>
 
-              <p><strong>제23조 (명도의무)</strong> 위탁자는 신탁부동산의 처분이 결정된 경우 지체 없이 신탁부동산을 수탁자 또는 매수인에게 명도하여야 한다.</p>
+              <p><strong>제23조 (명도의무)</strong> 위탁자는 신탁부동산의 처분이 결정된 경우 지체 없이 신탁부동산을 수탁자 또는 매수인에게 명도하여야 한다.[cite: 3]</p>
 
-              <p><strong>제24조 (신탁해지 및 책임부담)</strong> 위탁자와 수익자는 합의하여 언제든지 신탁을 종료할 수 있다. 다만 신탁특약으로서 달리 정한 경우에는 그 특약에 따른다.</p>
+              <p><strong>제24조 (신탁해지 및 책임부담)</strong> 위탁자와 수익자는 합의하여 언제든지 신탁을 종료할 수 있다.[cite: 3] 다만 신탁특약으로서 달리 정한 경우에는 그 특약에 따른다.[cite: 3]</p>
 
-              <p><strong>제25조 (수탁자의 사임)</strong> 수탁자는 위탁자와 수익자의 승낙을 받은 경우 또는 정당한 사유가 있는 경우에 한하여 사임할 수 있다.</p>
+              <p><strong>제25조 (수탁자의 사임)</strong> 수탁자는 위탁자와 수익자의 승낙을 받은 경우 또는 정당한 사유가 있는 경우에 한하여 사임할 수 있다.[cite: 3]</p>
 
-              <p><strong>제26조 (신탁의 종료)</strong> 이 신탁계약에 따른 신탁은 신탁기간의 만료, 신탁목적의 달성, 처분대금의 정산 완료 또는 신탁해지에 의하여 종료한다.</p>
+              <p><strong>제26조 (신탁의 종료)</strong> 이 신탁계약에 따른 신탁은 신탁기간의 만료, 신탁목적의 달성, 처분대금의 정산 완료 또는 신탁해지에 의하여 종료한다.[cite: 3]</p>
 
-              <p><strong>제27조 (신고사항)</strong> 위탁자 또는 그 상속인은 인감, 주소, 상호, 대표자 등의 변경이 있는 경우 지체 없이 수탁자에게 서면 신고하여야 한다.</p>
+              <p><strong>제27조 (신고사항)</strong> 위탁자 또는 그 상속인은 인감, 주소, 상호, 대표자 등의 변경이 있는 경우 지체 없이 수탁자에게 서면 신고하여야 한다.[cite: 3]</p>
 
-              <p><strong>제28조 (소송수행)</strong> 신탁부동산에 관한 소송은 위탁자 또는 우선수익자의 책임과 비용으로 수행함을 원칙으로 한다.</p>
+              <p><strong>제28조 (소송수행)</strong> 신탁부동산에 관한 소송은 위탁자 또는 우선수익자의 책임과 비용으로 수행함을 원칙으로 한다.[cite: 3]</p>
 
-              <p><strong>제29조 (관할법원)</strong> 이 신탁계약에 관하여 분쟁이 발생하는 경우에는 관할법원은 「민사소송법」에서 정하는 바에 따른다.</p>
+              <p><strong>제29조 (관할법원)</strong> 이 신탁계약에 관하여 분쟁이 발생하는 경우에는 관할법원은 「민사소송법」에서 정하는 바에 따른다.[cite: 3]</p>
 
-              <p><strong>제30조 (관계법규등 준용)</strong> 이 신탁계약에 정하지 아니한 사항은 별도의 약정이 없는 한 관계법규등에 정하는 바에 따른다.</p>
+              <p><strong>제30조 (관계법규등 준용)</strong> 이 신탁계약에 정하지 아니한 사항은 별도의 약정이 없는 한 관계법규등에 정하는 바에 따른다.[cite: 3]</p>
 
-              <p><strong>제31조 (신탁계약과 신탁특약의 관계)</strong> 위탁자와 수탁자는 관계법규에 위반하지 않는 범위 내에서 특약을 정할 수 있으며, 신탁특약의 내용은 이 신탁계약의 내용에 우선한다.</p>
+              <p><strong>제31조 (신탁계약과 신탁특약의 관계)</strong> 위탁자와 수탁자는 관계법규에 위반하지 않는 범위 내에서 특약을 정할 수 있으며, 신탁특약의 내용은 이 신탁계약의 내용에 우선한다.[cite: 3]</p>
             </div>
 
-            <p class="text-center font-bold my-4">- 이하 날인을 위한 여백 -</p>
-            <p class="text-[11px]">이 신탁계약을 증명하기 위해 계약서를 5부 작성하여 위탁자, 수탁자, 채무자, 1순위 우선수익자가 각각 1부씩 보관 및 1부는 신탁등기에 사용하며, 신탁등기용을 제외한 나머지 계약서는 수탁자 천공으로 갈음한다.</p>
+            <p class="text-center font-bold my-4">- 이하 날인을 위한 여백 -[cite: 3]</p>
+            <p class="text-[11px]">이 신탁계약을 증명하기 위해 계약서를 5부 작성하여 위탁자, 수탁자, 채무자, 1순위 우선수익자가 각각 1부씩 보관 및 1부는 신탁등기에 사용하며, 신탁등기용을 제외한 나머지 계약서는 수탁자 천공으로 갈음한다.[cite: 3]</p>
 
             <div class="text-center font-bold text-sm my-6 text-slate-900" id="d1-contract-date-display">
             </div>
@@ -673,7 +673,7 @@
 
             <!-- 별첨 1. 신탁부동산의 표시 (동적 구성) -->
             <div class="page-break pt-8">
-              <h3 class="font-bold text-sm mb-3">【별첨 1】 신탁부동산의 표시</h3>
+              <h3 class="font-bold text-sm mb-3">【별첨 1】 신탁부동산의 표시[cite: 3]</h3>
               <div class="border border-slate-700 p-4 bg-slate-50 space-y-2 text-[11px] leading-relaxed">
                 <p id="d1-property-text"></p>
                 <p class="font-semibold text-right pt-2">(이상 소유자: <span id="d1-prop-owner"></span>)</p>
@@ -683,10 +683,10 @@
 
             <!-- 별첨 2. 우선수익자 및 수익자 등의 표시 (가, 나, 다목) -->
             <div class="pt-6">
-              <h3 class="font-bold text-sm mb-3">【별첨 2】 우선수익자 및 수익자 등의 표시</h3>
+              <h3 class="font-bold text-sm mb-3">【별첨 2】 우선수익자 및 수익자 등의 표시[cite: 3]</h3>
               <div class="space-y-4">
                 <div>
-                  <h4 class="font-bold text-xs mb-1 text-amber-900">가. 우선수익자</h4>
+                  <h4 class="font-bold text-xs mb-1 text-amber-900">가. 우선수익자[cite: 3]</h4>
                   <table class="doc-table">
                     <tr><th class="w-1/4">순위</th><td colspan="2"><strong>1순위</strong></td></tr>
                     <tr><th>성명 (상호)</th><td colspan="2" id="d1-b2-name" class="font-bold"></td></tr>
@@ -698,7 +698,7 @@
                   </table>
                 </div>
                 <div>
-                  <h4 class="font-bold text-xs mb-1 text-blue-900">나. 수익자</h4>
+                  <h4 class="font-bold text-xs mb-1 text-blue-900">나. 수익자[cite: 3]</h4>
                   <table class="doc-table">
                     <tr><th class="w-1/4">상호 (성명)</th><td id="d1-b2-trustor-name" class="font-bold"></td></tr>
                     <tr><th>법인등록번호/등록번호</th><td id="d1-b2-trustor-id"></td></tr>
@@ -706,7 +706,7 @@
                   </table>
                 </div>
                 <div>
-                  <h4 class="font-bold text-xs mb-1 text-indigo-900">다. 채무자</h4>
+                  <h4 class="font-bold text-xs mb-1 text-indigo-900">다. 채무자[cite: 3]</h4>
                   <table class="doc-table">
                     <tr><th class="w-1/4">상호 (성명)</th><td id="d1-b2-debtor-cname" class="font-bold"></td></tr>
                     <tr><th>법인등록번호</th><td id="d1-b2-debtor-cid"></td></tr>
@@ -718,7 +718,7 @@
 
             <!-- 별첨 3. 신탁보수 -->
             <div class="pt-6">
-              <h3 class="font-bold text-sm mb-2">【별첨 3】 신탁보수</h3>
+              <h3 class="font-bold text-sm mb-2">【별첨 3】 신탁보수[cite: 3]</h3>
               <div class="border border-slate-700 p-4 space-y-3 bg-slate-50 text-[11px]">
                 <div>
                   <strong>1. 담보보수</strong><br>
@@ -726,7 +726,7 @@
                   보수액 : <strong id="d1-b3-fee" class="text-cyan-900 font-bold"></strong> (VAT 별도)
                 </div>
                 <div>
-                  <strong>2. 환가처분보수</strong>
+                  <strong>2. 환가처분보수</strong>[cite: 3]
                   <table class="doc-table mt-1.5">
                     <tr><th>처분가격</th><th>보수율</th></tr>
                     <tr><td>1억원까지</td><td>8/1000</td></tr>
@@ -735,38 +735,38 @@
                     <tr><td>10억원까지</td><td>5/1000</td></tr>
                     <tr><td>10억원초과</td><td>4/1000</td></tr>
                   </table>
-                  <span class="text-[10px] text-slate-500">주) 신탁보수는 기준금액 단계별 보수를 누적 산정한다.</span>
+                  <span class="text-[10px] text-slate-500">주) 신탁보수는 기준금액 단계별 보수를 누적 산정한다.[cite: 3]</span>
                 </div>
               </div>
             </div>
 
             <!-- 별첨 4. 신탁특약 전문 (제1조 ~ 제19조 전체 수록) -->
             <div class="page-break pt-8">
-              <h3 class="font-bold text-sm mb-3">【별첨 4】 신탁특약</h3>
-              <p class="text-[11px] mb-3">부동산담보신탁계약 기본계약 제31조의 규정과 관련하여, 당사자들은 다음과 같이 신탁특약을 정하고 신탁특약을 신탁본문에 우선하여 적용하기로 합의한다.</p>
+              <h3 class="font-bold text-sm mb-3">【별첨 4】 신탁특약[cite: 3]</h3>
+              <p class="text-[11px] mb-3">부동산담보신탁계약 기본계약 제31조의 규정과 관련하여, 당사자들은 다음과 같이 신탁특약을 정하고 신탁특약을 신탁본문에 우선하여 적용하기로 합의한다.[cite: 3]</p>
               
               <div class="space-y-3 text-[11px] leading-relaxed text-slate-800">
-                <p><strong>제1조 (수익자의 범위)</strong> ① 신탁특약에서 수익자라 함은 [별첨 2]의 [나. 수익자] 표에 기재된 사람을 말한다. ② 신탁특약에서 수익자라 함은 우선수익자를 포함하지 아니한다.</p>
-                <p><strong>제2조 (우선수익자의 수익권 등)</strong> 우선수익자는 별첨 2의 우선수익권금액 한도 내에서 피담보채권 상당액을 신탁본문 제22조 제1항의 순위에 따라 우선 변제받을 권리를 가진다.</p>
-                <p><strong>제3조 (우선수익자가 여럿인 경우의 의사결정 등)</strong> 우선수익자로서의 일반적인 의사결정은 최선순위 우선수익자의 의사에 따른다.</p>
-                <p><strong>제4조 (우선수익자 및 수익자의 변경 등)</strong> 우선수익자는 수탁자의 사전 서면 동의 및 통지를 거쳐 지위를 양도하거나 질권을 설정할 수 있다.</p>
-                <p><strong>제5조 (수탁자에 관한 사항)</strong> 수탁자는 채무자의 기한이익 상실 여부 또는 우선수익자의 피담보채권액을 직접 실사할 의무가 없으며, 제출 자료에 기하여 환가·정산 업무를 수행한다.</p>
-                <p><strong>제6조 (추가신탁 및 공동담보)</strong> 신탁재산 전부는 우선수익자의 피담보채권 만족 및 신탁보수·비용 회수를 위하여 공동담보로 제공된 것으로 본다.</p>
-                <p><strong>제7조 (신탁재산 처분 사유 발생시 점유·사용의 제한)</strong> 처분 사유 발생 시 수탁자는 우선수익자와 협의하여 위탁자의 신탁부동산에 대한 점유·사용 권한을 제한할 수 있다.</p>
-                <p><strong>제8조 (위탁자의 신탁재산 처분 등)</strong> 위탁자는 채무 변제를 위해 필요한 경우 수탁자 및 우선수익자의 사전 서면 동의를 얻어 신탁부동산을 처분할 수 있다.</p>
-                <p><strong>제9조 (본 신탁계약 체결 전 체결된 임대차계약의 처리)</strong> 계약 체결 전 기체결된 임대차보증금 반환의무는 위탁자가 전적으로 부담한다.</p>
-                <p><strong>제10조 (공매 및 처분의 세부사항)</strong> 공매 진행 시 온비드(Onbid) 시스템을 이용하여 공매 및 처분을 진행함을 원칙으로 한다.</p>
-                <p><strong>제11조 (신탁종료 등에 관한 사항)</strong> 당사자들은 우선수익자 전원 및 수탁자의 서면 동의가 없는 한 본 신탁계약을 임의 해지할 수 없다.</p>
-                <p><strong>제12조 (소송수행)</strong> 본 신탁계약 또는 신탁재산과 관련한 소송은 위탁자 또는 우선수익자의 책임과 비용으로 수행한다.</p>
-                <p><strong>제13조 (신탁재산에 관한 조세 등)</strong> 수탁자는 고유재산으로 신탁재산 관련 조세를 대납할 의무를 부담하지 아니한다.</p>
-                <p><strong>제14조 (세무, 회계, 법무 등)</strong> 신탁재산과 관련한 제반 세무·회계 신고의무는 위탁자 및 수익자가 부담한다.</p>
-                <p><strong>제15조 (기타 법규의 준수 등)</strong> 위탁자는 본 신탁계약이 신탁법 제8조의 사해신탁에 해당하지 아니함을 보증한다.</p>
-                <p><strong>제16조 (해석의 원칙 및 전속적 관할합의)</strong> 본 신탁계약에 관한 소송은 서울중앙지방법원을 제1심 전속 관할법원으로 합의한다.</p>
-                <p><strong>제17조 (기타 신탁본문에 대한 수정 및 보완)</strong> 본문 규정과 특약 규정이 상충할 시 특약 규정이 우선한다.</p>
+                <p><strong>제1조 (수익자의 범위)</strong> ① 신탁특약에서 수익자라 함은 [별첨 2]의 [나. 수익자] 표에 기재된 사람을 말한다.[cite: 3] ② 신탁특약에서 수익자라 함은 우선수익자를 포함하지 아니한다.[cite: 3]</p>
+                <p><strong>제2조 (우선수익자의 수익권 등)</strong> 우선수익자는 별첨 2의 우선수익권금액 한도 내에서 피담보채권 상당액을 신탁본문 제22조 제1항의 순위에 따라 우선 변제받을 권리를 가진다.[cite: 3]</p>
+                <p><strong>제3조 (우선수익자가 여럿인 경우의 의사결정 등)</strong> 우선수익자로서의 일반적인 의사결정은 최선순위 우선수익자의 의사에 따른다.[cite: 3]</p>
+                <p><strong>제4조 (우선수익자 및 수익자의 변경 등)</strong> 우선수익자는 수탁자의 사전 서면 동의 및 통지를 거쳐 지위를 양도하거나 질권을 설정할 수 있다.[cite: 3]</p>
+                <p><strong>제5조 (수탁자에 관한 사항)</strong> 수탁자는 채무자의 기한이익 상실 여부 또는 우선수익자의 피담보채권액을 직접 실사할 의무가 없으며, 제출 자료에 기하여 환가·정산 업무를 수행한다.[cite: 3]</p>
+                <p><strong>제6조 (추가신탁 및 공동담보)</strong> 신탁재산 전부는 우선수익자의 피담보채권 만족 및 신탁보수·비용 회수를 위하여 공동담보로 제공된 것으로 본다.[cite: 3]</p>
+                <p><strong>제7조 (신탁재산 처분 사유 발생시 점유·사용의 제한)</strong> 처분 사유 발생 시 수탁자는 우선수익자와 협의하여 위탁자의 신탁부동산에 대한 점유·사용 권한을 제한할 수 있다.[cite: 3]</p>
+                <p><strong>제8조 (위탁자의 신탁재산 처분 등)</strong> 위탁자는 채무 변제를 위해 필요한 경우 수탁자 및 우선수익자의 사전 서면 동의를 얻어 신탁부동산을 처분할 수 있다.[cite: 3]</p>
+                <p><strong>제9조 (본 신탁계약 체결 전 체결된 임대차계약의 처리)</strong> 계약 체결 전 기체결된 임대차보증금 반환의무는 위탁자가 전적으로 부담한다.[cite: 3]</p>
+                <p><strong>제10조 (공매 및 처분의 세부사항)</strong> 공매 진행 시 온비드(Onbid) 시스템을 이용하여 공매 및 처분을 진행함을 원칙으로 한다.[cite: 3]</p>
+                <p><strong>제11조 (신탁종료 등에 관한 사항)</strong> 당사자들은 우선수익자 전원 및 수탁자의 서면 동의가 없는 한 본 신탁계약을 임의 해지할 수 없다.[cite: 3]</p>
+                <p><strong>제12조 (소송수행)</strong> 본 신탁계약 또는 신탁재산과 관련한 소송은 위탁자 또는 우선수익자의 책임과 비용으로 수행한다.[cite: 3]</p>
+                <p><strong>제13조 (신탁재산에 관한 조세 등)</strong> 수탁자는 고유재산으로 신탁재산 관련 조세를 대납할 의무를 부담하지 아니한다.[cite: 3]</p>
+                <p><strong>제14조 (세무, 회계, 법무 등)</strong> 신탁재산과 관련한 제반 세무·회계 신고의무는 위탁자 및 수익자가 부담한다.[cite: 3]</p>
+                <p><strong>제15조 (기타 법규의 준수 등)</strong> 위탁자는 본 신탁계약이 신탁법 제8조의 사해신탁에 해당하지 아니함을 보증한다.[cite: 3]</p>
+                <p><strong>제16조 (해석의 원칙 및 전속적 관할합의)</strong> 본 신탁계약에 관한 소송은 서울중앙지방법원을 제1심 전속 관할법원으로 합의한다.[cite: 3]</p>
+                <p><strong>제17조 (기타 신탁본문에 대한 수정 및 보완)</strong> 본문 규정과 특약 규정이 상충할 시 특약 규정이 우선한다.[cite: 3]</p>
                 <p class="p-2.5 bg-amber-50 border border-amber-300 rounded font-semibold text-amber-950">
-                  <strong>제18조 (신탁보수)</strong> 신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 1순위 우선수익자인 <strong id="d1-b4-special-beneficiary" class="underline text-amber-900 font-bold"></strong>가 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 <strong id="d1-b4-special-beneficiary-tax" class="underline text-amber-900 font-bold"></strong>에게 (세금)계산서를 발급하기로 한다.
+                  <strong>제18조 (신탁보수)</strong> 신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 1순위 우선수익자인 <strong id="d1-b4-special-beneficiary" class="underline text-amber-900 font-bold"></strong>가 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 <strong id="d1-b4-special-beneficiary-tax" class="underline text-amber-900 font-bold"></strong>에게 (세금)계산서를 발급하기로 한다.[cite: 3]
                 </p>
-                <p><strong>제19조 (신탁기간)</strong> 본 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 우선수익자 채권변제시까지로 하며, 채무가 전액 변제되지 않은 경우 신탁계약은 종료하지 아니한다.</p>
+                <p><strong>제19조 (신탁기간)</strong> 본 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 우선수익자 채권변제시까지로 하며, 채무가 전액 변제되지 않은 경우 신탁계약은 종료하지 아니한다.[cite: 3]</p>
               </div>
             </div>
 
@@ -779,95 +779,95 @@
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
                 <span class="text-[11px] text-slate-500 block">별지1.</span>
-                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [개인ᆞ개인사업자 用]</h1>
+                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [개인ᆞ개인사업자 用][cite: 4]</h1>
               </div>
               <table class="border border-slate-700 text-center text-[10px] w-28">
-                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자[cite: 4]</td><td class="border border-slate-700 py-0.5">부서장[cite: 4]</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
             </div>
 
             <p class="text-[10px] text-slate-600 leading-tight">
-              「특정 금융거래정보의 보고 및 이용 등에 관한 법률」 제5조의2에 따라 고객님께서 회사와 거래 시에는 고객확인 및 검증을 위하여 아래의 내용을 기재하셔야 하며, 제공하신 정보는 동법에서 정한 용도 외의 목적으로 사용되지 않습니다.
+              「특정 금융거래정보의 보고 및 이용 등에 관한 법률」 제5조의2에 따라 고객님께서 회사와 거래 시에는 고객확인 및 검증을 위하여 아래의 내용을 기재하셔야 하며, 제공하신 정보는 동법에서 정한 용도 외의 목적으로 사용되지 않습니다.[cite: 4]
             </p>
 
             <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1">
-              <span>▶ 고객 기본정보</span>
-              <span>고객구분(체크): ▣ 개인 &nbsp;&nbsp; □ 개인사업자</span>
+              <span>▶ 고객 기본정보</span>[cite: 4]
+              <span>고객구분(체크): ▣ 개인 &nbsp;&nbsp; □ 개인사업자</span>[cite: 4]
             </div>
 
             <table class="doc-table">
               <tr>
-                <th class="w-1/6">성명</th>
-                <td class="w-1/3">한글: <strong id="d2-1-name"></strong><br><span class="text-[10px] text-slate-400">영문: (외국인 필수)</span></td>
-                <th class="w-1/6">주민번호 등<br><span class="text-[10px] font-normal">(앞자리7자리)</span></th>
+                <th class="w-1/6">성명</th>[cite: 4]
+                <td class="w-1/3">한글: <strong id="d2-1-name"></strong><br><span class="text-[10px] text-slate-400">영문: (외국인 필수)</span>[cite: 4]</td>
+                <th class="w-1/6">주민번호 등<br><span class="text-[10px] font-normal">(앞자리7자리)</span></th>[cite: 4]
                 <td id="d2-1-id"></td>
               </tr>
               <tr>
-                <th>자택/직장 구분</th>
-                <td>▣ 자택 &nbsp;&nbsp; □ 직장</td>
-                <th>연락처</th>
+                <th>자택/직장 구분</th>[cite: 4]
+                <td>▣ 자택 &nbsp;&nbsp; □ 직장</td>[cite: 4]
+                <th>연락처</th>[cite: 4]
                 <td>TEL: &nbsp;&nbsp;&nbsp;&nbsp; Mobile: 010-****-****</td>
               </tr>
               <tr>
-                <th>주소</th>
+                <th>주소</th>[cite: 4]
                 <td colspan="3" id="d2-1-addr"></td>
               </tr>
               <tr>
-                <th>외국인정보</th>
-                <td>국적: &nbsp;&nbsp;&nbsp;&nbsp; 생년월일:</td>
-                <th>성별</th>
-                <td>□ 남 &nbsp;&nbsp; □ 여</td>
+                <th>외국인정보</th>[cite: 4]
+                <td>국적: &nbsp;&nbsp;&nbsp;&nbsp; 생년월일:</td>[cite: 4]
+                <th>성별</th>[cite: 4]
+                <td>□ 남 &nbsp;&nbsp; □ 여</td>[cite: 4]
               </tr>
               <tr>
-                <th>직업구분</th>
-                <td colspan="3">□ 급여소득자 &nbsp;&nbsp; ▣ 개인사업자 &nbsp;&nbsp; □ 전문직 &nbsp;&nbsp; □ 주부 &nbsp;&nbsp; □ 학생 &nbsp;&nbsp; □ 기타</td>
+                <th>직업구분</th>[cite: 4]
+                <td colspan="3">□ 급여소득자 &nbsp;&nbsp; ▣ 개인사업자 &nbsp;&nbsp; □ 전문직 &nbsp;&nbsp; □ 주부 &nbsp;&nbsp; □ 학생 &nbsp;&nbsp; □ 기타</td>[cite: 4]
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 직장/사업 정보 (EDD 대상)</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 직장/사업 정보 (EDD 대상)</div>[cite: 4]
             <table class="doc-table">
               <tr>
-                <th class="w-1/6">직장명</th>
+                <th class="w-1/6">직장명</th>[cite: 4]
                 <td class="w-1/3"></td>
-                <th class="w-1/6">업종</th>
+                <th class="w-1/6">업종</th>[cite: 4]
                 <td></td>
               </tr>
               <tr>
-                <th>상호명(사업체)</th>
+                <th>상호명(사업체)</th>[cite: 4]
                 <td></td>
-                <th>사업자등록번호</th>
+                <th>사업자등록번호</th>[cite: 4]
                 <td></td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>[cite: 4]
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">거래 목적</th>
-                <td>□ 토지신탁 &nbsp;&nbsp; ▣ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td>
+                <th class="w-1/4">거래 목적</th>[cite: 4]
+                <td>□ 토지신탁 &nbsp;&nbsp; ▣ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td>[cite: 4]
               </tr>
               <tr>
-                <th>자금의 원천 및 출처</th>
-                <td>▣ 사업소득 &nbsp;&nbsp; □ 부동산임대소득 &nbsp;&nbsp; □ 금융소득 &nbsp;&nbsp; □ 기타</td>
+                <th>자금의 원천 및 출처</th>[cite: 4]
+                <td>▣ 사업소득 &nbsp;&nbsp; □ 부동산임대소득 &nbsp;&nbsp; □ 금융소득 &nbsp;&nbsp; □ 기타</td>[cite: 4]
               </tr>
               <tr>
-                <th>거래 자금의 실소유자 여부</th>
-                <td>▣ 예 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; □ 아니오</td>
+                <th>거래 자금의 실소유자 여부</th>[cite: 4]
+                <td>▣ 예 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; □ 아니오</td>[cite: 4]
               </tr>
               <tr>
-                <th>총 자산규모</th>
-                <td>□ 5억원 미만 &nbsp;&nbsp; □ 10억원 미만 &nbsp;&nbsp; ▣ 20억원 이상</td>
+                <th>총 자산규모</th>[cite: 4]
+                <td>□ 5억원 미만 &nbsp;&nbsp; □ 10억원 미만 &nbsp;&nbsp; ▣ 20억원 이상</td>[cite: 4]
               </tr>
             </table>
 
             <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-4">
-              본 거래의 당사자인 (<strong id="d2-1-confirm-name"></strong>)은 상기 거래와 관련한 내용을 (<strong>충분히 이해하였음</strong>)을 확인합니다.
+              본 거래의 당사자인 (<strong id="d2-1-confirm-name"></strong>)은 상기 거래와 관련한 내용을 (<strong>충분히 이해하였음</strong>)을 확인합니다.[cite: 4]
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
               <p class="font-bold text-slate-900" id="d2-1-date"></p>
-              <p>[본인 작성 시] &nbsp;&nbsp; 성명 : <strong id="d2-1-sig-name" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
+              <p>[본인 작성 시] &nbsp;&nbsp; 성명 : <strong id="d2-1-sig-name" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>[cite: 4]
             </div>
           </div>
 
@@ -877,76 +877,76 @@
           <div id="doc-view-2-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block">별지1.</span>
-                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지1.</span>[cite: 4]
+                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1>[cite: 4]
               </div>
               <table class="border border-slate-700 text-center text-[10px] w-28">
-                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자[cite: 4]</td><td class="border border-slate-700 py-0.5">부서장[cite: 4]</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
             </div>
 
             <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1">
               <span>▶ 고객 기본정보 (위탁자 법인용)</span>
-              <span>고객구분(체크): ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span>
+              <span>고객구분(체크): ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span>[cite: 4]
             </div>
 
             <table class="doc-table">
               <tr>
-                <th class="w-1/5">법인(단체)명</th>
-                <td class="w-1/3">한글: <strong id="d2-2-name"></strong></td>
-                <th class="w-1/5">사업자번호 등 실명번호</th>
+                <th class="w-1/5">법인(단체)명</th>[cite: 4]
+                <td class="w-1/3">한글: <strong id="d2-2-name"></strong></td>[cite: 4]
+                <th class="w-1/5">사업자번호 등 실명번호</th>[cite: 4]
                 <td id="d2-2-bizno"></td>
               </tr>
               <tr>
-                <th>본점 주소</th>
+                <th>본점 주소</th>[cite: 4]
                 <td colspan="3" id="d2-2-addr"></td>
               </tr>
               <tr>
-                <th>사업장 주소</th>
+                <th>사업장 주소</th>[cite: 4]
                 <td colspan="3" id="d2-2-baddr"></td>
               </tr>
               <tr>
-                <th>업종 (업태/종목)</th>
+                <th>업종 (업태/종목)</th>[cite: 4]
                 <td colspan="3" id="d2-2-biztype"></td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>[cite: 4]
             <table class="doc-table">
               <tr>
-                <th class="w-1/5">대표자 성명</th>
+                <th class="w-1/5">대표자 성명</th>[cite: 4]
                 <td class="w-1/3"><strong id="d2-2-rep"></strong></td>
-                <th class="w-1/5">생년월일</th>
+                <th class="w-1/5">생년월일</th>[cite: 4]
                 <td id="d2-2-rep-birth"></td>
               </tr>
               <tr>
-                <th>국적</th>
-                <td>대한민국</td>
-                <th>성별</th>
+                <th>국적</th>[cite: 4]
+                <td>대한민국</td>[cite: 4]
+                <th>성별</th>[cite: 4]
                 <td>-</td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>[cite: 4]
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">거래 목적</th>
-                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td>
+                <th class="w-1/4">거래 목적</th>[cite: 4]
+                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td>[cite: 4]
               </tr>
               <tr>
-                <th>거래 자금의 원천 및 출처</th>
-                <td>■ 운영자금 &nbsp;&nbsp; □ 차입금 &nbsp;&nbsp; □ 유형자산처분 &nbsp;&nbsp; □ 기타</td>
+                <th>거래 자금의 원천 및 출처</th>[cite: 4]
+                <td>■ 운영자금 &nbsp;&nbsp; □ 차입금 &nbsp;&nbsp; □ 유형자산처분 &nbsp;&nbsp; □ 기타</td>[cite: 4]
               </tr>
             </table>
 
             <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-4">
-              상기 기재한 내용이 사실과 일치하며, 고객확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.
+              상기 기재한 내용이 사실과 일치하며, 고객확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.[cite: 4]
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
               <p class="font-bold text-slate-900" id="d2-2-date"></p>
-              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-2-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
+              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-2-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>[cite: 4]
             </div>
           </div>
 
@@ -956,74 +956,74 @@
           <div id="doc-view-2-3" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block">별지1.</span>
-                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지1.</span>[cite: 4]
+                <h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1>[cite: 4]
               </div>
               <table class="border border-slate-700 text-center text-[10px] w-28">
-                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자[cite: 4]</td><td class="border border-slate-700 py-0.5">부서장[cite: 4]</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
             </div>
 
             <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1">
               <span>▶ 고객 기본정보 (1순위 우선수익자 - 금융기관)</span>
-              <span>고객구분: ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span>
+              <span>고객구분: ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span>[cite: 4]
             </div>
 
             <table class="doc-table">
               <tr>
-                <th class="w-1/5">법인(단체)명</th>
+                <th class="w-1/5">법인(단체)명</th>[cite: 4]
                 <td class="w-1/3">한글: <strong id="d2-3-name"></strong></td>
-                <th class="w-1/5">사업자번호 등 실명번호</th>
+                <th class="w-1/5">사업자번호 등 실명번호</th>[cite: 4]
                 <td id="d2-3-bizno"></td>
               </tr>
               <tr>
-                <th>본점 주소</th>
+                <th>본점 주소</th>[cite: 4]
                 <td colspan="3" id="d2-3-addr"></td>
               </tr>
               <tr>
-                <th>업종 (업태/종목)</th>
-                <td>금융업</td>
-                <th>설립목적</th>
-                <td>대금업</td>
+                <th>업종 (업태/종목)</th>[cite: 4]
+                <td>금융업</td>[cite: 4]
+                <th>설립목적</th>[cite: 4]
+                <td>대금업</td>[cite: 4]
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>[cite: 4]
             <table class="doc-table">
               <tr>
-                <th class="w-1/5">대표자 성명</th>
+                <th class="w-1/5">대표자 성명</th>[cite: 4]
                 <td class="w-1/3"><strong id="d2-3-rep"></strong></td>
-                <th class="w-1/5">생년월일</th>
+                <th class="w-1/5">생년월일</th>[cite: 4]
                 <td>-</td>
               </tr>
               <tr>
-                <th>국적</th>
-                <td>대한민국</td>
-                <th>성별</th>
+                <th>국적</th>[cite: 4]
+                <td>대한민국</td>[cite: 4]
+                <th>성별</th>[cite: 4]
                 <td>-</td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>[cite: 4]
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">거래 목적</th>
-                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 (우선수익권 담보취득) &nbsp;&nbsp; □ 기타</td>
+                <th class="w-1/4">거래 목적</th>[cite: 4]
+                <td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 (우선수익권 담보취득) &nbsp;&nbsp; □ 기타</td>[cite: 4]
               </tr>
               <tr>
-                <th>거래 자금의 출처</th>
+                <th>거래 자금의 출처</th>[cite: 4]
                 <td>■ 금융자금 (대출채권 피담보채권 확보)</td>
               </tr>
             </table>
 
             <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-4">
-              상기 기재한 내용이 사실과 일치하며, 고객확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.
+              상기 기재한 내용이 사실과 일치하며, 고객확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.[cite: 4]
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
               <p class="font-bold text-slate-900" id="d2-3-date"></p>
-              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-3-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
+              <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-3-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>[cite: 4]
             </div>
           </div>
 
@@ -1033,108 +1033,108 @@
           <div id="doc-view-3-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block">별지2.</span>
-                <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지2.</span>[cite: 1]
+                <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>[cite: 1]
               </div>
               <table class="border border-slate-700 text-center text-[10px] w-28">
-                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자[cite: 1]</td><td class="border border-slate-700 py-0.5">부서장[cite: 1]</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
             </div>
 
             <p class="text-[10px] text-slate-600 leading-tight">
-              「특정 금융거래정보의 보고 및 이용 등에 관한 법률 시행령」 제10조의5에 따라 고객님께서 회사와 거래 시에는 실제소유자 확인을 위하여 아래의 내용을 기재하셔야 합니다.
+              「특정 금융거래정보의 보고 및 이용 등에 관한 법률 시행령」 제10조의5에 따라 고객님께서 회사와 거래 시에는 실제소유자 확인을 위하여 아래의 내용을 기재하셔야 합니다.[cite: 1]
             </p>
 
             <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 기본 정보 (위탁자 법인)</div>
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">법인(단체)명</th>
+                <th class="w-1/4">법인(단체)명</th>[cite: 1]
                 <td class="w-1/4"><strong id="d3-1-name"></strong></td>
-                <th class="w-1/4">사업자번호 등 실명번호</th>
+                <th class="w-1/4">사업자번호 등 실명번호</th>[cite: 1]
                 <td class="w-1/4" id="d3-1-bizno"></td>
               </tr>
               <tr>
-                <th>실제소유자 확인 생략 여부</th>
+                <th>실제소유자 확인 생략 여부</th>[cite: 1]
                 <td colspan="3">
-                  □ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 □ 금융회사등 □ 사업보고서 제출대상)<br>
-                  <strong>■ 미대상</strong> (자본시장법 제159조 제출대상 외 일반영리법인)
+                  □ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 □ 금융회사등 □ 사업보고서 제출대상)[cite: 1]<br>
+                  <strong>■ 미대상</strong> (자본시장법 제159조 제출대상 외 일반영리법인)[cite: 1]
                 </td>
               </tr>
             </table>
 
             <div class="text-[11px] font-bold text-slate-900 pt-1">
               ▶ 실제소유자 확인 정보<br>
-              <span class="text-[10px] font-normal text-slate-600">※ 주주명부 등 지분율 확인서류를 근거로, 다음 3단계 순서에 따라 실제소유자(자연人)을 확인하여 주시기 바랍니다.</span>
+              <span class="text-[10px] font-normal text-slate-600">※ 주주명부 등 지분율 확인서류를 근거로, 다음 3단계 순서에 따라 실제소유자(자연人)을 확인하여 주시기 바랍니다.</span>[cite: 1]
             </div>
 
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">실제소유자 확인 방법</th>
-                <td colspan="2">■ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약 &nbsp;&nbsp; □ 주식등 변동상황 명세서</td>
+                <th class="w-1/4">실제소유자 확인 방법</th>[cite: 1]
+                <td colspan="2">■ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약 &nbsp;&nbsp; □ 주식등 변동상황 명세서</td>[cite: 1]
               </tr>
               <tr>
-                <th rowspan="3">실제소유자 구분</th>
+                <th rowspan="3">실제소유자 구분</th>[cite: 1]
                 <td colspan="2">
-                  <strong>[1단계]</strong><br>
-                  1-① 25%이상의 지분을 소유한 자가 있으며, 확인서류 등으로 그 사실이 확인됩니까?<br>
-                  <strong>■ 예</strong> (“예”를 체크한 경우 “실제소유자 정보” 작성) &nbsp;&nbsp; □ 아니오
+                  <strong>[1단계]</strong><br>[cite: 1]
+                  1-① 25%이상의 지분을 소유한 자가 있으며, 확인서류 등으로 그 사실이 확인됩니까?<br>[cite: 1]
+                  <strong>■ 예</strong> (“예”를 체크한 경우 “실제소유자 정보” 작성) &nbsp;&nbsp; □ 아니오[cite: 1]
                 </td>
               </tr>
               <tr>
                 <td colspan="2">
-                  <strong>[2단계]</strong> (위의 1단계에서 확인할 수 없는 사유 : 25%이상 지분 소유자는 법인만 존재)<br>
-                  2-① 최대 지분을 소유한 자가 있습니까? □ 예 □ 아니오<br>
-                  2-② 대표자, 임원 과반수 선임 주주가 있습니까? □ 예 □ 아니오
+                  <strong>[2단계]</strong> (위의 1단계에서 확인할 수 없는 사유 : 25%이상 지분 소유자는 법인만 존재)<br>[cite: 1]
+                  2-① 최대 지분을 소유한 자가 있습니까? □ 예 □ 아니오[cite: 1]<br>
+                  2-② 대표자, 임원 과반수 선임 주주가 있습니까? □ 예 □ 아니오[cite: 1]
                 </td>
               </tr>
               <tr>
                 <td colspan="2">
-                  <strong>[3단계]</strong><br>
-                  3-① 해당 법인 또는 단체에 선임된 대표이사가 있습니까? □ 예 □ 아니오
+                  <strong>[3단계]</strong><br>[cite: 1]
+                  3-① 해당 법인 또는 단체에 선임된 대표이사가 있습니까? □ 예 □ 아니오[cite: 1]
                 </td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (자연인)</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (자연인)</div>[cite: 1]
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">성명</th>
+                <th class="w-1/4">성명</th>[cite: 1]
                 <td class="w-1/4"><strong id="d3-1-owner-name"></strong></td>
-                <th class="w-1/4">국적</th>
-                <td class="w-1/4">대한민국</td>
+                <th class="w-1/4">국적</th>[cite: 1]
+                <td class="w-1/4">대한민국</td>[cite: 1]
               </tr>
               <tr>
-                <th>생년월일</th>
+                <th>생년월일</th>[cite: 1]
                 <td id="d3-1-owner-birth">-</td>
-                <th>지분율(%)</th>
+                <th>지분율(%)</th>[cite: 1]
                 <td><strong id="d3-1-owner-share">100%</strong></td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>[cite: 1]
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">성명</th>
+                <th class="w-1/4">성명</th>[cite: 1]
                 <td class="w-1/4" id="d3-1-author-name"></td>
-                <th class="w-1/4">소속 부서명</th>
+                <th class="w-1/4">소속 부서명</th>[cite: 1]
                 <td class="w-1/4"></td>
               </tr>
               <tr>
-                <th>소속 회사명</th>
+                <th>소속 회사명</th>[cite: 1]
                 <td id="d3-1-author-comp"></td>
-                <th>직위/직책</th>
-                <td>대표이사</td>
+                <th>직위/직책</th>[cite: 1]
+                <td>대표이사</td>[cite: 1]
               </tr>
             </table>
 
             <div class="bg-slate-50 p-2.5 border border-slate-300 rounded text-[11px] mt-3">
-              상기 기재한 내용이 사실과 일치하며, 실제소유자확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.
+              상기 기재한 내용이 사실과 일치하며, 실제소유자확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.[cite: 1]
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
               <p class="font-bold text-slate-900" id="d3-1-date"></p>
-              <p>작성자 : &nbsp;&nbsp; <strong id="d3-1-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
+              <p>작성자 : &nbsp;&nbsp; <strong id="d3-1-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>[cite: 1]
             </div>
           </div>
 
@@ -1144,90 +1144,90 @@
           <div id="doc-view-3-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
             <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
               <div>
-                <span class="text-[11px] text-slate-500 block">별지2.</span>
-                <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
+                <span class="text-[11px] text-slate-500 block">별지2.</span>[cite: 1]
+                <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>[cite: 1]
               </div>
               <table class="border border-slate-700 text-center text-[10px] w-28">
-                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+                <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자[cite: 1]</td><td class="border border-slate-700 py-0.5">부서장[cite: 1]</td></tr>
                 <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
               </table>
             </div>
 
             <p class="text-[10px] text-slate-600 leading-tight">
-              「특정 금융거래정보의 보고 및 이용 등에 관한 법률 시행령」 제10조의5에 따라 고객님께서 회사와 거래 시에는 실제소유자 확인을 위하여 아래의 내용을 기재하셔야 합니다.
+              「특정 금융거래정보의 보고 및 이용 등에 관한 법률 시행령」 제10조의5에 따라 고객님께서 회사와 거래 시에는 실제소유자 확인을 위하여 아래의 내용을 기재하셔야 합니다.[cite: 1]
             </p>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 기본 정보</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 기본 정보</div>[cite: 1]
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">법인(단체)명</th>
+                <th class="w-1/4">법인(단체)명</th>[cite: 1]
                 <td class="w-1/4"><strong id="d3-2-name"></strong></td>
-                <th class="w-1/4">사업자번호 등 실명번호</th>
+                <th class="w-1/4">사업자번호 등 실명번호</th>[cite: 1]
                 <td class="w-1/4" id="d3-2-bizno"></td>
               </tr>
               <tr>
-                <th>실제소유자 확인 생략 여부</th>
+                <th>실제소유자 확인 생략 여부</th>[cite: 1]
                 <td colspan="3">
-                  <strong>■ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 ■ 금융회사등 □ 사업보고서 제출대상*)</strong><br>
-                  □ 미대상 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 자본시장법 제159조 제출대상법인
+                  <strong>■ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 ■ 금융회사등 □ 사업보고서 제출대상*)</strong><br>[cite: 1]
+                  □ 미대상 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 자본시장법 제159조 제출대상법인[cite: 1]
                 </td>
               </tr>
             </table>
 
             <div class="text-[11px] font-bold text-slate-900 pt-1">
-              ▶ 실제소유자 확인 정보 (금융기관 생략 대상)
+              ▶ 실제소유자 확인 정보 (금융기관 생략 대상)[cite: 1]
             </div>
 
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">실제소유자 확인 방법</th>
-                <td colspan="2">□ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약 &nbsp;&nbsp; □ 기타</td>
+                <th class="w-1/4">실제소유자 확인 방법</th>[cite: 1]
+                <td colspan="2">□ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약 &nbsp;&nbsp; □ 기타</td>[cite: 1]
               </tr>
               <tr>
-                <th>[1단계 ~ 3단계]</th>
+                <th>[1단계 ~ 3단계]</th>[cite: 1]
                 <td colspan="2" class="text-slate-500 py-2">
                   ※ 특정금융정보법 시행령 제10조의5에 따른 금융회사등 확인 생략 대상 법인으로 세부 단계 판정 생략
                 </td>
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (확인 생략 대상 - 공란 처리)</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (확인 생략 대상 - 공란 처리)</div>[cite: 1]
             <table class="doc-table bg-slate-50 text-slate-400">
               <tr>
-                <th class="w-1/4">성명</th>
-                <td class="w-1/4">- (생략) -</td>
-                <th class="w-1/4">국적</th>
+                <th class="w-1/4">성명</th>[cite: 1]
+                <td class="w-1/4">- (생략) -</td>[cite: 1]
+                <th class="w-1/4">국적</th>[cite: 1]
                 <td class="w-1/4">-</td>
               </tr>
               <tr>
-                <th>생년월일</th>
+                <th>생년월일</th>[cite: 1]
                 <td>-</td>
-                <th>지분율(%)</th>
-                <td>(1단계, 2-①인 경우 필수 기재)</td>
+                <th>지분율(%)</th>[cite: 1]
+                <td>(1단계, 2-①인 경우 필수 기재)</td>[cite: 1]
               </tr>
             </table>
 
-            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
+            <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>[cite: 1]
             <table class="doc-table">
               <tr>
-                <th class="w-1/4">성명</th>
+                <th class="w-1/4">성명</th>[cite: 1]
                 <td class="w-1/4" id="d3-2-author-name"></td>
                 <th class="w-1/4">소속 기관명</th>
                 <td class="w-1/4" id="d3-2-author-comp"></td>
               </tr>
               <tr>
-                <th>직위/직책</th>
-                <td colspan="3">대표자</td>
+                <th>직위/직책</th>[cite: 1]
+                <td colspan="3">대표자</td>[cite: 1]
               </tr>
             </table>
 
             <div class="bg-slate-50 p-2.5 border border-slate-300 rounded text-[11px] mt-3">
-              상기 기재한 내용이 사실과 일치하며, 실제소유자확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.
+              상기 기재한 내용이 사실과 일치하며, 실제소유자확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.[cite: 1]
             </div>
 
             <div class="text-right pt-6 text-[12px] space-y-2">
               <p class="font-bold text-slate-900" id="d3-2-date"></p>
-              <p>작성자 : &nbsp;&nbsp; <strong id="d3-2-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
+              <p>작성자 : &nbsp;&nbsp; <strong id="d3-2-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>[cite: 1]
             </div>
           </div>
 
@@ -1235,14 +1235,14 @@
       </div>
     </section>
 
-    <!-- TAB 5: SETTINGS & ADMIN -->
+    <!-- TAB 5: SETTINGS & ADMIN (중앙 구글 시트 웹앱 URL 연동 추가) -->
     <section id="tab-settings" class="tab-content hidden space-y-6">
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-sliders text-purple-400"></i> 관리자 설정 &amp; Gemini API Key 관리
+            <i class="fa-solid fa-sliders text-purple-400"></i> 관리자 설정 &amp; 중앙 클라우드 DB 연동
           </h2>
-          <p class="text-xs text-slate-400 mt-1">입력된 API Key는 브라우저 로컬 스토리지에 영구 보존되어 새로고침 후에도 유지됩니다.</p>
+          <p class="text-xs text-slate-400 mt-1">Google AI Studio API Key와 Google 스프레드시트 웹 앱 URL을 관리합니다.</p>
         </div>
         <button onclick="lockAdminSettings()" class="bg-slate-900 text-amber-400 text-xs border border-amber-500/30 px-3.5 py-2 rounded-xl">
           <i class="fa-solid fa-lock mr-1"></i>로그아웃
@@ -1250,24 +1250,47 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Google Apps Script Web App URL 설정 -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-key text-purple-400 mr-1.5"></i>Google AI Studio API Key (영구 보존)</h3>
-          <input type="password" id="gemini-api-key" placeholder="Google AI Studio에서 발급받은 API Key를 입력하세요" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-cloud text-cyan-400"></i> Google 스프레드시트 웹 앱 URL (클라우드 DB)
+          </h3>
+          <p class="text-xs text-slate-400">Google Apps Script 배포 시 발급받은 웹 앱 실행 URL을 입력하세요.</p>
+          <input type="text" id="gscript-webapp-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
           <div class="flex gap-2">
-            <button onclick="saveAdminApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
+            <button onclick="saveCloudAppUrl()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
+              URL 저장 및 연동
+            </button>
+            <button onclick="syncFromCloudDB()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs px-4 py-2 rounded-lg border border-cyan-500/30">
+              클라우드 데이터 즉시 동기화
+            </button>
+          </div>
+        </div>
+
+        <!-- Gemini API Key 설정 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-key text-purple-400"></i> Google AI Studio API Key (영구 보존)
+          </h3>
+          <p class="text-xs text-slate-400">Gemini 3.8 Flash OCR에 사용되는 개인 인증키입니다.</p>
+          <input type="password" id="gemini-api-key" placeholder="Google AI Studio API Key 입력" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
+          <div class="flex gap-2">
+            <button onclick="saveAdminApiKey()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
               <i class="fa-solid fa-floppy-disk mr-1"></i>Key 저장 및 적용
             </button>
-            <button onclick="testGoogleAPIConnection()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs px-4 py-2 rounded-lg border border-cyan-500/30">
+            <button onclick="testGoogleAPIConnection()" class="bg-slate-800 hover:bg-slate-700 text-purple-300 text-xs px-4 py-2 rounded-lg border border-purple-500/30">
               연결 테스트
             </button>
           </div>
-          <p class="text-[11px] text-emerald-400 mt-1">※ 입력 즉시 자동 저장되어 브라우저 새로고침 시에도 풀리지 않습니다.</p>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <!-- 관리자 비밀번호 변경 -->
+        <div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
           <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-user-lock text-amber-400 mr-1.5"></i>관리자 비밀번호 변경</h3>
-          <input type="password" id="new-admin-pw" placeholder="새 비밀번호" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none">
-          <input type="password" id="confirm-admin-pw" placeholder="새 비밀번호 확인" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input type="password" id="new-admin-pw" placeholder="새 비밀번호" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none">
+            <input type="password" id="confirm-admin-pw" placeholder="새 비밀번호 확인" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none">
+          </div>
           <button onclick="changeAdminPassword()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2 rounded-lg">변경 적용</button>
         </div>
       </div>
@@ -1330,124 +1353,142 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script>
-    const FAILOVER_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3-flash"];
-
-    // Clean neutral seed vendor database (No sample hardcoded person/jeonju properties)
-    const DEFAULT_SEED_VENDORS = [
-      {
-        id: "VND-2026-001",
-        companyName: "(주)한국개발신탁파트너스",
-        representative: "홍길동",
-        corpRegNo: "110111-1234567",
-        bizNo: "123-81-45678",
-        address: "서울특별시 강남구 테헤란로 100",
-        bizType: "부동산업 / 신탁 및 자산관리",
-        source: "기본 마스터"
-      },
-      {
-        id: "VND-2026-002",
-        companyName: "(주)대한종합건설",
-        representative: "김철수",
-        corpRegNo: "110111-2345678",
-        bizNo: "214-82-65432",
-        address: "서울특별시 서초구 서초대로 200",
-        bizType: "건설업 / 토목건축",
-        source: "기본 마스터"
-      },
-      {
-        id: "VND-2026-003",
-        companyName: "(주)우리금융은행",
-        representative: "이대표",
-        corpRegNo: "110111-3456789",
-        bizNo: "101-81-99887",
-        address: "서울특별시 중구 소공로 51",
-        bizType: "금융업 / 은행",
-        source: "기본 마스터"
-      },
-      {
-        id: "VND-2026-004",
-        companyName: "이신탁 (개인)",
-        representative: "이신탁",
-        corpRegNo: "750101-1******",
-        bizNo: "N/A",
-        address: "서울특별시 송파구 올림픽로 88",
-        bizType: "개인 (부동산 소유자)",
-        source: "기본 마스터"
-      },
-      {
-        id: "VND-2026-005",
-        companyName: "(주)하나금융투자",
-        representative: "박금융",
-        corpRegNo: "110111-4567890",
-        bizNo: "116-81-33221",
-        address: "서울특별시 영등포구 여의대로 66",
-        bizType: "금융업 / 투자금융",
-        source: "기본 마스터"
-      }
-    ];
-
-    let vendorDatabase = [];
-    let isAdminAuthenticated = false;
-    let currentUploadedFile = null;
-    let cachedFileBase64 = null;
-    let cachedMimeType = null;
-
-    let selectedTrustorId = "VND-2026-001";
-    let selectedDebtorId = "VND-2026-002";
-    let selectedBeneficiaryId = "VND-2026-003";
-    let isDebtorSameAsTrustor = false;
-
-    let currentDocSubTab = "doc1";
-
-    // API Key Storage Helper
-    function getStoredApiKey() {
-      return (localStorage.getItem('gemini_ocr_api_key') || '').trim();
+    // ==========================================
+    // CLOUD DATABASE & APPLICATION CONTROLLER
+    // ==========================================
+    function getCloudWebAppUrl() {
+      return (localStorage.getItem('gscript_webapp_url') || '').trim();
     }
 
-    function loadPersistentVendorDatabase() {
-      const saved = localStorage.getItem('trust_vendor_db');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            vendorDatabase = parsed;
+    function saveCloudAppUrl() {
+      const url = document.getElementById('gscript-webapp-url').value.trim();
+      if (!url) {
+        showToast('웹 앱 URL을 입력해 주세요.', 'warning');
+        return;
+      }
+      localStorage.setItem('gscript_webapp_url', url);
+      showToast('구글 시트 연동 URL이 저장되었습니다!', 'success');
+      syncFromCloudDB();
+    }
+
+    // Google Apps Script Cloud Sync Engine
+    async function syncFromCloudDB() {
+      const cloudUrl = getCloudWebAppUrl();
+      if (!cloudUrl) {
+        updateCloudStatusBadge(false);
+        return;
+      }
+
+      appendDiagnosticLog("중앙 클라우드 시트로부터 데이터 동기화 시도 중...");
+      try {
+        const response = await fetch(`${cloudUrl}?action=getAll`, { method: 'GET' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.status === 'success') {
+            // Update Vendors from Cloud
+            if (data.vendors && Array.isArray(data.vendors) && data.vendors.length > 0) {
+              vendorDatabase = data.vendors;
+              saveVendorDatabaseToStorage(false); // Do not send back to cloud
+              renderVendorTables();
+              appendDiagnosticLog(`[클라우드 동기화 성공] 거래처 ${vendorDatabase.length}건 수신`, 'success');
+            }
+            // Update API Key from Cloud if exists and not set locally
+            if (data.apiKey && data.apiKey.length > 5) {
+              localStorage.setItem('gemini_ocr_api_key', data.apiKey);
+              refreshApiKeyStatusUI();
+              appendDiagnosticLog(`[클라우드 동기화] Gemini API Key 수신 완료`, 'success');
+            }
+            updateCloudStatusBadge(true);
+            showToast('Google 스프레드시트와 실시간 동기화 완료!', 'success');
             return;
           }
-        } catch (e) {
-          console.warn("DB 로드 실패, 기본값 초기화", e);
+        }
+      } catch (err) {
+        appendDiagnosticLog(`클라우드 통신 실패 (로컬 모드 유지): ${err.message}`, 'warn');
+      }
+      updateCloudStatusBadge(false);
+    }
+
+    // Push Single Vendor to Cloud DB
+    async function pushVendorToCloud(vendor) {
+      const cloudUrl = getCloudWebAppUrl();
+      if (!cloudUrl) return;
+
+      try {
+        await fetch(cloudUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveVendor', vendor: vendor })
+        });
+      } catch (e) {
+        console.warn("Cloud push error", e);
+      }
+    }
+
+    // Push Delete Vendor to Cloud DB
+    async function pushDeleteVendorToCloud(vendorId) {
+      const cloudUrl = getCloudWebAppUrl();
+      if (!cloudUrl) return;
+
+      try {
+        await fetch(cloudUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'deleteVendor', id: vendorId })
+        });
+      } catch (e) {
+        console.warn("Cloud delete error", e);
+      }
+    }
+
+    // Push Settings to Cloud DB
+    async function pushSettingsToCloud(apiKey) {
+      const cloudUrl = getCloudWebAppUrl();
+      if (!cloudUrl) return;
+
+      try {
+        await fetch(cloudUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveSettings', apiKey: apiKey })
+        });
+      } catch (e) {
+        console.warn("Cloud settings push error", e);
+      }
+    }
+
+    function updateCloudStatusBadge(isConnected) {
+      const dot = document.getElementById('cloud-status-dot');
+      const text = document.getElementById('cloud-status-text');
+      if (isConnected) {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 mr-2';
+        if (text) {
+          text.className = 'text-emerald-400 ml-1 font-mono font-bold';
+          text.textContent = '구글시트 연동됨';
+        }
+      } else {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 mr-2';
+        if (text) {
+          text.className = 'text-amber-400 ml-1 font-mono font-bold';
+          text.textContent = '로컬 전용';
         }
       }
-      vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
-      saveVendorDatabaseToStorage();
     }
 
-    function saveVendorDatabaseToStorage() {
-      localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase));
-      const count = vendorDatabase.length;
-      document.getElementById('stat-total-vendors').textContent = count;
-      const b = document.getElementById('db-count-badge');
-      if (b) b.textContent = count;
-    }
-
-    function resetVendorDBToDefault() {
-      if (!confirm("거래처 DB를 기본 5개 마스터 데이터로 초기화하시겠습니까?")) return;
-      vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
-      saveVendorDatabaseToStorage();
-      renderVendorTables();
-      selectParty('trustor', 'VND-2026-001');
-      selectParty('debtor', 'VND-2026-002');
-      selectParty('beneficiary', 'VND-2026-003');
-      showToast('거래처 DB가 기본 마스터로 초기화되었습니다.', 'info');
-    }
-
-    // Window Onload Initialization
+    // ==========================================
+    // INITIALIZATION & EVENT HANDLERS
+    // ==========================================
     window.onload = function() {
-      // 1. API Key 복원 및 실시간 자동 저장 바인딩
+      // 1. API Key & Cloud URL 로드
       const key = getStoredApiKey();
       const apiKeyInput = document.getElementById('gemini-api-key');
-      if (apiKeyInput && key) {
-        apiKeyInput.value = key;
-      }
+      if (apiKeyInput && key) apiKeyInput.value = key;
+
+      const cloudUrl = getCloudWebAppUrl();
+      const cloudInput = document.getElementById('gscript-webapp-url');
+      if (cloudInput && cloudUrl) cloudInput.value = cloudUrl;
+
+      // 실시간 키 변경 시 로컬 저장 바인딩
       if (apiKeyInput) {
         apiKeyInput.addEventListener('input', function() {
           const val = this.value.trim();
@@ -1461,7 +1502,7 @@
       // 2. 기준일자 초기화
       document.getElementById('contract-date').value = "2026-10-04";
 
-      // 3. 거래처 DB 로드 & UI 초기화
+      // 3. 로컬 DB 로드 후 클라우드 동기화 수행
       loadPersistentVendorDatabase();
       renderVendorTables();
       setupFileUploadListeners();
@@ -1475,585 +1516,16 @@
       refreshApiKeyStatusUI();
       updateDocumentPreviews();
 
-      appendDiagnosticLog("부동산 담보신탁 및 부속서류 통합 자동화 시스템 로드 완료");
+      // Attempt Cloud Sync
+      syncFromCloudDB();
     };
 
-    function appendDiagnosticLog(msg, type = 'info') {
-      const terminal = document.getElementById('diagnostic-terminal');
-      if (!terminal) return;
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0];
-      const div = document.createElement('div');
-      div.className = type === 'success' ? 'text-emerald-400 font-semibold' : (type === 'warn' ? 'text-amber-400 font-semibold' : (type === 'error' ? 'text-rose-400 font-semibold' : 'text-slate-400'));
-      div.textContent = `[${timeStr}] ${msg}`;
-      terminal.appendChild(div);
-      terminal.scrollTop = terminal.scrollHeight;
-    }
-
-    function clearDiagnosticLog() {
-      document.getElementById('diagnostic-terminal').innerHTML = '<div>[로그 초기화됨]</div>';
-    }
-
-    function refreshApiKeyStatusUI() {
-      const key = getStoredApiKey();
-      const dot = document.getElementById('api-status-dot');
-      const badge = document.getElementById('active-model-name-badge');
-      const statText = document.getElementById('stat-api-status-text');
-      const alertBox = document.getElementById('ocr-api-alert');
-
-      if (key && key.length > 5) {
-        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2';
-        if (badge) {
-          badge.className = 'text-emerald-400 ml-1 font-mono font-bold';
-          badge.textContent = FAILOVER_MODELS[0];
-        }
-        if (statText) {
-          statText.textContent = "Key 등록 완료";
-          statText.className = "text-base font-bold text-emerald-400";
-        }
-        if (alertBox) alertBox.classList.add('hidden');
-      } else {
-        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 mr-2';
-        if (badge) {
-          badge.className = 'text-amber-400 ml-1 font-mono font-bold';
-          badge.textContent = 'Key 미설정';
-        }
-        if (statText) {
-          statText.textContent = "Key 미등록";
-          statText.className = "text-base font-bold text-amber-400";
-        }
-        if (alertBox) alertBox.classList.remove('hidden');
-      }
-      const input = document.getElementById('gemini-api-key');
-      if (input && key) input.value = key;
-    }
-
-    // Party Selection & Autocomplete
-    function toggleSameAsTrustor() {
-      isDebtorSameAsTrustor = !isDebtorSameAsTrustor;
-      updateSameAsTrustorUI();
-      if (isDebtorSameAsTrustor && selectedTrustorId) {
-        selectParty('debtor', selectedTrustorId);
-        showToast('채무자 정보가 위탁자와 동일하게 동기화되었습니다.', 'info');
-      }
-    }
-
-    function updateSameAsTrustorUI() {
-      const btn = document.getElementById('btn-same-as-trustor');
-      const badge = document.getElementById('debtor-sync-badge');
-      if (isDebtorSameAsTrustor) {
-        btn.className = 'px-2.5 py-1 text-[11px] font-bold rounded-md bg-indigo-600 text-white border border-indigo-400 shadow transition-all flex items-center gap-1';
-        btn.innerHTML = `<i class="fa-solid fa-check text-[10px]"></i> <span>채무자와 동일함</span>`;
-        badge.classList.remove('hidden');
-      } else {
-        btn.className = 'px-2.5 py-1 text-[11px] font-bold rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all flex items-center gap-1';
-        btn.innerHTML = `<i class="fa-solid fa-link text-[10px]"></i> <span>채무자와 동일</span>`;
-        badge.classList.add('hidden');
-      }
-    }
-
-    function showPartyDropdown(role) {
-      handlePartySearch(role);
-      document.getElementById(`${role}-dropdown`).classList.remove('hidden');
-    }
-
-    function handlePartySearch(role) {
-      const input = document.getElementById(`${role}-search-input`);
-      const dropdown = document.getElementById(`${role}-dropdown`);
-      const q = (input.value || '').trim().toLowerCase();
-
-      const matches = vendorDatabase.filter(v => {
-        if (!q) return true;
-        return (v.companyName && v.companyName.toLowerCase().includes(q)) ||
-               (v.representative && v.representative.toLowerCase().includes(q)) ||
-               (v.corpRegNo && v.corpRegNo.toLowerCase().includes(q));
-      });
-
-      dropdown.innerHTML = '';
-      if (matches.length === 0) {
-        dropdown.innerHTML = `<div class="p-3 text-center text-xs text-slate-500">일치하는 거래처가 없습니다.</div>`;
-      } else {
-        matches.forEach(v => {
-          const item = document.createElement('div');
-          item.className = 'p-2.5 hover:bg-slate-800 cursor-pointer flex items-center justify-between text-xs';
-          item.onclick = () => selectParty(role, v.id);
-          item.innerHTML = `
-            <div class="truncate max-w-[80%]">
-              <strong class="text-white">${v.companyName}</strong>
-              <span class="text-slate-400 ml-1">(${v.representative})</span>
-              <p class="text-[10px] text-slate-500 font-mono truncate">${v.corpRegNo} | ${v.address}</p>
-            </div>
-            <span class="text-[10px] text-cyan-400 border border-cyan-800 px-1.5 py-0.5 rounded">선택</span>
-          `;
-          dropdown.appendChild(item);
-        });
-      }
-      dropdown.classList.remove('hidden');
-    }
-
-    function selectParty(role, vendorId) {
-      const v = vendorDatabase.find(item => item.id === vendorId);
-      if (!v) return;
-
-      if (role === 'trustor') {
-        selectedTrustorId = v.id;
-        if (isDebtorSameAsTrustor) {
-          selectedDebtorId = v.id;
-          applyPartyToUI('debtor', v);
-        }
-      } else if (role === 'debtor') {
-        selectedDebtorId = v.id;
-        if (selectedDebtorId !== selectedTrustorId) {
-          isDebtorSameAsTrustor = false;
-          updateSameAsTrustorUI();
-        }
-      } else {
-        selectedBeneficiaryId = v.id;
-      }
-
-      applyPartyToUI(role, v);
-      updateDocumentPreviews();
-    }
-
-    function applyPartyToUI(role, v) {
-      const nameEl = document.getElementById(`${role}-selected-name`);
-      const detailsEl = document.getElementById(`${role}-selected-details`);
-      const cardEl = document.getElementById(`${role}-selected-card`);
-      const inputEl = document.getElementById(`${role}-search-input`);
-      const dropdownEl = document.getElementById(`${role}-dropdown`);
-
-      if (nameEl) nameEl.textContent = v.companyName;
-      if (detailsEl) detailsEl.textContent = `대표: ${v.representative} | ${v.corpRegNo}`;
-      if (cardEl) cardEl.classList.remove('hidden');
-      if (inputEl) inputEl.value = v.companyName;
-      if (dropdownEl) dropdownEl.classList.add('hidden');
-    }
-
-    function clearSelectedParty(role) {
-      if (role === 'trustor') {
-        selectedTrustorId = "";
-        if (isDebtorSameAsTrustor) clearSelectedParty('debtor');
-      } else if (role === 'debtor') {
-        selectedDebtorId = "";
-        isDebtorSameAsTrustor = false;
-        updateSameAsTrustorUI();
-      } else {
-        selectedBeneficiaryId = "";
-      }
-
-      document.getElementById(`${role}-selected-card`)?.classList.add('hidden');
-      const input = document.getElementById(`${role}-search-input`);
-      if (input) { input.value = ""; input.focus(); }
-      showPartyDropdown(role);
-      updateDocumentPreviews();
-    }
-
-    function setupAutocompleteOutsideClick() {
-      document.addEventListener('click', (e) => {
-        ['trustor', 'debtor', 'beneficiary'].forEach(role => {
-          const container = document.getElementById(`${role}-search-container`);
-          if (container && !container.contains(e.target)) {
-            document.getElementById(`${role}-dropdown`)?.classList.add('hidden');
-          }
-        });
-      });
-    }
-
-    function setAsPartyAndGenerate(vendorId, role) {
-      selectParty(role, vendorId);
-      switchTab('generator');
-      showToast(`거래처가 지정되었습니다.`, 'success');
-    }
-
-    // =========================================================================
-    // DOCUMENT PREVIEWS UPDATE ENGINE (실무 가이드 & 첨부 양식 100% 매핑)
-    // =========================================================================
-    function updateDocumentPreviews() {
-      const trustor = vendorDatabase.find(v => v.id === selectedTrustorId) || {
-        companyName: "위탁자 미선택",
-        representative: "-",
-        corpRegNo: "-",
-        address: "-",
-        bizNo: "-"
-      };
-
-      const debtor = vendorDatabase.find(v => v.id === selectedDebtorId) || {
-        companyName: "채무자 미선택",
-        representative: "-",
-        corpRegNo: "-",
-        address: "-",
-        bizNo: "-",
-        bizType: "-"
-      };
-
-      const beneficiary = vendorDatabase.find(v => v.id === selectedBeneficiaryId) || {
-        companyName: "우선수익자 미선택",
-        representative: "-",
-        corpRegNo: "-",
-        address: "-",
-        bizNo: "-"
-      };
-
-      // 1. 단일 기준일자 일체화 (Single Date Principle)
-      const rawDate = document.getElementById('contract-date').value || "2026-10-04";
-      const [year, month, day] = rawDate.split('-');
-      const formattedDateKorean = `${year}년 ${month}월 ${day}일`;
-
-      const prefLimit = document.getElementById('contract-pref-limit').value || "\\3,000,000,000-";
-      const feeText = document.getElementById('contract-fee').value || "금 일천오백만원정(\\ 15,000,000-)";
-      const propertyText = document.getElementById('property-summary').value || `${trustor.address} 토지 및 지상 건물 일체`;
-
-      // ==============================================================
-      // 서류 1: 부동산 담보신탁계약서 (본문 31개조 및 별첨 1~4 전문 매핑)
-      // ==============================================================
-      document.getElementById('d1-cover-trustor').textContent = trustor.companyName;
-      document.getElementById('d1-cover-debtor').textContent = debtor.companyName;
-      document.getElementById('d1-cover-beneficiary').textContent = beneficiary.companyName;
-      document.getElementById('d1-intro-trustor').textContent = trustor.companyName;
-
-      document.getElementById('d1-contract-date-display').textContent = formattedDateKorean;
-
-      // 계약서 말미 서명란 (4자 체계)
-      document.getElementById('d1-sig-t-name').textContent = trustor.companyName;
-      document.getElementById('d1-sig-t-addr').textContent = trustor.address;
-      document.getElementById('d1-sig-t-id').textContent = trustor.corpRegNo;
-
-      document.getElementById('d1-sig-d-name').textContent = debtor.companyName;
-      document.getElementById('d1-sig-d-addr').textContent = debtor.address;
-      document.getElementById('d1-sig-d-rep').textContent = `대표이사 ${debtor.representative}`;
-      document.getElementById('d1-sig-d-id').textContent = debtor.corpRegNo;
-
-      document.getElementById('d1-sig-b-name').textContent = beneficiary.companyName;
-      document.getElementById('d1-sig-b-addr').textContent = beneficiary.address;
-      document.getElementById('d1-sig-b-rep').textContent = `대표자 ${beneficiary.representative}`;
-      document.getElementById('d1-sig-b-id').textContent = beneficiary.corpRegNo;
-
-      // 별첨 1
-      document.getElementById('d1-property-text').textContent = propertyText;
-      document.getElementById('d1-prop-owner').textContent = trustor.companyName;
-
-      // 별첨 2
-      document.getElementById('d1-b2-name').textContent = beneficiary.companyName;
-      document.getElementById('d1-b2-corpno').textContent = beneficiary.corpRegNo;
-      document.getElementById('d1-b2-addr').textContent = beneficiary.address;
-      document.getElementById('d1-b2-debt-desc').textContent = `[${debtor.companyName}]와 [${beneficiary.companyName}] 사이에 체결된 [대출약정서]에 기한 [대출원리금채권 등]`;
-      document.getElementById('d1-b2-debtor-name').textContent = debtor.companyName;
-      document.getElementById('d1-b2-limit').textContent = prefLimit;
-
-      document.getElementById('d1-b2-trustor-name').textContent = trustor.companyName;
-      document.getElementById('d1-b2-trustor-id').textContent = trustor.corpRegNo;
-      document.getElementById('d1-b2-trustor-addr').textContent = trustor.address;
-
-      document.getElementById('d1-b2-debtor-cname').textContent = debtor.companyName;
-      document.getElementById('d1-b2-debtor-cid').textContent = debtor.corpRegNo;
-      document.getElementById('d1-b2-debtor-caddr').textContent = debtor.address;
-
-      // 별첨 3
-      document.getElementById('d1-b3-fee').textContent = feeText;
-
-      // 별첨 4 특약 18조: 1순위 우선수익자 자동 연동
-      document.getElementById('d1-b4-special-beneficiary').textContent = beneficiary.companyName;
-      document.getElementById('d1-b4-special-beneficiary-tax').textContent = beneficiary.companyName;
-
-      // ==============================================================
-      // 서류 2: 고객거래확인서 (위탁자 & 우선수익자 총 3부)
-      // ==============================================================
-      // 2-① 위탁자 (개인용)
-      document.getElementById('d2-1-name').textContent = trustor.companyName;
-      document.getElementById('d2-1-id').textContent = (trustor.corpRegNo && trustor.corpRegNo.length >= 6) ? trustor.corpRegNo.substring(0, 6) : "000000";
-      document.getElementById('d2-1-addr').textContent = trustor.address;
-      document.getElementById('d2-1-confirm-name').textContent = trustor.companyName;
-      document.getElementById('d2-1-date').textContent = formattedDateKorean;
-      document.getElementById('d2-1-sig-name').textContent = trustor.companyName;
-
-      // 2-② 위탁자 법인용
-      document.getElementById('d2-2-name').textContent = trustor.companyName;
-      document.getElementById('d2-2-bizno').textContent = trustor.bizNo || '-';
-      document.getElementById('d2-2-addr').textContent = trustor.address;
-      document.getElementById('d2-2-baddr').textContent = trustor.address;
-      document.getElementById('d2-2-biztype').textContent = trustor.bizType || '일반업종';
-      document.getElementById('d2-2-rep').textContent = trustor.representative;
-      document.getElementById('d2-2-rep-birth').textContent = trustor.corpRegNo ? trustor.corpRegNo.substring(0, 6) : '-';
-      document.getElementById('d2-2-date').textContent = formattedDateKorean;
-      document.getElementById('d2-2-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
-
-      // 2-③ 1순위 우선수익자용
-      document.getElementById('d2-3-name').textContent = beneficiary.companyName;
-      document.getElementById('d2-3-bizno').textContent = beneficiary.bizNo || '-';
-      document.getElementById('d2-3-addr').textContent = beneficiary.address;
-      document.getElementById('d2-3-rep').textContent = beneficiary.representative;
-      document.getElementById('d2-3-date').textContent = formattedDateKorean;
-      document.getElementById('d2-3-sig-full').textContent = `${beneficiary.companyName} 대표자 ${beneficiary.representative}`;
-
-      // ==============================================================
-      // 서류 3: 실제소유자확인서 (위탁자 법인용 & 우선수익자용)
-      // ==============================================================
-      // 3-① 위탁자 법인용 (미대상, 주주명부 기준)
-      document.getElementById('d3-1-name').textContent = trustor.companyName;
-      document.getElementById('d3-1-bizno').textContent = trustor.bizNo || '-';
-      document.getElementById('d3-1-owner-name').textContent = trustor.representative;
-      document.getElementById('d3-1-owner-birth').textContent = trustor.corpRegNo ? trustor.corpRegNo.substring(0, 6) : '-';
-      document.getElementById('d3-1-owner-share').textContent = "100%";
-      document.getElementById('d3-1-author-name').textContent = trustor.representative;
-      document.getElementById('d3-1-author-comp').textContent = trustor.companyName;
-      document.getElementById('d3-1-date').textContent = formattedDateKorean;
-      document.getElementById('d3-1-sig-full').textContent = `${trustor.companyName} 대표이사 ${trustor.representative}`;
-
-      // 3-② 우선수익자용 (금융회사등 확인 생략, 실소유자 공란)
-      document.getElementById('d3-2-name').textContent = beneficiary.companyName;
-      document.getElementById('d3-2-bizno').textContent = beneficiary.bizNo || '-';
-      document.getElementById('d3-2-author-name').textContent = beneficiary.representative;
-      document.getElementById('d3-2-author-comp').textContent = beneficiary.companyName;
-      document.getElementById('d3-2-date').textContent = formattedDateKorean;
-      document.getElementById('d3-2-sig-full').textContent = `${beneficiary.companyName} 대표자 ${beneficiary.representative}`;
-    }
-
-    function switchDocSubTab(docId) {
-      currentDocSubTab = docId;
-      document.querySelectorAll('.doc-paper').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.doc-subtab').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('bg-slate-900', 'text-slate-400');
-      });
-
-      const activeView = document.getElementById(`doc-view-${docId.replace('doc', '')}`);
-      const activeBtn = document.getElementById(`subtab-${docId}`);
-      if (activeView) activeView.classList.remove('hidden');
-      if (activeBtn) {
-        activeBtn.classList.add('bg-blue-600', 'text-white');
-        activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
-      }
-    }
-
-    // =========================================================================
-    // WORD (.docx) EXPORT ENGINE
-    // =========================================================================
-    function getCleanWordHtml(element) {
-      const clone = element.cloneNode(true);
-      clone.querySelectorAll('.no-print').forEach(el => el.remove());
-
-      return `
-        <!DOCTYPE html>
-        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
-              xmlns:w='urn:schemas-microsoft-com:office:word' 
-              xmlns='http://www.w3.org/TR/REC-html40'>
-        <head>
-          <meta charset='utf-8'>
-          <title>신탁계약서류</title>
-          <style>
-            @page { size: A4; margin: 20mm 15mm 20mm 15mm; mso-page-orientation: portrait; }
-            body { font-family: 'Batang', 'Noto Serif KR', serif; font-size: 10pt; line-height: 1.6; color: #000000; }
-            h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; font-weight: bold; }
-            h2 { font-size: 14pt; margin-top: 14pt; margin-bottom: 6pt; font-weight: bold; }
-            h3 { font-size: 12pt; margin-top: 12pt; margin-bottom: 4pt; font-weight: bold; }
-            h4 { font-size: 10.5pt; font-weight: bold; }
-            table { border-collapse: collapse; width: 100%; border: 1.5pt solid #000000; margin: 8pt 0; }
-            th, td { border: 0.75pt solid #000000; padding: 4.5pt 6pt; font-size: 9.5pt; vertical-align: middle; }
-            th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
-            p { margin: 3pt 0; font-size: 9.5pt; text-align: justify; }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .font-bold { font-weight: bold; }
-            .page-break { page-break-before: always; mso-special-character: line-break; }
-          </style>
-          <!--[if gte mso 9]>
-          <xml>
-            <w:WordDocument>
-              <w:View>Print</w:View>
-              <w:Zoom>100</w:Zoom>
-              <w:DoNotOptimizeForBrowser/>
-            </w:WordDocument>
-          </xml>
-          <![endif]-->
-        </head>
-        <body>
-          ${clone.innerHTML}
-        </body>
-        </html>
-      `;
-    }
-
-    function saveBlobFile(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 300);
-    }
-
-    function downloadCurrentDocAsDocx() {
-      const activePaper = document.querySelector('.doc-paper:not(.hidden)');
-      if (!activePaper) return;
-
-      const subtabKey = currentDocSubTab;
-      let filename = "담보신탁계약서";
-      if (subtabKey === 'doc2-1') filename = "고객거래확인서_위탁자개인용";
-      else if (subtabKey === 'doc2-2') filename = "고객거래확인서_위탁자법인용";
-      else if (subtabKey === 'doc2-3') filename = "고객거래확인서_우선수익자용";
-      else if (subtabKey === 'doc3-1') filename = "실제소유자확인서_위탁자법인용";
-      else if (subtabKey === 'doc3-2') filename = "실제소유자확인서_우선수익자용";
-
-      const wordHtml = getCleanWordHtml(activePaper);
-      if (typeof htmlDocx !== 'undefined') {
-        try {
-          const converted = htmlDocx.asBlob(wordHtml);
-          saveBlobFile(converted, `${filename}.docx`);
-          showToast(`${filename}.docx 다운로드 완료!`, 'success');
-          return;
-        } catch (e) {
-          console.warn("htmlDocx conversion fallback", e);
-        }
-      }
-
-      // Word MSO HTML Blob fallback
-      const blob = new Blob(['\ufeff', wordHtml], {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      });
-      saveBlobFile(blob, `${filename}.docx`);
-      showToast(`${filename}.docx 다운로드 완료!`, 'success');
-    }
-
-    function downloadAllDocsAsDocx() {
-      const docs = [
-        { id: 'doc-view-1', name: '1. 부동산담보신탁계약서' },
-        { id: 'doc-view-2-1', name: '2-1. 고객거래확인서_위탁자개인용' },
-        { id: 'doc-view-2-2', name: '2-2. 고객거래확인서_위탁자법인용' },
-        { id: 'doc-view-2-3', name: '2-3. 고객거래확인서_우선수익자용' },
-        { id: 'doc-view-3-1', name: '3-1. 실제소유자확인서_위탁자법인용' },
-        { id: 'doc-view-3-2', name: '3-2. 실제소유자확인서_우선수익자용' }
-      ];
-
-      let combinedInnerHtml = "";
-      docs.forEach((item, idx) => {
-        const el = document.getElementById(item.id);
-        if (el) {
-          const clone = el.cloneNode(true);
-          clone.querySelectorAll('.no-print').forEach(n => n.remove());
-          if (idx > 0) {
-            combinedInnerHtml += `<div class="page-break" style="page-break-before: always; mso-special-character: line-break;"></div>`;
-          }
-          combinedInnerHtml += clone.innerHTML;
-        }
-      });
-
-      const fullHtml = `
-        <!DOCTYPE html>
-        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
-              xmlns:w='urn:schemas-microsoft-com:office:word' 
-              xmlns='http://www.w3.org/TR/REC-html40'>
-        <head>
-          <meta charset='utf-8'>
-          <title>신탁계약서류일체</title>
-          <style>
-            @page { size: A4; margin: 20mm 15mm 20mm 15mm; mso-page-orientation: portrait; }
-            body { font-family: 'Batang', 'Noto Serif KR', serif; font-size: 10pt; line-height: 1.6; color: #000000; }
-            h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; font-weight: bold; }
-            table { border-collapse: collapse; width: 100%; border: 1.5pt solid #000000; margin: 8pt 0; }
-            th, td { border: 0.75pt solid #000000; padding: 4.5pt 6pt; font-size: 9.5pt; vertical-align: middle; }
-            th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
-            p { margin: 3pt 0; font-size: 9.5pt; text-align: justify; }
-            .page-break { page-break-before: always; mso-special-character: line-break; }
-          </style>
-          <!--[if gte mso 9]>
-          <xml>
-            <w:WordDocument>
-              <w:View>Print</w:View>
-              <w:Zoom>100</w:Zoom>
-              <w:DoNotOptimizeForBrowser/>
-            </w:WordDocument>
-          </xml>
-          <![endif]-->
-        </head>
-        <body>
-          ${combinedInnerHtml}
-        </body>
-        </html>
-      `;
-
-      const filename = `신탁서류3종_통합본_${document.getElementById('contract-date').value}.docx`;
-
-      if (typeof htmlDocx !== 'undefined') {
-        try {
-          const converted = htmlDocx.asBlob(fullHtml);
-          saveBlobFile(converted, filename);
-          showToast(`서류 3종 전체 .docx 다운로드 완료!`, 'success');
-          return;
-        } catch(e) {}
-      }
-
-      const blob = new Blob(['\ufeff', fullHtml], {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      });
-      saveBlobFile(blob, filename);
-      showToast(`서류 3종 전체 .docx 다운로드 완료!`, 'success');
-    }
-
-    // =========================================================================
-    // OCR & AI STUDIO API ENGINE
-    // =========================================================================
-    function switchTab(tabId) {
-      if (tabId === 'settings' && !isAdminAuthenticated) {
-        document.getElementById('admin-pw-input').value = '';
-        document.getElementById('admin-auth-error').classList.add('hidden');
-        document.getElementById('admin-auth-modal').classList.remove('hidden');
-        return;
-      }
-
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white', 'shadow');
-        btn.classList.add('text-slate-400', 'hover:text-white');
-      });
-      const activeBtn = document.getElementById(`nav-${tabId}`);
-      if (activeBtn) {
-        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
-        activeBtn.classList.remove('text-slate-400');
-      }
-
-      if (tabId === 'database') renderVendorTables();
-      if (tabId === 'generator') updateDocumentPreviews();
-      if (tabId === 'settings') refreshApiKeyStatusUI();
-    }
-
-    function verifyAdminPassword() {
-      const input = document.getElementById('admin-pw-input').value;
-      const pwd = localStorage.getItem('admin_system_pw') || 'admin123';
-      if (input === pwd) {
-        isAdminAuthenticated = true;
-        document.getElementById('admin-auth-modal').classList.add('hidden');
-        showToast('관리자 인증 완료', 'success');
-        switchTab('settings');
-      } else {
-        document.getElementById('admin-auth-error').classList.remove('hidden');
-      }
-    }
-
-    function cancelAdminAuth() {
-      document.getElementById('admin-auth-modal').classList.add('hidden');
-    }
-
-    function lockAdminSettings() {
-      isAdminAuthenticated = false;
-      switchTab('dashboard');
-      showToast('관리자 잠금 상태로 전환되었습니다.', 'warning');
-    }
-
-    function changeAdminPassword() {
-      const newPw = document.getElementById('new-admin-pw').value;
-      const confirmPw = document.getElementById('confirm-admin-pw').value;
-      if (!newPw || newPw !== confirmPw) {
-        showToast('비밀번호가 일치하지 않거나 비어 있습니다.', 'error');
-        return;
-      }
-      localStorage.setItem('admin_system_pw', newPw);
-      showToast('관리자 비밀번호가 변경되었습니다.', 'success');
+    function saveVendorDatabaseToStorage(syncToCloud = true) {
+      localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase));
+      const count = vendorDatabase.length;
+      document.getElementById('stat-total-vendors').textContent = count;
+      const b = document.getElementById('db-count-badge');
+      if (b) b.textContent = count;
     }
 
     function saveAdminApiKey() {
@@ -2061,142 +1533,12 @@
       if (!k) return;
       localStorage.setItem('gemini_ocr_api_key', k);
       refreshApiKeyStatusUI();
-      appendDiagnosticLog(`[저장 완료] API Key가 로컬 저장소에 영구 보존되었습니다.`, 'success');
+      pushSettingsToCloud(k);
+      appendDiagnosticLog(`[저장 완료] API Key가 로컬 및 클라우드에 저장되었습니다.`, 'success');
       showToast('API Key가 안전하게 영구 저장되었습니다.', 'success');
     }
 
-    async function testGoogleAPIConnection() {
-      const key = getStoredApiKey() || document.getElementById('gemini-api-key').value.trim();
-      if (!key) {
-        showToast('저장된 API Key가 없습니다.', 'warning');
-        return;
-      }
-      appendDiagnosticLog("API Key 통신 테스트 시작...");
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${FAILOVER_MODELS[0]}:generateContent?key=${encodeURIComponent(key)}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
-        });
-        if (res.ok) {
-          appendDiagnosticLog(`[성공 200 OK] 모델 ${FAILOVER_MODELS[0]} 연결 확인`, 'success');
-          showToast('API Key 정상 연결 확인!', 'success');
-          refreshApiKeyStatusUI();
-        } else {
-          appendDiagnosticLog(`연결 실패: HTTP ${res.status}`, 'error');
-          showToast(`오류: HTTP ${res.status}`, 'error');
-        }
-      } catch(e) {
-        appendDiagnosticLog(`네트워크 에러: ${e.message}`, 'error');
-      }
-    }
-
-    function setupFileUploadListeners() {
-      const dropZone = document.getElementById('drop-zone');
-      const fileInput = document.getElementById('file-input');
-
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
-        dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
-      });
-      dropZone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        if (files.length) handleSelectedFile(files[0]);
-      });
-      fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) handleSelectedFile(e.target.files[0]);
-      });
-    }
-
-    async function handleSelectedFile(file) {
-      currentUploadedFile = file;
-      document.getElementById('file-preview-card').classList.remove('hidden');
-      document.getElementById('preview-filename').textContent = file.name;
-      document.getElementById('preview-file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
-
-      appendDiagnosticLog(`파일 접수: ${file.name}`);
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const fullData = reader.result;
-        cachedFileBase64 = fullData.split(',')[1];
-        cachedMimeType = file.type || 'application/pdf';
-        executeHighPrecisionOCR();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    async function executeHighPrecisionOCR() {
-      if (!cachedFileBase64) return;
-      const key = getStoredApiKey();
-      if (!key) {
-        showToast('관리자 설정에서 API Key를 먼저 등록해 주세요.', 'warning');
-        return;
-      }
-
-      const pBar = document.getElementById('ocr-progress-bar');
-      const pFill = document.getElementById('ocr-progress-fill');
-      const badge = document.getElementById('ocr-status-badge');
-      pBar.classList.remove('hidden');
-      badge.textContent = '분석 진행 중';
-      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
-
-      const promptText = `대한민국 사업자등록증 및 등기부등본의 다음 6가지 정보를 정밀 판독하여 JSON으로만 반환하세요:
-{
-  "companyName": "회사명/상호명",
-  "representative": "대표자 성명",
-  "corpRegNo": "13자리 법인등록번호(없으면 사업자번호)",
-  "address": "본점 소재지 도로명 주소",
-  "bizNo": "10자리 사업자등록번호",
-  "bizType": "업태 및 종목"
-}`;
-
-      const payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { inlineData: { mimeType: cachedMimeType, data: cachedFileBase64 } },
-            { text: promptText }
-          ]
-        }],
-        generationConfig: { responseMimeType: "application/json" }
-      };
-
-      try {
-        appendDiagnosticLog(`Gemini 3.8 Flash OCR 분석 요청...`);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${FAILOVER_MODELS[0]}:generateContent?key=${encodeURIComponent(key)}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        const parsed = JSON.parse(jsonText);
-
-        document.getElementById('ocr-company-name').value = parsed.companyName || '';
-        document.getElementById('ocr-representative').value = parsed.representative || '';
-        document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
-        document.getElementById('ocr-address').value = parsed.address || '';
-        document.getElementById('ocr-biz-no').value = parsed.bizNo || '';
-        document.getElementById('ocr-biz-type').value = parsed.bizType || '';
-
-        pFill.style.width = '100%';
-        badge.textContent = '파싱 성공';
-        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300';
-        appendDiagnosticLog(`[성공] ${parsed.companyName} 추출 완료`, 'success');
-        showToast('서류 정보가 성공적으로 추출되었습니다!', 'success');
-        setTimeout(() => pBar.classList.add('hidden'), 500);
-      } catch (err) {
-        badge.textContent = '실패';
-        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
-        appendDiagnosticLog(`OCR 실패: ${err.message}`, 'error');
-        showToast('OCR 분석 중 오류가 발생했습니다.', 'error');
-        pBar.classList.add('hidden');
-      }
-    }
-
+    // Extended Save Extracted To DB with Cloud Push
     function saveExtractedToDB() {
       const comp = document.getElementById('ocr-company-name').value.trim();
       const rep = document.getElementById('ocr-representative').value.trim();
@@ -2211,7 +1553,7 @@
       }
 
       const newId = `VND-2026-${String(vendorDatabase.length + 1).padStart(3, '0')}`;
-      vendorDatabase.unshift({
+      const newVendor = {
         id: newId,
         companyName: comp,
         representative: rep,
@@ -2220,72 +1562,17 @@
         address: addr,
         bizType: btype || '일반업종',
         source: 'AI OCR'
-      });
+      };
 
+      vendorDatabase.unshift(newVendor);
       saveVendorDatabaseToStorage();
       renderVendorTables();
       selectParty('trustor', newId);
-      showToast(`[${comp}] DB 저장 및 위탁자 지정 완료!`, 'success');
-    }
 
-    function clearOCRForm() {
-      document.getElementById('ocr-result-form').reset();
-      document.getElementById('file-preview-card').classList.add('hidden');
-      cachedFileBase64 = null;
-    }
+      // Push to Google Sheet
+      pushVendorToCloud(newVendor);
 
-    function renderVendorTables() {
-      const tbody = document.getElementById('vendor-main-tbody');
-      const dashTbody = document.getElementById('dashboard-vendor-tbody');
-      tbody.innerHTML = '';
-      dashTbody.innerHTML = '';
-
-      vendorDatabase.forEach(v => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-800/40">
-            <td class="p-4 font-mono text-cyan-400">${v.id}</td>
-            <td class="p-4 font-bold text-white">${v.companyName}</td>
-            <td class="p-4">${v.representative}</td>
-            <td class="p-4 font-mono">${v.corpRegNo}</td>
-            <td class="p-4 font-mono">${v.bizNo || '-'}</td>
-            <td class="p-4 truncate max-w-xs">${v.address}</td>
-            <td class="p-4 text-center space-x-1">
-              <button onclick="setAsPartyAndGenerate('${v.id}', 'trustor')" class="px-2 py-1 bg-blue-600/30 text-blue-300 rounded hover:bg-blue-600 hover:text-white">위탁자</button>
-              <button onclick="setAsPartyAndGenerate('${v.id}', 'debtor')" class="px-2 py-1 bg-indigo-600/30 text-indigo-300 rounded hover:bg-indigo-600 hover:text-white">채무자</button>
-              <button onclick="setAsPartyAndGenerate('${v.id}', 'beneficiary')" class="px-2 py-1 bg-amber-600/30 text-amber-300 rounded hover:bg-amber-600 hover:text-white">우선수익자</button>
-            </td>
-            <td class="p-4 text-right">
-              <button onclick="deleteVendor('${v.id}')" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
-            </td>
-          </tr>
-        `;
-      });
-
-      vendorDatabase.slice(0, 4).forEach(v => {
-        dashTbody.innerHTML += `
-          <tr class="hover:bg-slate-900/60">
-            <td class="p-3 font-mono text-cyan-400">${v.id}</td>
-            <td class="p-3 font-bold text-white">${v.companyName}</td>
-            <td class="p-3">${v.representative}</td>
-            <td class="p-3 font-mono">${v.corpRegNo}</td>
-            <td class="p-3 truncate max-w-xs">${v.address}</td>
-            <td class="p-3 text-right space-x-1">
-              <button onclick="setAsPartyAndGenerate('${v.id}', 'trustor')" class="text-[11px] px-2 py-0.5 bg-blue-600/30 text-blue-300 rounded">위탁</button>
-              <button onclick="setAsPartyAndGenerate('${v.id}', 'debtor')" class="text-[11px] px-2 py-0.5 bg-indigo-600/30 text-indigo-300 rounded">채무</button>
-              <button onclick="setAsPartyAndGenerate('${v.id}', 'beneficiary')" class="text-[11px] px-2 py-0.5 bg-amber-600/30 text-amber-300 rounded">우선</button>
-            </td>
-          </tr>
-        `;
-      });
-
-      saveVendorDatabaseToStorage();
-    }
-
-    function filterVendorTable() {
-      const q = document.getElementById('db-search-input').value.toLowerCase();
-      document.querySelectorAll('#vendor-main-tbody tr').forEach(r => {
-        r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-      });
+      showToast(`[${comp}] 클라우드 DB 저장 및 위탁자 지정 완료!`, 'success');
     }
 
     function deleteVendor(id) {
@@ -2293,11 +1580,9 @@
       vendorDatabase = vendorDatabase.filter(v => v.id !== id);
       saveVendorDatabaseToStorage();
       renderVendorTables();
+      pushDeleteVendorToCloud(id);
       showToast('삭제되었습니다.', 'info');
     }
-
-    function openAddVendorModal() { document.getElementById('add-vendor-modal').classList.remove('hidden'); }
-    function closeAddVendorModal() { document.getElementById('add-vendor-modal').classList.add('hidden'); }
 
     function submitManualVendor() {
       const comp = document.getElementById('modal-company').value.trim();
@@ -2307,7 +1592,7 @@
       if (!comp) return;
 
       const newId = `VND-2026-${String(vendorDatabase.length + 1).padStart(3, '0')}`;
-      vendorDatabase.unshift({
+      const newVendor = {
         id: newId,
         companyName: comp,
         representative: rep,
@@ -2315,20 +1600,14 @@
         address: addr,
         bizNo: 'N/A',
         source: '수동 등록'
-      });
+      };
+
+      vendorDatabase.unshift(newVendor);
       saveVendorDatabaseToStorage();
       renderVendorTables();
+      pushVendorToCloud(newVendor);
       closeAddVendorModal();
       showToast('신규 거래처 등록 완료!', 'success');
-    }
-
-    function showToast(msg, type = 'info') {
-      const c = document.getElementById('toast-container');
-      const t = document.createElement('div');
-      t.className = 'pointer-events-auto bg-slate-900 text-white text-xs px-4 py-3 rounded-xl border border-slate-700 shadow-2xl flex items-center gap-2';
-      t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i><span>${msg}</span>`;
-      c.appendChild(t);
-      setTimeout(() => t.remove(), 3500);
     }
   </script>
 </body>
