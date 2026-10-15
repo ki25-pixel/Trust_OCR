@@ -1,0 +1,47 @@
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background: white; color: black; }
+  .no-print { display: none !important; }
+  .page-break { page-break-before: always; }
+}
+
+.doc-paper {
+  background: #ffffff;
+  box-shadow: 0 4px 25px -3px rgba(0, 0, 0, 0.3);
+  font-family: 'Noto Serif KR', 'Batang', serif;
+  color: #111827;
+  line-height: 1.75;
+}
+
+.doc-table {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1.5px solid #111827;
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+.doc-table th, .doc-table td {
+  border: 1px solid #4b5563;
+  padding: 5px 8px;
+  font-size: 11px;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.doc-table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+  text-align: center;
+}
+
+.terminal-scroll {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #090d16; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }

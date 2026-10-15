@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>부동산 담보신탁 및 부속서류 통합 자동화 시스템</title>
+  
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- 외부 스타일시트 연결 -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PDF.js & HTML-DOCX 변환기 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-white">
+
+  <!-- 브라우저 기본 자동완성 백업 Datalist -->
+  <datalist id="vendor-master-datalist"></datalist>
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
+          <i class="fa-solid fa-file-shield text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
+            부동산 담보신탁 및 부속서류 통합 시스템
+            <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-semibold">모듈화 버전</span>
+          </h1>
+          <p class="text-xs text-slate-400 hidden sm:block">거래처 DB 실시간 자동완성 &amp; 신탁서류 3종 워드(.docx) 변환</p>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-white bg-blue-600 shadow">
+          <i class="fa-solid fa-chart-pie mr-1.5"></i>대시보드
+        </button>
+        <button onclick="switchTab('ocr')" id="nav-ocr" class="nav-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-cyan-400"></i>AI OCR 추출
+        </button>
+        <button onclick="switchTab('database')" id="nav-database" class="nav-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-database mr-1.5"></i>거래처 DB 관리
+        </button>
+        <button onclick="switchTab('generator')" id="nav-generator" class="nav-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-file-contract mr-1.5 text-indigo-400"></i>신탁서류 3종 생성
+        </button>
+        <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1">
+          <i class="fa-solid fa-lock text-amber-400 text-[10px] mr-1"></i>설정 (Admin)
+        </button>
+      </nav>
+
+      <div class="flex items-center space-x-3">
+        <div id="header-api-badge" class="hidden lg:flex items-center text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+          <span id="api-status-dot" class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
+          API: <span id="active-model-name-badge" class="text-amber-400 ml-1 font-mono font-bold">Key 미설정</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="flex-grow bg-slate-950 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+
+    <!-- TAB 1: 대시보드 -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 p-6 sm:p-8 border border-cyan-500/30 shadow-2xl">
+        <div class="relative z-10 max-w-3xl">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-4">
+            <i class="fa-solid fa-bolt text-emerald-400"></i> 거래처 DB 실시간 자동완성 드롭다운 &amp; 원클릭 자동채움 가동
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">부동산 담보신탁 및 부속서류 자동 생성 시스템</h2>
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
+            PDF OCR로 거래처 DB를 구축하고, 업체명 입력란 클릭 또는 타이핑 시 나타나는 **자동완성 드롭다운**에서 업체를 선택하면 등록번호·대표자·주소가 한 번에 채워져 신탁서류 3종(.docx)이 즉시 완성됩니다.
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="switchTab('generator')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2">
+              <i class="fa-solid fa-file-contract"></i> 신탁서류 3종 생성기 바로가기
+            </button>
+            <button onclick="switchTab('ocr')" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 font-medium text-sm px-5 py-2.5 rounded-xl border border-cyan-500/30 transition-all flex items-center gap-2">
+              <i class="fa-solid fa-file-arrow-up"></i> PDF 파일 OCR 추출
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
+          <span class="text-xs font-medium text-slate-400">등록 거래처 마스터</span>
+          <div class="mt-2 text-2xl font-bold text-white" id="stat-total-vendors">0</div>
+          <p class="text-xs text-slate-500 mt-1">자동완성 연동 DB</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
+          <span class="text-xs font-medium text-slate-400">서류 1: 담보신탁계약서</span>
+          <div class="mt-2 text-xl font-bold text-white">31개조 및 별첨 1~4 전문</div>
+          <p class="text-xs text-slate-500 mt-1">다수 위탁자/대리금융기관 동적 분기</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
+          <span class="text-xs font-medium text-slate-400">서류 2 &amp; 3: 확인서</span>
+          <div class="mt-2 text-xl font-bold text-white">고객거래 &amp; 실제소유자</div>
+          <p class="text-xs text-slate-500 mt-1">위탁자 및 우선수익자 맞춤 생성</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-xl">
+          <span class="text-xs font-medium text-slate-400">코드 구조</span>
+          <div class="mt-2 text-xl font-bold text-cyan-300">4개 파일 모듈화</div>
+          <p class="text-xs text-slate-500 mt-1">유지보수 및 GitHub 관리 최적화</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-blue-400"></i> 거래처 마스터 목록
+          </h3>
+          <button onclick="switchTab('database')" class="text-xs text-slate-400 hover:text-white">전체보기 <i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 font-medium">
+              <tr>
+                <th class="p-3">관리코드</th>
+                <th class="p-3">구분/상호</th>
+                <th class="p-3">대표자</th>
+                <th class="p-3">등록번호</th>
+                <th class="p-3">주소</th>
+                <th class="p-3 text-right">빠른 지정</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-vendor-tbody" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: AI OCR 추출 -->
+    <section id="tab-ocr" class="tab-content hidden space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+          Step 1: 고정밀 PDF OCR 거래처 정보 추출 (Gemini 3.8 Flash)
+        </h2>
+        <p class="text-xs text-slate-400 mt-1">사업자등록증 또는 등기부등본(PDF)을 업로드하면 핵심 거래처 정보가 자동 파싱됩니다.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-5 space-y-4">
+          <div id="drop-zone" class="border-2 border-dashed border-slate-800 hover:border-cyan-500 bg-slate-900/60 hover:bg-slate-900 rounded-2xl p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[240px]">
+            <input type="file" id="file-input" accept="application/pdf,image/*" class="hidden">
+            <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-3 text-2xl border border-cyan-500/20">
+              <i class="fa-solid fa-file-pdf"></i>
+            </div>
+            <h3 class="text-sm font-semibold text-white mb-1">사업자등록증 / 법인등기부등본 업로드</h3>
+            <p class="text-xs text-slate-400 mb-3">PDF, JPG, PNG 파일 드래그 &amp; 드롭</p>
+            <button onclick="document.getElementById('file-input').click()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md transition-all">
+              파일 선택하기
+            </button>
+          </div>
+
+          <div id="file-preview-card" class="hidden bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="text-xs font-medium text-slate-300 truncate max-w-[200px]" id="preview-filename">document.pdf</span>
+              <span id="preview-file-size" class="text-[11px] text-slate-500 font-mono">0 KB</span>
+            </div>
+            <div class="h-48 bg-slate-950 rounded-lg flex items-center justify-center overflow-auto p-2">
+              <p id="preview-placeholder" class="text-xs text-slate-500">PDF 준비 완료</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h3 class="text-base font-semibold text-white flex items-center gap-2">
+                <i class="fa-solid fa-database text-cyan-400"></i> AI 파싱 결과 검증 및 수정 Form
+              </h3>
+              <span id="ocr-status-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">대기 중</span>
+            </div>
+
+            <div id="ocr-progress-bar" class="hidden mb-4">
+              <div class="flex justify-between text-xs text-cyan-400 mb-1 font-medium">
+                <span id="ocr-step-text">Gemini 3.8 Flash 파싱 중...</span>
+                <span id="ocr-percent" class="font-mono">30%</span>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="ocr-progress-fill" class="bg-gradient-to-r from-blue-500 to-cyan-400 h-full w-1/3 transition-all duration-300"></div>
+              </div>
+            </div>
+
+            <form id="ocr-result-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div class="sm:col-span-2">
+                <label class="block text-slate-300 mb-1">회사명 (상호명) *</label>
+                <input type="text" id="ocr-company-name" placeholder="상호명 자동 입력" class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5 focus:outline-none focus:border-cyan-500 font-medium">
+              </div>
+              <div>
+                <label class="block text-slate-300 mb-1">대표자 성명 *</label>
+                <input type="text" id="ocr-representative" placeholder="대표자 성명" class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5 focus:outline-none focus:border-cyan-500">
+              </div>
+              <div>
+                <label class="block text-slate-300 mb-1">법인등록번호 (13자리) *</label>
+                <input type="text" id="ocr-corp-no" placeholder="XXXXXX-XXXXXXX" class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-slate-300 mb-1">본점 소재지 주소 *</label>
+                <input type="text" id="ocr-address" placeholder="도로명 전체 주소" class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5 focus:outline-none focus:border-cyan-500">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">사업자등록번호 (10자리)</label>
+                <input type="text" id="ocr-biz-no" placeholder="XXX-XX-XXXXX" class="w-full bg-slate-950 border border-slate-800 text-slate-300 rounded-lg p-2.5 focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">업태 / 종목</label>
+                <input type="text" id="ocr-biz-type" placeholder="업태 및 종목" class="w-full bg-slate-950 border border-slate-800 text-slate-300 rounded-lg p-2.5 focus:outline-none">
+              </div>
+            </form>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1">
+            <div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-800 pb-1">
+              <span><i class="fa-solid fa-terminal text-cyan-400 mr-1"></i>실시간 AI 통신 및 진단 터미널</span>
+              <button onclick="clearDiagnosticLog()" class="hover:text-white">지우기</button>
+            </div>
+            <div id="diagnostic-terminal" class="terminal-scroll h-24 overflow-y-auto text-slate-400 space-y-1 p-1">
+              <div>[시스템 대기] OCR 모듈 준비 완료</div>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-3 flex justify-end gap-2">
+            <button type="button" onclick="clearOCRForm()" class="px-3 py-2 bg-slate-800 text-slate-300 text-xs rounded-lg">초기화</button>
+            <button type="button" onclick="saveExtractedToDB()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-lg shadow-lg">
+              <i class="fa-solid fa-cloud-arrow-up mr-1"></i>거래처 DB에 영구 저장
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 거래처 DB 관리 -->
+    <section id="tab-database" class="tab-content hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-database text-emerald-400"></i> 거래처 Data Base 마스터 관리 (영구 보존)
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">로컬 스토리지에 영구 보존되며 새로고침 시에도 안전하게 유지됩니다.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="resetVendorDBToDefault()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 px-3 py-2.5 rounded-lg transition-all">
+            <i class="fa-solid fa-rotate-left mr-1"></i>기본 DB 초기화
+          </button>
+          <button onclick="openAddVendorModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-md transition-all">
+            <i class="fa-solid fa-plus mr-1"></i>신규 거래처 등록
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-between items-center">
+        <div class="relative w-80">
+          <input type="text" id="db-search-input" oninput="filterVendorTable()" placeholder="상호, 대표자, 등록번호 검색..." class="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-lg px-3 py-2 pl-9 focus:outline-none focus:border-cyan-500">
+          <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3 top-2.5 text-xs"></i>
+        </div>
+        <div class="text-xs text-slate-400">
+          총 <strong id="db-count-badge" class="text-white font-bold">0</strong>개 등록됨
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+            <tr>
+              <th class="p-4">코드</th>
+              <th class="p-4">구분/상호</th>
+              <th class="p-4">대표자</th>
+              <th class="p-4">등록번호</th>
+              <th class="p-4">사업자번호</th>
+              <th class="p-4">주소</th>
+              <th class="p-4 text-center">신탁 서류 지정</th>
+              <th class="p-4 text-right">관리</th>
+            </tr>
+          </thead>
+          <tbody id="vendor-main-tbody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 4: 신탁서류 3종 생성 -->
+    <section id="tab-generator" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-file-word text-blue-400"></i> 담보신탁 및 부속서류 계약 관계자 동적 구성
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              <span class="text-cyan-400 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>자동완성 사용법:</span> 
+              업체명 입력칸을 **클릭**하거나 우측 **`▼` 버튼**을 누르면 거래처 DB 목록이 펼쳐지며, 선택 시 **등록번호·대표자·주소가 한 번에 자동 기입**됩니다.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="downloadCurrentDocAsDocx()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md transition-all flex items-center gap-1.5">
+              <i class="fa-solid fa-file-arrow-down"></i> 현재 서식 (.docx)
+            </button>
+            <button onclick="downloadAllDocsAsDocx()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md transition-all flex items-center gap-1.5">
+              <i class="fa-solid fa-box-archive"></i> 서류 3종 전체 (.docx)
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. 위탁자 겸 수익자 동적 리스트 -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-blue-500/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">1</span>
+              <h4 class="text-xs font-bold text-blue-300">위탁자 겸 수익자 목록 (trusters)</h4>
+              <span id="badge-multi-truster" class="text-[10px] px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700">단독 위탁자</span>
+            </div>
+            <button type="button" onclick="addTrusterRow()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all flex items-center gap-1">
+              <i class="fa-solid fa-plus text-[10px]"></i> 위탁자 추가
+            </button>
+          </div>
+          <div id="trusters-container" class="space-y-3"></div>
+        </div>
+
+        <!-- 2. 채무자 & 우선수익자 설정 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="debtor-config-card" class="bg-slate-950 p-4 rounded-xl border border-indigo-500/40 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">2</span>
+                <h4 class="text-xs font-bold text-indigo-300">채무자 정보 (debtor)</h4>
+              </div>
+              <span id="debtor-status-tag" class="text-[10px] px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-700">별도 채무자</span>
+            </div>
+
+            <div id="debtor-inputs-box" class="space-y-2 text-xs">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="relative" id="debtor-name-wrapper">
+                  <div class="relative flex items-center">
+                    <input type="text" id="debtor-name" list="vendor-master-datalist" autocomplete="off"
+                      onfocus="openDebtorDropdown(true)"
+                      oninput="handleDebtorTyping(this.value)"
+                      placeholder="채무자 상호 검색/선택..." 
+                      class="w-full bg-slate-900 border border-indigo-500/60 text-white p-2 pr-7 rounded focus:outline-none focus:border-indigo-400 font-bold">
+                    <button type="button" onclick="openDebtorDropdown(true)" class="absolute right-2 text-indigo-400 hover:text-white px-1">
+                      <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                  </div>
+                  <div id="debtor-autocomplete" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border-2 border-indigo-500 rounded-lg shadow-2xl max-h-56 overflow-y-auto z-50 divide-y divide-slate-800"></div>
+                </div>
+                <input type="text" id="debtor-idNumber" oninput="handleDebtorManualChange()" placeholder="법인등록번호/등록번호" class="bg-slate-900 border border-slate-700 text-white p-2 rounded focus:outline-none font-mono">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <input type="text" id="debtor-ceoName" oninput="handleDebtorManualChange()" placeholder="대표자 직책 및 성명" class="bg-slate-900 border border-slate-700 text-white p-2 rounded focus:outline-none">
+                <select id="debtor-type" onchange="handleDebtorManualChange()" class="bg-slate-900 border border-slate-700 text-slate-300 p-2 rounded focus:outline-none">
+                  <option value="corporation">법인 (corporation)</option>
+                  <option value="individual">개인 (individual)</option>
+                </select>
+              </div>
+              <input type="text" id="debtor-address" oninput="handleDebtorManualChange()" placeholder="채무자 주소" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded focus:outline-none">
+            </div>
+            <p id="debtor-sync-notice" class="hidden text-[11px] text-cyan-400 font-medium">※ 특정 위탁자가 채무자를 겸임하고 있으므로 해당 위탁자 정보가 자동으로 연동됩니다.</p>
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-xl border border-amber-500/40 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-amber-600 text-white font-bold text-xs flex items-center justify-center">3</span>
+                <h4 class="text-xs font-bold text-amber-300">우선수익자 및 대리금융기관 (priorityBeneficiaries)</h4>
+              </div>
+              <button type="button" onclick="addPriorityBeneficiaryRow()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition-all flex items-center gap-1">
+                <i class="fa-solid fa-plus text-[10px]"></i> 우선수익자 추가
+              </button>
+            </div>
+            <div id="pb-container" class="space-y-3"></div>
+            <div class="border-t border-slate-800 pt-2 flex items-center justify-between text-xs">
+              <label class="flex items-center gap-2 cursor-pointer text-slate-300 font-medium">
+                <input type="checkbox" id="check-manual-agent" onchange="handleAgentBankToggle()" class="rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-0">
+                <span>대리금융기관 선임 (hasAgentBank)</span>
+              </label>
+              <input type="text" id="agent-bank-name" list="vendor-master-datalist" oninput="updateDocumentPreviews()" placeholder="대리금융기관 상호" class="w-1/2 bg-slate-900 border border-slate-700 text-amber-300 p-1.5 rounded focus:outline-none text-xs font-medium">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 계약 메타정보 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 border-t border-slate-800 pt-3 text-xs">
+          <div>
+            <label class="block text-slate-300 mb-1 font-semibold text-emerald-400">
+              <i class="fa-solid fa-calendar-day mr-1"></i>계약체결일자 (기준일자) *
+            </label>
+            <input type="date" id="contract-date" value="2026-04-09" onchange="updateDocumentPreviews()" class="w-full bg-slate-950 border border-emerald-500/60 text-white rounded-lg p-2 focus:outline-none font-bold">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-semibold text-cyan-400">
+              <i class="fa-solid fa-coins mr-1"></i>담보보수 요율 및 금액 *
+            </label>
+            <div class="flex gap-1.5">
+              <input type="text" id="meta-fee-rate" value="0.2%" oninput="updateDocumentPreviews()" placeholder="요율" class="w-1/3 bg-slate-950 border border-slate-700 text-white rounded-lg p-2 focus:outline-none text-center">
+              <input type="text" id="meta-fee-kor" value="금 일천오백만원정" oninput="updateDocumentPreviews()" placeholder="한글" class="w-2/3 bg-slate-950 border border-slate-700 text-white rounded-lg p-2 focus:outline-none font-bold">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-semibold text-cyan-400">
+              <i class="fa-solid fa-money-bill-wave mr-1"></i>담보보수 숫자 금액 *
+            </label>
+            <input type="text" id="meta-fee-num" value="\ 15,000,000-" oninput="updateDocumentPreviews()" class="w-full bg-slate-950 border border-slate-700 text-white rounded-lg p-2 focus:outline-none font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-semibold text-indigo-400">
+              <i class="fa-solid fa-clock mr-1"></i>신탁기간 (특약 제19조) *
+            </label>
+            <input type="text" id="meta-trust-period" value="24개월" oninput="updateDocumentPreviews()" class="w-full bg-slate-950 border border-slate-700 text-white rounded-lg p-2 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-semibold">
+              <i class="fa-solid fa-copy mr-1"></i>계약서 작성 부수
+            </label>
+            <input type="number" id="meta-copy-count" value="4" min="1" max="20" onchange="updateDocumentPreviews()" class="w-full bg-slate-950 border border-slate-700 text-white rounded-lg p-2 focus:outline-none font-bold">
+          </div>
+        </div>
+
+        <div class="text-xs">
+          <label class="block text-slate-300 mb-1 font-semibold">
+            <i class="fa-solid fa-map-location-dot text-indigo-400 mr-1"></i>신탁부동산 표시 (별첨 1)
+          </label>
+          <input type="text" id="meta-property-summary" value="서울특별시 강남구 테헤란로 100 대 850㎡ 및 지상 철근콘크리트 평슬래브 5층 근린생활시설" oninput="updateDocumentPreviews()" class="w-full bg-slate-950 border border-slate-700 text-white rounded-lg p-2 focus:outline-none">
+        </div>
+      </div>
+
+      <!-- 서류 선택 서브탭 -->
+      <div class="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
+        <button onclick="switchDocSubTab('doc1')" id="subtab-doc1" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-blue-600 text-white transition-all">
+          <i class="fa-solid fa-file-contract mr-1.5"></i>1. 담보신탁계약서 (본문 31개조 및 별첨 1~4 전문)
+        </button>
+        <button onclick="switchDocSubTab('doc2-1')" id="subtab-doc2-1" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-slate-900 text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-user mr-1.5"></i>2-① 고객거래확인서 (위탁자 개인용)
+        </button>
+        <button onclick="switchDocSubTab('doc2-2')" id="subtab-doc2-2" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-slate-900 text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-building mr-1.5"></i>2-② 고객거래확인서 (위탁자 법인용)
+        </button>
+        <button onclick="switchDocSubTab('doc2-3')" id="subtab-doc2-3" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-slate-900 text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-building-columns mr-1.5"></i>2-③ 고객거래확인서 (우선수익자용)
+        </button>
+        <button onclick="switchDocSubTab('doc3-1')" id="subtab-doc3-1" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-slate-900 text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-id-card-clip mr-1.5"></i>3-① 실제소유자확인서 (위탁자 법인)
+        </button>
+        <button onclick="switchDocSubTab('doc3-2')" id="subtab-doc3-2" class="doc-subtab px-4 py-2 text-xs font-semibold rounded-t-xl bg-slate-900 text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-shield-halved mr-1.5"></i>3-② 실제소유자확인서 (우선수익자-생략)
+        </button>
+      </div>
+
+      <!-- 서류 출력 뷰어 컨테이너 (templates.js가 이곳에 법률 서식 원문을 주입함) -->
+      <div class="flex justify-center bg-black/50 p-2 sm:p-6 rounded-2xl border border-slate-800 shadow-2xl min-h-[850px]">
+        <div id="print-area" class="w-full max-w-[850px]"></div>
+      </div>
+    </section>
+
+    <!-- TAB 5: 설정 (Admin) -->
+    <section id="tab-settings" class="tab-content hidden space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-purple-400"></i> 관리자 설정 &amp; Gemini API Key 관리
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">입력된 API Key는 브라우저 로컬 스토리지에 영구 보존되어 새로고침 후에도 유지됩니다.</p>
+        </div>
+        <button onclick="lockAdminSettings()" class="bg-slate-900 text-amber-400 text-xs border border-amber-500/30 px-3.5 py-2 rounded-xl">
+          <i class="fa-solid fa-lock mr-1"></i>로그아웃
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-key text-purple-400 mr-1.5"></i>Google AI Studio API Key (영구 보존)</h3>
+          <input type="password" id="gemini-api-key" placeholder="Google AI Studio에서 발급받은 API Key를 입력하세요" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-cyan-500 font-mono">
+          <div class="flex gap-2">
+            <button onclick="saveAdminApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
+              <i class="fa-solid fa-floppy-disk mr-1"></i>Key 저장 및 적용
+            </button>
+            <button onclick="testGoogleAPIConnection()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs px-4 py-2 rounded-lg border border-cyan-500/30">
+              연결 테스트
+            </button>
+          </div>
+          <p class="text-[11px] text-emerald-400 mt-1">※ 입력 즉시 자동 저장되어 브라우저 새로고침 시에도 풀리지 않습니다.</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-user-lock text-amber-400 mr-1.5"></i>관리자 비밀번호 변경</h3>
+          <input type="password" id="new-admin-pw" placeholder="새 비밀번호" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none">
+          <input type="password" id="confirm-admin-pw" placeholder="새 비밀번호 확인" class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none">
+          <button onclick="changeAdminPassword()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2 rounded-lg">변경 적용</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 관리자 인증 모달 -->
+  <div id="admin-auth-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4">
+      <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-xl border border-amber-500/30">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-white">관리자 인증</h3>
+        <p class="text-xs text-slate-400 mt-1">비밀번호를 입력해 주세요 (기본: admin123)</p>
+      </div>
+      <form onsubmit="event.preventDefault(); verifyAdminPassword();" class="space-y-3">
+        <input type="password" id="admin-pw-input" required class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 text-center font-mono focus:border-amber-500">
+        <p id="admin-auth-error" class="hidden text-[11px] text-red-400">비밀번호가 일치하지 않습니다.</p>
+        <div class="flex gap-2">
+          <button type="button" onclick="cancelAdminAuth()" class="w-1/2 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl">취소</button>
+          <button type="submit" class="w-1/2 py-2 bg-amber-600 text-white text-xs rounded-xl font-bold">확인</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 수동 거래처 추가 모달 -->
+  <div id="add-vendor-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <h3 class="text-base font-bold text-white mb-4">신규 거래처 등록</h3>
+      <form onsubmit="event.preventDefault(); submitManualVendor();" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-300 mb-1">상호 / 성명 *</label>
+          <input type="text" id="modal-company" required class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1">대표자 *</label>
+            <input type="text" id="modal-rep" required class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5">
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">법인등록번호/등록번호 *</label>
+            <input type="text" id="modal-corpno" required class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5 font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1">주소 *</label>
+          <input type="text" id="modal-address" required class="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2.5">
+        </div>
+        <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" onclick="closeAddVendorModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg">취소</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- 분리된 법률 서식 템플릿 및 메인 로직 스크립트 연결 -->
+  <script src="templates.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
