@@ -1,6 +1,12 @@
-const FAILOVER_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3-flash"];
+// 과부하 시 순차적으로 우회할 모델 체인
+const FAILOVER_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3-flash",
+  "gemini-2.5-flash"
+];
 
-// 한국어 조사 자동 처리 헬퍼
+// 1. 한국어 조사 자동 처리 헬퍼
 function getJosa(word, josaType) {
   if (!word) return "";
   const trimmed = word.trim();
@@ -23,7 +29,7 @@ function getJosa(word, josaType) {
   }
 }
 
-// 기본 거래처 마스터 DB
+// 2. 기본 거래처 마스터 DB
 const DEFAULT_SEED_VENDORS = [
   {
     id: "VND-2026-001",
@@ -181,12 +187,10 @@ function resetVendorDBToDefault() {
 }
 
 window.onload = function() {
-  // 1) templates.js의 법률 서식 HTML을 #print-area에 주입
   if (typeof injectDocumentTemplates === 'function') {
     injectDocumentTemplates();
   }
 
-  // 2) API Key 복원
   const key = getStoredApiKey();
   const apiKeyInput = document.getElementById('gemini-api-key');
   if (apiKeyInput && key) apiKeyInput.value = key;
@@ -197,7 +201,6 @@ window.onload = function() {
     });
   }
 
-  // 3) DB 로드 및 UI 초기화
   loadPersistentVendorDatabase();
   renderVendorTables();
   setupFileUploadListeners();
@@ -208,6 +211,8 @@ window.onload = function() {
   renderPriorityBeneficiaryUI();
   refreshApiKeyStatusUI();
   updateDocumentPreviews();
+
+  appendDiagnosticLog("시스템 준비 완료 (503 과부하 자동 재시도 및 모델 우회 엔진 탑재)");
 };
 
 function refreshApiKeyStatusUI() {
@@ -436,7 +441,7 @@ function renderTrusterUI() {
             </label>
             <div class="flex items-center gap-1 text-[11px] text-slate-300">
               <span>지분율:</span>
-              <input type="text" value="${t.shareRatio || ''}" oninput="updateTrusterField(${index}, 'shareRatio', this.value)" class="w-14 bg-slate-950 border border-slate-700 p-1 rounded text-center text-xs"> %
+              <input type="text" value="${t.shareRatio \vert{}\vert{} ''}" oninput="updateTrusterField(${index}, 'shareRatio', this.value)" class="w-14 bg-slate-950 border border-slate-700 p-1 rounded text-center text-xs"> %
             </div>
           ` : ''}
           ${contractState.trusters.length > 1 ? `
@@ -637,6 +642,7 @@ function updateDocumentPreviews() {
 
   // 표지
   const coverBox = document.getElementById('cover-parties-box');
+  if (!coverBox) return;
   let coverHtml = "";
   if (!isMultiTruster) {
     const t = contractState.trusters[0];
@@ -1048,7 +1054,7 @@ function downloadAllDocsAsDocx() {
 }
 
 // =========================================================================
-// 탭 전환, OCR, 거래처 DB 관리
+// 탭 전환, 503 과부하 자동 재시도 & 모델 우회 OCR 엔진
 // =========================================================================
 function switchTab(tabId) {
   if (tabId === 'settings' && !isAdminAuthenticated) {
@@ -1106,26 +1112,135 @@ function saveAdminApiKey() {
   showToast('API Key가 영구 저장되었습니다.');
 }
 
+// Sleep 헬퍼
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 2단계 비표준 JSON 자동 복구 파서
+function safeExtractJSON(rawText) {
+  if (!rawText) throw new Error("AI 응답 본문이 비어있습니다.");
+  let clean = rawText.trim().replace(/```json/gi, '').replace(/```/g, '').trim();
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    clean = clean.substring(firstBrace, lastBrace + 1);
+  }
+  try {
+    return JSON.parse(clean);
+  } catch (initialErr) {
+    try {
+      let repaired = clean
+        .replace(/\/\/[^\n\r]*/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/,\s*([\]}])/g, '$1')
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":')
+        .replace(/:\s*'([^']*)'/g, ': "$1"');
+      return JSON.parse(repaired);
+    } catch (repairErr) {
+      throw initialErr;
+    }
+  }
+}
+
+// ★ 핵심: 503/429 지수 백오프 자동 재시도 & 다중 모델 우회(Failover) 호출기
+async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
+  let lastError = null;
+
+  for (let mIdx = 0; mIdx < FAILOVER_MODELS.length; mIdx++) {
+    const model = FAILOVER_MODELS[mIdx];
+    const isFallback = mIdx > 0;
+
+    if (isFallback) {
+      appendDiagnosticLog(`[트래픽 분산 우회] 예비 모델 "${model}"(으)로 전환 시도 중...`, 'warn');
+      if (onStepUpdate) onStepUpdate(`과부하 우회: 예비 모델 (${model}) 호출 중...`);
+    } else {
+      appendDiagnosticLog(`AI OCR 요청 시작: 모델 "${model}"...`);
+      if (onStepUpdate) onStepUpdate(`Google AI (${model}) 분석 요청 중...`);
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
+    const MAX_RETRIES = 2; // 모델당 최대 2회 추가 재시도
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 정상 응답 수신!`, 'success');
+          return { model, data };
+        }
+
+        const errText = await response.text();
+        let parsedMsg = errText;
+        try {
+          const j = JSON.parse(errText);
+          parsedMsg = j.error?.message || errText;
+        } catch(e) {}
+
+        // 503(과부하) 또는 429(할당량 집중) 감지 시 지수 백오프 대기 후 재시도
+        if (response.status === 503 || response.status === 429) {
+          lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
+          if (attempt < MAX_RETRIES) {
+            const waitMs = (attempt + 1) * 1500; // 1.5초 -> 3.0초
+            appendDiagnosticLog(`[서버 과부하 ${response.status}] ${waitMs / 1000}초 후 자동 재시도 (${attempt + 1}/${MAX_RETRIES})...`, 'warn');
+            if (onStepUpdate) onStepUpdate(`서버 혼잡 감지: ${waitMs / 1000}초 후 자동 재시도 중...`);
+            await sleep(waitMs);
+            continue;
+          } else {
+            appendDiagnosticLog(`모델 "${model}" 응답 지연 지속. 다음 예비 모델로 즉시 우회합니다.`, 'warn');
+            break; // 내부 루프 탈출 -> 다음 예비 모델로 이동
+          }
+        } else {
+          // 404 등 기타 오류 시에도 다음 예비 모델로 즉시 우회 시도
+          lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
+          appendDiagnosticLog(`모델 "${model}" 전환 (${response.status}): 다음 모델 시도`, 'warn');
+          break;
+        }
+      } catch (netErr) {
+        lastError = netErr;
+        if (attempt < MAX_RETRIES) {
+          appendDiagnosticLog(`네트워크 재시도 중...`, 'warn');
+          await sleep(1500);
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.");
+}
+
 async function testGoogleAPIConnection() {
   const key = getStoredApiKey() || document.getElementById('gemini-api-key').value.trim();
   if (!key) { showToast('저장된 API Key가 없습니다.'); return; }
+  appendDiagnosticLog("API 연결 테스트 및 자동 우회 점검 시작...");
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${FAILOVER_MODELS[0]}:generateContent?key=${encodeURIComponent(key)}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
-    });
-    if (res.ok) { showToast('API Key 정상 연결 확인!'); refreshApiKeyStatusUI(); }
-    else { showToast(`연결 오류: HTTP ${res.status}`); }
-  } catch(e) { showToast(`네트워크 오류`); }
+    const payload = { contents: [{ parts: [{ text: "ping" }] }] };
+    const result = await callWithRetryAndFailover(payload, key);
+    showToast(`연결 성공! (활성 모델: ${result.model})`);
+    refreshApiKeyStatusUI();
+  } catch(e) {
+    showToast(`연결 오류: ${e.message.substring(0, 40)}`);
+  }
 }
 
 function appendDiagnosticLog(msg, type = 'info') {
   const terminal = document.getElementById('diagnostic-terminal');
   if (!terminal) return;
   const div = document.createElement('div');
-  div.className = type === 'success' ? 'text-emerald-400 font-semibold' : (type === 'error' ? 'text-rose-400' : 'text-slate-400');
+  if (type === 'success') div.className = 'text-emerald-400 font-semibold';
+  else if (type === 'warn') div.className = 'text-amber-400 font-semibold';
+  else if (type === 'error') div.className = 'text-rose-400 font-semibold';
+  else div.className = 'text-slate-400';
+
   div.textContent = `[${new Date().toTimeString().split(' ')[0]}] ${msg}`;
   terminal.appendChild(div);
   terminal.scrollTop = terminal.scrollHeight;
@@ -1163,45 +1278,71 @@ async function handleSelectedFile(file) {
   reader.readAsDataURL(file);
 }
 
+// ★ 보완된 고정밀 OCR 실행 함수 (자동 재시도 & 예비 모델 우회 적용)
 async function executeHighPrecisionOCR() {
   if (!cachedFileBase64) return;
   const key = getStoredApiKey();
-  if (!key) { showToast('설정 탭에서 API Key를 먼저 등록해 주세요.'); return; }
-  const pBar = document.getElementById('ocr-progress-bar');
-  const badge = document.getElementById('ocr-status-badge');
-  pBar.classList.remove('hidden');
-  badge.textContent = '분석 중...';
+  if (!key) { showToast('설정(Admin) 탭에서 API Key를 먼저 등록해 주세요.'); return; }
 
-  const promptText = `대한민국 사업자등록증 및 등기부등본의 다음 6가지 정보를 JSON으로만 반환하세요:
-{"companyName":"","representative":"","corpRegNo":"","address":"","bizNo":"","bizType":""}`;
+  const pBar = document.getElementById('ocr-progress-bar');
+  const pFill = document.getElementById('ocr-progress-fill');
+  const stepText = document.getElementById('ocr-step-text');
+  const badge = document.getElementById('ocr-status-badge');
+
+  pBar.classList.remove('hidden');
+  if (pFill) pFill.style.width = '50%';
+  badge.textContent = 'AI 분석 및 자동 우회 작동 중...';
+  badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
+
+  const promptText = `대한민국 사업자등록증 및 등기사항전부증명서(등기부등본)의 다음 6가지 정보를 정밀 판독하여 반드시 아래 JSON 형식으로만 반환하세요:
+{
+  "companyName": "법인명 또는 상호명",
+  "representative": "대표자 성명",
+  "corpRegNo": "13자리 법인등록번호(개인사업자는 생년월일 또는 사업자번호)",
+  "address": "본점 소재지 도로명 전체 주소",
+  "bizNo": "10자리 사업자등록번호",
+  "bizType": "업태 및 종목"
+}`;
+
+  const payload = {
+    contents: [{
+      role: "user",
+      parts: [
+        { inlineData: { mimeType: cachedMimeType, data: cachedFileBase64 } },
+        { text: promptText }
+      ]
+    }],
+    generationConfig: { responseMimeType: "application/json" }
+  };
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${FAILOVER_MODELS[0]}:generateContent?key=${encodeURIComponent(key)}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ inlineData: { mimeType: cachedMimeType, data: cachedFileBase64 } }, { text: promptText }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
+    // 단일 호출 대신 지수 백오프 재시도 & 다중 모델 우회 엔진 호출
+    const result = await callWithRetryAndFailover(payload, key, (statusMsg) => {
+      if (stepText) stepText.textContent = statusMsg;
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text);
+
+    const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parsed = safeExtractJSON(rawText);
+
     document.getElementById('ocr-company-name').value = parsed.companyName || '';
     document.getElementById('ocr-representative').value = parsed.representative || '';
     document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
     document.getElementById('ocr-address').value = parsed.address || '';
     document.getElementById('ocr-biz-no').value = parsed.bizNo || '';
     document.getElementById('ocr-biz-type').value = parsed.bizType || '';
-    badge.textContent = '완료';
-    appendDiagnosticLog(`[성공] ${parsed.companyName}`, 'success');
-    showToast('추출 완료!');
+
+    if (pFill) pFill.style.width = '100%';
+    badge.textContent = `파싱 성공 (${result.model})`;
+    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
+    appendDiagnosticLog(`[추출 완료] 상호: ${parsed.companyName} | 대표: ${parsed.representative}`, 'success');
+    showToast(`[${parsed.companyName}] 서류 정보 추출 완료!`);
   } catch (err) {
-    badge.textContent = '실패';
-    appendDiagnosticLog(`오류: ${err.message}`, 'error');
+    badge.textContent = '파싱 실패';
+    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
+    appendDiagnosticLog(`최종 오류: ${err.message}`, 'error');
+    showToast(`오류: ${err.message.substring(0, 45)}...`);
   } finally {
-    pBar.classList.add('hidden');
+    setTimeout(() => pBar.classList.add('hidden'), 600);
   }
 }
 
