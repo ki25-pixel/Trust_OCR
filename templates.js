@@ -1,5 +1,5 @@
 // 서류 3종(총 6개 뷰)의 원본 법률 양식을 #print-area에 렌더링하는 모듈
-function injectDocumentTemplates() {
+window.injectDocumentTemplates = function() {
   const printArea = document.getElementById('print-area');
   if (!printArea) return;
 
@@ -269,4 +269,4 @@ function injectDocumentTemplates() {
       </div>
     </div>
   `;
-}
+};
