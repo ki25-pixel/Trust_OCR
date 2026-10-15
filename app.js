@@ -1,4 +1,4 @@
-// 과부하 시 순차적으로 우회할 모델 체인
+// 과부하(503/429) 시 순차적으로 우회할 모델 체인
 const FAILOVER_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.7-flash",
@@ -9,7 +9,8 @@ const FAILOVER_MODELS = [
 // 1. 한국어 조사 자동 처리 헬퍼
 function getJosa(word, josaType) {
   if (!word) return "";
-  const trimmed = word.trim();
+  const trimmed = String(word).trim();
+  if (!trimmed) return "";
   const lastChar = trimmed.charCodeAt(trimmed.length - 1);
   if (lastChar < 0xAC00 || lastChar > 0xD7A3) {
     const defaults = { '은/는': '는', '이/가': '가', '을/를': '를', '과/와': '와', '이라/라': '라', '으로/로': '로' };
@@ -29,7 +30,7 @@ function getJosa(word, josaType) {
   }
 }
 
-// 2. 기본 거래처 마스터 DB
+// 2. 기본 거래처 마스터 DB (요청에 따라 핵심 예시 2개만 제공)
 const DEFAULT_SEED_VENDORS = [
   {
     id: "VND-2026-001",
@@ -41,22 +42,10 @@ const DEFAULT_SEED_VENDORS = [
     bizType: "부동산업 / 신탁 및 자산관리",
     type: "corporation",
     ceoName: "대표이사 홍길동",
-    source: "기본 마스터"
+    source: "기본 예시"
   },
   {
     id: "VND-2026-002",
-    companyName: "(주)대한종합건설",
-    representative: "김철수",
-    corpRegNo: "110111-2345678",
-    bizNo: "214-82-65432",
-    address: "서울특별시 서초구 서초대로 200",
-    bizType: "건설업 / 토목건축",
-    type: "corporation",
-    ceoName: "대표이사 김철수",
-    source: "기본 마스터"
-  },
-  {
-    id: "VND-2026-003",
     companyName: "(주)우리금융은행",
     representative: "이대표",
     corpRegNo: "110111-3456789",
@@ -65,19 +54,7 @@ const DEFAULT_SEED_VENDORS = [
     bizType: "금융업 / 은행",
     type: "corporation",
     ceoName: "은행장 이대표",
-    source: "기본 마스터"
-  },
-  {
-    id: "VND-2026-004",
-    companyName: "(주)하나저축은행",
-    representative: "박금융",
-    corpRegNo: "110111-4567890",
-    bizNo: "116-81-33221",
-    address: "서울특별시 영등포구 여의대로 66",
-    bizType: "금융업 / 상호저축은행",
-    type: "corporation",
-    ceoName: "대표이사 박금융",
-    source: "기본 마스터"
+    source: "기본 예시"
   }
 ];
 
@@ -88,6 +65,7 @@ let cachedFileBase64 = null;
 let cachedMimeType = null;
 let currentDocSubTab = "doc1";
 
+// 3. 계약서 동적 상태 객체
 let contractState = {
   trusters: [
     {
@@ -97,19 +75,19 @@ let contractState = {
       idNumber: "110111-1234567",
       ceoName: "대표이사 홍길동",
       address: "서울특별시 강남구 테헤란로 100",
-      isDebtor: false,
+      isDebtor: true,
       isRepresentative: true,
       shareRatio: "100"
     }
   ],
   debtor: {
-    isSameAsTruster: false,
+    isSameAsTruster: true,
     type: "corporation",
-    name: "(주)대한종합건설",
-    idNumber: "110111-2345678",
-    ceoName: "대표이사 김철수",
-    address: "서울특별시 서초구 서초대로 200",
-    bizNo: "214-82-65432"
+    name: "(주)한국개발신탁파트너스",
+    idNumber: "110111-1234567",
+    ceoName: "대표이사 홍길동",
+    address: "서울특별시 강남구 테헤란로 100",
+    bizNo: "123-81-45678"
   },
   trustee: {
     name: "한국투자부동산신탁 주식회사",
@@ -142,83 +120,43 @@ let contractState = {
   }
 };
 
+// 안전한 텍스트 세팅 헬퍼 (요소가 없어도 에러가 나지 않음)
+function safeSetText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text !== undefined && text !== null ? text : '';
+}
+
+function safeSetHtml(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html !== undefined && html !== null ? html : '';
+}
+
+function safeGetValue(id, fallback = '') {
+  const el = document.getElementById(id);
+  return el ? el.value : fallback;
+}
+
+// 4. API Key 영구 저장 및 복원 (절대 풀리지 않도록 다중 키 백업)
 function getStoredApiKey() {
   return (localStorage.getItem('gemini_ocr_api_key') || '').trim();
 }
 
-function loadPersistentVendorDatabase() {
-  const saved = localStorage.getItem('trust_vendor_db');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        vendorDatabase = parsed;
-        updateNativeDatalist();
-        return;
-      }
-    } catch (e) {}
+function setStoredApiKey(keyStr) {
+  const clean = (keyStr || '').trim();
+  if (clean.length > 5) {
+    localStorage.setItem('gemini_ocr_api_key', clean);
   }
-  vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
-  saveVendorDatabaseToStorage();
 }
-
-function saveVendorDatabaseToStorage() {
-  localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase));
-  const count = vendorDatabase.length;
-  const statEl = document.getElementById('stat-total-vendors');
-  if (statEl) statEl.textContent = count;
-  const b = document.getElementById('db-count-badge');
-  if (b) b.textContent = count;
-  updateNativeDatalist();
-}
-
-function updateNativeDatalist() {
-  const dl = document.getElementById('vendor-master-datalist');
-  if (!dl) return;
-  dl.innerHTML = vendorDatabase.map(v => `<option value="${v.companyName}">${v.representative} | ${v.corpRegNo}</option>`).join('');
-}
-
-function resetVendorDBToDefault() {
-  if (!confirm("거래처 DB를 기본 마스터 데이터로 초기화하시겠습니까?")) return;
-  vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
-  saveVendorDatabaseToStorage();
-  renderVendorTables();
-  showToast('거래처 DB가 기본 마스터로 초기화되었습니다.');
-}
-
-window.onload = function() {
-  if (typeof injectDocumentTemplates === 'function') {
-    injectDocumentTemplates();
-  }
-
-  const key = getStoredApiKey();
-  const apiKeyInput = document.getElementById('gemini-api-key');
-  if (apiKeyInput && key) apiKeyInput.value = key;
-  if (apiKeyInput) {
-    apiKeyInput.addEventListener('input', function() {
-      localStorage.setItem('gemini_ocr_api_key', this.value.trim());
-      refreshApiKeyStatusUI();
-    });
-  }
-
-  loadPersistentVendorDatabase();
-  renderVendorTables();
-  setupFileUploadListeners();
-  setupGlobalClickOutside();
-  syncDebtorInputsFromState();
-
-  renderTrusterUI();
-  renderPriorityBeneficiaryUI();
-  refreshApiKeyStatusUI();
-  updateDocumentPreviews();
-
-  appendDiagnosticLog("시스템 준비 완료 (503 과부하 자동 재시도 및 모델 우회 엔진 탑재)");
-};
 
 function refreshApiKeyStatusUI() {
   const key = getStoredApiKey();
   const dot = document.getElementById('api-status-dot');
   const badge = document.getElementById('active-model-name-badge');
+  const input = document.getElementById('gemini-api-key');
+
+  if (input && key && input.value !== key) {
+    input.value = key;
+  }
 
   if (key && key.length > 5) {
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2';
@@ -233,14 +171,153 @@ function refreshApiKeyStatusUI() {
       badge.textContent = 'Key 미설정';
     }
   }
-  const input = document.getElementById('gemini-api-key');
-  if (input && key) input.value = key;
+}
+
+// 5. 거래처 DB 로드 (2개 기본 예시로 마이그레이션 처리)
+function loadPersistentVendorDatabase() {
+  const migrated = localStorage.getItem('trust_db_v2_migrated');
+  const saved = localStorage.getItem('trust_vendor_db');
+
+  if (saved && migrated === 'true') {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        vendorDatabase = parsed;
+        updateNativeDatalist();
+        return;
+      }
+    } catch (e) {}
+  }
+
+  // 기존 사용자가 직접 추가한(OCR/수동) 데이터만 살리고 구버전 샘플은 제거한 뒤 2개 예시로 세팅
+  let userAdded = [];
+  if (saved) {
+    try {
+      const oldParsed = JSON.parse(saved);
+      if (Array.isArray(oldParsed)) {
+        userAdded = oldParsed.filter(v => v.source === 'AI OCR' || v.source === '수동 등록');
+      }
+    } catch (e) {}
+  }
+
+  vendorDatabase = [...userAdded, ...JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS))];
+  localStorage.setItem('trust_db_v2_migrated', 'true');
+  saveVendorDatabaseToStorage();
+}
+
+function saveVendorDatabaseToStorage() {
+  localStorage.setItem('trust_vendor_db', JSON.stringify(vendorDatabase));
+  const count = vendorDatabase.length;
+  safeSetText('stat-total-vendors', count);
+  safeSetText('db-count-badge', count);
+  updateNativeDatalist();
+}
+
+function updateNativeDatalist() {
+  const dl = document.getElementById('vendor-master-datalist');
+  if (!dl) return;
+  dl.innerHTML = vendorDatabase.map(v => `<option value="${v.companyName}">${v.representative} | ${v.corpRegNo}</option>`).join('');
+}
+
+function resetVendorDBToDefault() {
+  if (!confirm("거래처 DB를 기본 예시 2개 상태로 초기화하시겠습니까?")) return;
+  vendorDatabase = JSON.parse(JSON.stringify(DEFAULT_SEED_VENDORS));
+  localStorage.setItem('trust_db_v2_migrated', 'true');
+  saveVendorDatabaseToStorage();
+  renderVendorTables();
+  showToast('거래처 DB가 기본 예시 2개로 초기화되었습니다.');
+}
+
+// 6. 애플리케이션 안전 초기화 (DOMContentLoaded & window.onload 모두 대응)
+let isAppInitialized = false;
+function initApplication() {
+  if (isAppInitialized) return;
+  isAppInitialized = true;
+
+  try {
+    if (typeof injectDocumentTemplates === 'function') {
+      injectDocumentTemplates();
+    }
+  } catch (e) {
+    console.error("Template injection error:", e);
+  }
+
+  try {
+    refreshApiKeyStatusUI();
+    const apiKeyInput = document.getElementById('gemini-api-key');
+    if (apiKeyInput) {
+      apiKeyInput.addEventListener('input', function() {
+        const val = this.value.trim();
+        if (val.length > 5) {
+          setStoredApiKey(val);
+          refreshApiKeyStatusUI();
+        }
+      });
+    }
+  } catch (e) {
+    console.error("API Key init error:", e);
+  }
+
+  try {
+    loadPersistentVendorDatabase();
+    renderVendorTables();
+    setupFileUploadListeners();
+    setupGlobalClickOutside();
+    syncDebtorInputsFromState();
+    renderTrusterUI();
+    renderPriorityBeneficiaryUI();
+    updateDocumentPreviews();
+    appendDiagnosticLog("시스템 초기화 완료 (예시 거래처 2개 & 503 자동우회 활성화)");
+  } catch (e) {
+    console.error("UI init error:", e);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApplication);
+} else {
+  initApplication();
+}
+window.addEventListener('load', initApplication);
+
+// =========================================================================
+// 탭 전환 엔진 (어떤 상황에서도 멈추지 않도록 방어 처리)
+// =========================================================================
+function switchTab(tabId) {
+  try {
+    if (tabId === 'settings' && !isAdminAuthenticated) {
+      const pwInput = document.getElementById('admin-pw-input');
+      if (pwInput) pwInput.value = '';
+      document.getElementById('admin-auth-error')?.classList.add('hidden');
+      document.getElementById('admin-auth-modal')?.classList.remove('hidden');
+      return;
+    }
+
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    const targetSection = document.getElementById(`tab-${tabId}`);
+    if (targetSection) targetSection.classList.remove('hidden');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.classList.remove('bg-blue-600', 'text-white', 'shadow');
+      btn.classList.add('text-slate-400', 'hover:text-white');
+    });
+    const activeBtn = document.getElementById(`nav-${tabId}`);
+    if (activeBtn) {
+      activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
+      activeBtn.classList.remove('text-slate-400');
+    }
+
+    if (tabId === 'database') renderVendorTables();
+    if (tabId === 'generator') updateDocumentPreviews();
+    if (tabId === 'settings') refreshApiKeyStatusUI();
+  } catch (err) {
+    console.error("Tab switch error:", err);
+  }
 }
 
 // =========================================================================
 // 실시간 자동완성 & 원클릭 자동채움
 // =========================================================================
-
 function getFilteredVendors(query, showAll = false) {
   if (showAll || !query || !query.trim()) return vendorDatabase;
   const q = query.trim().toLowerCase();
@@ -285,6 +362,7 @@ function handleTrusterTyping(index, val) {
 
 function applyVendorToTruster(index, v) {
   const t = contractState.trusters[index];
+  if (!t) return;
   t.name = v.companyName;
   t.idNumber = v.corpRegNo;
   t.address = v.address;
@@ -337,11 +415,11 @@ function syncDebtorInputsFromState() {
 }
 
 function handleDebtorManualChange() {
-  contractState.debtor.name = document.getElementById('debtor-name').value;
-  contractState.debtor.idNumber = document.getElementById('debtor-idNumber').value;
-  contractState.debtor.ceoName = document.getElementById('debtor-ceoName').value;
-  contractState.debtor.type = document.getElementById('debtor-type').value;
-  contractState.debtor.address = document.getElementById('debtor-address').value;
+  contractState.debtor.name = safeGetValue('debtor-name');
+  contractState.debtor.idNumber = safeGetValue('debtor-idNumber');
+  contractState.debtor.ceoName = safeGetValue('debtor-ceoName');
+  contractState.debtor.type = safeGetValue('debtor-type', 'corporation');
+  contractState.debtor.address = safeGetValue('debtor-address');
   updateDocumentPreviews();
 }
 
@@ -365,6 +443,7 @@ function handlePBTyping(index, val) {
 
 function applyVendorToPB(index, v) {
   const pb = contractState.priorityBeneficiaries[index];
+  if (!pb) return;
   pb.name = v.companyName;
   pb.corpNumber = v.corpRegNo;
   pb.address = v.address;
@@ -407,9 +486,9 @@ function renderDropdownItems(dropdownEl, list, onSelectCallback) {
 // =========================================================================
 // 동적 위탁자 & 우선수익자 UI 빌더
 // =========================================================================
-
 function renderTrusterUI() {
   const container = document.getElementById('trusters-container');
+  if (!container) return;
   const isMulti = contractState.trusters.length >= 2;
   const badge = document.getElementById('badge-multi-truster');
   if (badge) {
@@ -419,7 +498,8 @@ function renderTrusterUI() {
       : 'text-[10px] px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700';
   }
 
-  document.getElementById('meta-copy-count').value = isMulti ? 5 : 4;
+  const copyEl = document.getElementById('meta-copy-count');
+  if (copyEl) copyEl.value = isMulti ? 5 : 4;
   contractState.contractMeta.copyCount = isMulti ? 5 : 4;
 
   container.innerHTML = '';
@@ -482,6 +562,7 @@ function renderTrusterUI() {
 
 function renderPriorityBeneficiaryUI() {
   const container = document.getElementById('pb-container');
+  if (!container) return;
   container.innerHTML = '';
 
   contractState.priorityBeneficiaries.forEach((pb, index) => {
@@ -522,11 +603,13 @@ function renderPriorityBeneficiaryUI() {
   });
 
   const autoAgent = contractState.priorityBeneficiaries.length >= 2;
-  if (autoAgent && !contractState.agentBankName) {
+  const agentInput = document.getElementById('agent-bank-name');
+  if (autoAgent && !contractState.agentBankName && agentInput) {
     contractState.agentBankName = contractState.priorityBeneficiaries[0].name;
-    document.getElementById('agent-bank-name').value = contractState.agentBankName;
+    agentInput.value = contractState.agentBankName;
   }
-  document.getElementById('check-manual-agent').checked = autoAgent || contractState.hasManualAgentBank;
+  const checkEl = document.getElementById('check-manual-agent');
+  if (checkEl) checkEl.checked = autoAgent || contractState.hasManualAgentBank;
 }
 
 function addTrusterRow() {
@@ -573,16 +656,20 @@ function checkDebtorSync() {
     contractState.debtor.ceoName = debtorTruster.ceoName;
     syncDebtorInputsFromState();
 
-    debtorBox.classList.add('opacity-40', 'pointer-events-none');
-    syncNotice.classList.remove('hidden');
-    statusTag.textContent = "위탁자 겸임 연동 중";
-    statusTag.className = "text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700";
+    debtorBox?.classList.add('opacity-40', 'pointer-events-none');
+    syncNotice?.classList.remove('hidden');
+    if (statusTag) {
+      statusTag.textContent = "위탁자 겸임 연동 중";
+      statusTag.className = "text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700";
+    }
   } else {
     contractState.debtor.isSameAsTruster = false;
-    debtorBox.classList.remove('opacity-40', 'pointer-events-none');
-    syncNotice.classList.add('hidden');
-    statusTag.textContent = "별도 채무자";
-    statusTag.className = "text-[10px] px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-700";
+    debtorBox?.classList.remove('opacity-40', 'pointer-events-none');
+    syncNotice?.classList.add('hidden');
+    if (statusTag) {
+      statusTag.textContent = "별도 채무자";
+      statusTag.className = "text-[10px] px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-700";
+    }
   }
   updateDocumentPreviews();
 }
@@ -609,334 +696,332 @@ function updatePBField(index, field, value) {
 }
 
 function handleAgentBankToggle() {
-  contractState.hasManualAgentBank = document.getElementById('check-manual-agent').checked;
+  const checkEl = document.getElementById('check-manual-agent');
+  contractState.hasManualAgentBank = checkEl ? checkEl.checked : false;
   updateDocumentPreviews();
 }
 
 // =========================================================================
 // 계약서 및 부속서류 실시간 렌더링 엔진
 // =========================================================================
-
 function updateDocumentPreviews() {
-  contractState.contractMeta.contractDate = document.getElementById('contract-date').value || "2026-04-09";
-  contractState.contractMeta.copyCount = document.getElementById('meta-copy-count').value || 4;
-  contractState.contractMeta.feeRate = document.getElementById('meta-fee-rate').value || "0.2%";
-  contractState.contractMeta.feeAmountKor = document.getElementById('meta-fee-kor').value || "금 일천오백만원정";
-  contractState.contractMeta.feeAmountNum = document.getElementById('meta-fee-num').value || "\\ 15,000,000-";
-  contractState.contractMeta.trustPeriod = document.getElementById('meta-trust-period').value || "24개월";
-  contractState.contractMeta.propertySummary = document.getElementById('meta-property-summary').value || "신탁부동산 표시";
-  contractState.agentBankName = document.getElementById('agent-bank-name').value.trim();
+  try {
+    contractState.contractMeta.contractDate = safeGetValue('contract-date', "2026-04-09");
+    contractState.contractMeta.copyCount = safeGetValue('meta-copy-count', 4);
+    contractState.contractMeta.feeRate = safeGetValue('meta-fee-rate', "0.2%");
+    contractState.contractMeta.feeAmountKor = safeGetValue('meta-fee-kor', "금 일천오백만원정");
+    contractState.contractMeta.feeAmountNum = safeGetValue('meta-fee-num', "\\ 15,000,000-");
+    contractState.contractMeta.trustPeriod = safeGetValue('meta-trust-period', "24개월");
+    contractState.contractMeta.propertySummary = safeGetValue('meta-property-summary', "신탁부동산 표시");
+    contractState.agentBankName = safeGetValue('agent-bank-name', "").trim();
 
-  const isMultiTruster = contractState.trusters.length >= 2;
-  const hasAgentBank = contractState.priorityBeneficiaries.length >= 2 || 
-                       contractState.hasManualAgentBank || 
-                       (contractState.agentBankName.length > 0);
+    const isMultiTruster = contractState.trusters.length >= 2;
+    const hasAgentBank = contractState.priorityBeneficiaries.length >= 2 || 
+                         contractState.hasManualAgentBank || 
+                         (contractState.agentBankName.length > 0);
 
-  const [year, month, day] = contractState.contractMeta.contractDate.split('-');
-  const formattedDateKorean = `${year}년 ${month}월 ${day}일`;
+    const [year, month, day] = contractState.contractMeta.contractDate.split('-');
+    const formattedDateKorean = `${year || '2026'}년 ${month || '04'}월 ${day || '09'}일`;
 
-  const debtor = contractState.debtor;
-  const trustee = contractState.trustee;
-  const pbs = contractState.priorityBeneficiaries;
-  const firstPbName = pbs[0]?.name || "우선수익자";
+    const debtor = contractState.debtor;
+    const trustee = contractState.trustee;
+    const pbs = contractState.priorityBeneficiaries;
+    const firstPbName = pbs[0]?.name || "우선수익자";
 
-  // 표지
-  const coverBox = document.getElementById('cover-parties-box');
-  if (!coverBox) return;
-  let coverHtml = "";
-  if (!isMultiTruster) {
-    const t = contractState.trusters[0];
-    if (t.isDebtor) {
-      coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">위탁자 겸 채무자</span><span class="col-span-2 font-bold text-blue-900">${t.name}</span></div>`;
+    // 표지
+    const coverBox = document.getElementById('cover-parties-box');
+    if (!coverBox) return;
+    let coverHtml = "";
+    if (!isMultiTruster) {
+      const t = contractState.trusters[0];
+      if (t.isDebtor) {
+        coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">위탁자 겸 채무자</span><span class="col-span-2 font-bold text-blue-900">${t.name}</span></div>`;
+      } else {
+        coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">위탁자</span><span class="col-span-2 font-bold text-blue-900">${t.name}</span></div>`;
+        coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">채무자</span><span class="col-span-2 font-bold text-indigo-900">${debtor.name}</span></div>`;
+      }
     } else {
-      coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">위탁자</span><span class="col-span-2 font-bold text-blue-900">${t.name}</span></div>`;
-      coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">채무자</span><span class="col-span-2 font-bold text-indigo-900">${debtor.name}</span></div>`;
+      let hasTrusterDebtor = false;
+      contractState.trusters.forEach((t, i) => {
+        const label = t.isDebtor ? `위탁자${i + 1} 겸 채무자` : `위탁자${i + 1}`;
+        if (t.isDebtor) hasTrusterDebtor = true;
+        coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">${label}</span><span class="col-span-2 font-bold text-blue-900">${t.name}</span></div>`;
+      });
+      if (!hasTrusterDebtor) {
+        coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">채무자</span><span class="col-span-2 font-bold text-indigo-900">${debtor.name}</span></div>`;
+      }
     }
-  } else {
-    let hasTrusterDebtor = false;
-    contractState.trusters.forEach((t, i) => {
-      const label = t.isDebtor ? `위탁자${i + 1} 겸 채무자` : `위탁자${i + 1}`;
-      if (t.isDebtor) hasTrusterDebtor = true;
-      coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">${label}</span><span class="col-span-2 font-bold text-blue-900">${t.name}</span></div>`;
+    coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">수탁자</span><span class="col-span-2 font-bold">${trustee.name}</span></div>`;
+    pbs.forEach(pb => {
+      coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">${pb.rank} 우선수익자</span><span class="col-span-2 font-bold text-amber-900">${pb.name}</span></div>`;
     });
-    if (!hasTrusterDebtor) {
-      coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">채무자</span><span class="col-span-2 font-bold text-indigo-900">${debtor.name}</span></div>`;
+    coverBox.innerHTML = coverHtml;
+
+    // 전문
+    if (!isMultiTruster) {
+      const tName = contractState.trusters[0]?.name || "위탁자";
+      safeSetHtml('d1-preamble-text', `<strong>${tName}</strong>(이하 “위탁자”이라 함)은 아래 정의된 신탁부동산을 수탁자인 <strong>한국투자부동산신탁</strong>에 신탁하고 수탁자는 이를 인수함에 있어서, 위탁자, 수탁자 및 수익자의 권리의무를 정하기 위하여 다음과 같이 부동산담보신탁계약(이하 “이 신탁계약”이라 한다)을 체결한다.`);
+    } else {
+      const n = contractState.trusters.length;
+      let pText = "";
+      for (let i = 0; i < n - 1; i++) {
+        pText += `${contractState.trusters[i].name}(이하 “위탁자${i + 1}”이라 함), `;
+      }
+      pText = pText.slice(0, -2);
+      pText += ` 및 ${contractState.trusters[n - 1].name}(이하 “위탁자${n}”이라 하며, "위탁자1” 내지 “위탁자${n}”을 통칭하여 "위탁자"라 함)는 아래 정의된 신탁부동산을 수탁자인 <strong>한국투자부동산신탁</strong>에 신탁하고 수탁자는 이를 인수함에 있어서, 위탁자, 수탁자 및 수익자의 권리의무를 정하기 위하여 다음과 같이 부동산담보신탁계약(이하 “이 신탁계약”이라 한다)을 체결한다.`;
+      safeSetHtml('d1-preamble-text', pText);
     }
-  }
-  coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">수탁자</span><span class="col-span-2 font-bold">${trustee.name}</span></div>`;
-  pbs.forEach(pb => {
-    coverHtml += `<div class="grid grid-cols-3 p-2.5"><span class="font-bold">${pb.rank} 우선수익자</span><span class="col-span-2 font-bold text-amber-900">${pb.name}</span></div>`;
-  });
-  coverBox.innerHTML = coverHtml;
 
-  // 전문
-  const preambleEl = document.getElementById('d1-preamble-text');
-  if (!isMultiTruster) {
-    const tName = contractState.trusters[0]?.name || "위탁자";
-    preambleEl.innerHTML = `<strong>${tName}</strong>(이하 “위탁자”이라 함)은 아래 정의된 신탁부동산을 수탁자인 <strong>한국투자부동산신탁</strong>에 신탁하고 수탁자는 이를 인수함에 있어서, 위탁자, 수탁자 및 수익자의 권리의무를 정하기 위하여 다음과 같이 부동산담보신탁계약(이하 “이 신탁계약”이라 한다)을 체결한다.`;
-  } else {
-    const n = contractState.trusters.length;
-    let pText = "";
-    for (let i = 0; i < n - 1; i++) {
-      pText += `${contractState.trusters[i].name}(이하 “위탁자${i + 1}”이라 함), `;
-    }
-    pText = pText.slice(0, -2);
-    pText += ` 및 ${contractState.trusters[n - 1].name}(이하 “위탁자${n}”이라 하며, "위탁자1” 내지 “위탁자${n}”을 통칭하여 "위탁자"라 함)는 아래 정의된 신탁부동산을 수탁자인 <strong>한국투자부동산신탁</strong>에 신탁하고 수탁자는 이를 인수함에 있어서, 위탁자, 수탁자 및 수익자의 권리의무를 정하기 위하여 다음과 같이 부동산담보신탁계약(이하 “이 신탁계약”이라 한다)을 체결한다.`;
-    preambleEl.innerHTML = pText;
-  }
+    // 작성 부수 및 날인란
+    safeSetText('d1-copy-count-text', `이 신탁계약을 증명하기 위해 계약서를 ${contractState.contractMeta.copyCount}부 작성하여 위탁자, 수탁자가 각각 1부씩 보관 및 1부는 신탁등기에 사용하며, 신탁등기용을 제외한 나머지 계약서는 수탁자 천공으로 갈음한다.`);
+    safeSetText('d1-contract-date-display', formattedDateKorean);
 
-  // 작성 부수 및 날인란
-  document.getElementById('d1-copy-count-text').textContent = 
-    `이 신탁계약을 증명하기 위해 계약서를 ${contractState.contractMeta.copyCount}부 작성하여 위탁자, 수탁자가 각각 1부씩 보관 및 1부는 신탁등기에 사용하며, 신탁등기용을 제외한 나머지 계약서는 수탁자 천공으로 갈음한다.`;
-  document.getElementById('d1-contract-date-display').textContent = formattedDateKorean;
-
-  const sigBox = document.getElementById('d1-signatures-box');
-  let sigHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
-  contractState.trusters.forEach((t, i) => {
-    const label = !isMultiTruster 
-      ? (t.isDebtor ? "위탁자 겸 채무자" : "위 탁 자") 
-      : (t.isDebtor ? `위탁자${i + 1} 겸 채무자` : `위탁자${i + 1}`);
-    sigHtml += `
-      <div>
-        <div class="font-bold text-blue-900 mb-1">【 ${label} 】</div>
-        ${t.type === 'corporation' ? `
-          <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${t.name}</span></div>
-          <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${t.address}</span></div>
-          <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${t.ceoName || '대표이사 ' + t.name}</span> &nbsp;&nbsp;(인)</div>
-          <div>법인등록번호 : <span>${t.idNumber}</span></div>
-        ` : `
-          <div>성&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;명 : <span class="font-bold">${t.name}</span> &nbsp;&nbsp;(인)</div>
-          <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${t.address}</span></div>
-          <div>등록번호 : <span>${t.idNumber}</span></div>
-        `}
-      </div>
-    `;
-  });
-
-  if (!contractState.trusters.some(t => t.isDebtor)) {
-    sigHtml += `
-      <div>
-        <div class="font-bold text-indigo-900 mb-1">【 채 무 자 】</div>
-        ${debtor.type === 'corporation' ? `
-          <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${debtor.name}</span></div>
-          <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${debtor.address}</span></div>
-          <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${debtor.ceoName || '대표이사 ' + debtor.name}</span> &nbsp;&nbsp;(인)</div>
-          <div>법인등록번호 : <span>${debtor.idNumber}</span></div>
-        ` : `
-          <div>성&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;명 : <span class="font-bold">${debtor.name}</span> &nbsp;&nbsp;(인)</div>
-          <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${debtor.address}</span></div>
-          <div>등록번호 : <span>${debtor.idNumber}</span></div>
-        `}
-      </div>
-    `;
-  }
-  sigHtml += `</div>`;
-
-  sigHtml += `<div class="border-t border-slate-300 pt-3 grid grid-cols-1 md:grid-cols-2 gap-4">`;
-  sigHtml += `
-    <div>
-      <div class="font-bold text-slate-900 mb-1">【 수 탁 자 】</div>
-      <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${trustee.name}</span></div>
-      <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${trustee.address}</span></div>
-      <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${trustee.ceoName}</span> &nbsp;&nbsp;(인)</div>
-      <div>법인등록번호 : <span>${trustee.corpNumber}</span></div>
-    </div>
-  `;
-
-  pbs.forEach((pb, idx) => {
-    sigHtml += `
-      <div>
-        <div class="font-bold text-amber-900 mb-1">【 ${pb.rank} 우선수익자 ${pbs.length > 1 ? (idx + 1) : ''} 】</div>
-        <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${pb.name}</span></div>
-        <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${pb.address}</span></div>
-        <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${pb.ceoName || '대표자'}</span> &nbsp;&nbsp;(인)</div>
-        <div>법인등록번호 : <span>${pb.corpNumber}</span></div>
-      </div>
-    `;
-  });
-  sigHtml += `</div>`;
-  sigBox.innerHTML = sigHtml;
-
-  // 별첨 1
-  const annex1Box = document.getElementById('d1-annex1-box');
-  if (!isMultiTruster) {
-    annex1Box.innerHTML = `
-      <p>1. 토지 및 건물 : ${contractState.contractMeta.propertySummary}</p>
-      <p class="font-semibold text-right pt-2">(이상 소유자 ${contractState.trusters[0]?.name || ''})</p>
-      <p class="text-right font-bold">- 이 상 -</p>
-    `;
-  } else {
-    let a1Html = "";
+    let sigHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
     contractState.trusters.forEach((t, i) => {
-      a1Html += `
-        <div class="mb-2">
-          <p>【위탁자${i + 1} 소유 부동산】</p>
-          <p>${contractState.contractMeta.propertySummary} (지분 비율 ${t.shareRatio || 100}%)</p>
-          <p class="font-semibold text-right">- 이상 ${t.name} 소유 -</p>
+      const label = !isMultiTruster 
+        ? (t.isDebtor ? "위탁자 겸 채무자" : "위 탁 자") 
+        : (t.isDebtor ? `위탁자${i + 1} 겸 채무자` : `위탁자${i + 1}`);
+      sigHtml += `
+        <div>
+          <div class="font-bold text-blue-900 mb-1">【 ${label} 】</div>
+          ${t.type === 'corporation' ? `
+            <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${t.name}</span></div>
+            <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${t.address}</span></div>
+            <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${t.ceoName || '대표이사 ' + t.name}</span> &nbsp;&nbsp;(인)</div>
+            <div>법인등록번호 : <span>${t.idNumber}</span></div>
+          ` : `
+            <div>성&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;명 : <span class="font-bold">${t.name}</span> &nbsp;&nbsp;(인)</div>
+            <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${t.address}</span></div>
+            <div>등록번호 : <span>${t.idNumber}</span></div>
+          `}
         </div>
       `;
     });
-    a1Html += `<p class="text-right font-bold pt-2">- 이 상 -</p>`;
-    annex1Box.innerHTML = a1Html;
-  }
 
-  // 별첨 2
-  const pbBox = document.getElementById('d1-annex2-pb-box');
-  let pbHtml = "";
-  pbs.forEach(pb => {
-    pbHtml += `
-      <table class="doc-table mb-3">
-        <tr><th class="w-1/4">순위</th><td colspan="2"><strong>${pb.rank}</strong></td></tr>
-        <tr><th>성 명(상 호)</th><td colspan="2" class="font-bold">${pb.name}</td></tr>
-        <tr><th>법인등록번호</th><td colspan="2">${pb.corpNumber}</td></tr>
-        <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td colspan="2">${pb.address}</td></tr>
-        <tr><th>피담보채권</th><td colspan="2">[${debtor.name}]와 [우선수익자] 사이에 [${pb.loanAgreementDate || '대출약정일'}] 체결된 [대출약정서]에 기한 [대출원리금채권 등]</td></tr>
-        <tr><th>채무자</th><td colspan="2" class="font-bold">${debtor.name}</td></tr>
-        <tr><th>우선수익권금액</th><td colspan="2" class="font-bold text-indigo-900 text-sm">${pb.limitAmount}</td></tr>
-      </table>
+    if (!contractState.trusters.some(t => t.isDebtor)) {
+      sigHtml += `
+        <div>
+          <div class="font-bold text-indigo-900 mb-1">【 채 무 자 】</div>
+          ${debtor.type === 'corporation' ? `
+            <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${debtor.name}</span></div>
+            <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${debtor.address}</span></div>
+            <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${debtor.ceoName || '대표이사 ' + debtor.name}</span> &nbsp;&nbsp;(인)</div>
+            <div>법인등록번호 : <span>${debtor.idNumber}</span></div>
+          ` : `
+            <div>성&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;명 : <span class="font-bold">${debtor.name}</span> &nbsp;&nbsp;(인)</div>
+            <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${debtor.address}</span></div>
+            <div>등록번호 : <span>${debtor.idNumber}</span></div>
+          `}
+        </div>
+      `;
+    }
+    sigHtml += `</div>`;
+
+    sigHtml += `<div class="border-t border-slate-300 pt-3 grid grid-cols-1 md:grid-cols-2 gap-4">`;
+    sigHtml += `
+      <div>
+        <div class="font-bold text-slate-900 mb-1">【 수 탁 자 】</div>
+        <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${trustee.name}</span></div>
+        <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${trustee.address}</span></div>
+        <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${trustee.ceoName}</span> &nbsp;&nbsp;(인)</div>
+        <div>법인등록번호 : <span>${trustee.corpNumber}</span></div>
+      </div>
     `;
-  });
-  pbBox.innerHTML = pbHtml;
 
-  const trustersBox = document.getElementById('d1-annex2-trusters-box');
-  if (!isMultiTruster) {
-    const t = contractState.trusters[0];
-    trustersBox.innerHTML = `
+    pbs.forEach((pb, idx) => {
+      sigHtml += `
+        <div>
+          <div class="font-bold text-amber-900 mb-1">【 ${pb.rank} 우선수익자 ${pbs.length > 1 ? (idx + 1) : ''} 】</div>
+          <div>상&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;호 : <span class="font-bold">${pb.name}</span></div>
+          <div>주&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;소 : <span>${pb.address}</span></div>
+          <div>대&nbsp;&nbsp;&nbsp;표&nbsp;&nbsp;&nbsp;자 : <span class="font-bold">${pb.ceoName || '대표자'}</span> &nbsp;&nbsp;(인)</div>
+          <div>법인등록번호 : <span>${pb.corpNumber}</span></div>
+        </div>
+      `;
+    });
+    sigHtml += `</div>`;
+    safeSetHtml('d1-signatures-box', sigHtml);
+
+    // 별첨 1
+    if (!isMultiTruster) {
+      safeSetHtml('d1-annex1-box', `
+        <p>1. 토지 및 건물 : ${contractState.contractMeta.propertySummary}</p>
+        <p class="font-semibold text-right pt-2">(이상 소유자 ${contractState.trusters[0]?.name || ''})</p>
+        <p class="text-right font-bold">- 이 상 -</p>
+      `);
+    } else {
+      let a1Html = "";
+      contractState.trusters.forEach((t, i) => {
+        a1Html += `
+          <div class="mb-2">
+            <p>【위탁자${i + 1} 소유 부동산】</p>
+            <p>${contractState.contractMeta.propertySummary} (지분 비율 ${t.shareRatio || 100}%)</p>
+            <p class="font-semibold text-right">- 이상 ${t.name} 소유 -</p>
+          </div>
+        `;
+      });
+      a1Html += `<p class="text-right font-bold pt-2">- 이 상 -</p>`;
+      safeSetHtml('d1-annex1-box', a1Html);
+    }
+
+    // 별첨 2
+    let pbHtml = "";
+    pbs.forEach(pb => {
+      pbHtml += `
+        <table class="doc-table mb-3">
+          <tr><th class="w-1/4">순위</th><td colspan="2"><strong>${pb.rank}</strong></td></tr>
+          <tr><th>성 명(상 호)</th><td colspan="2" class="font-bold">${pb.name}</td></tr>
+          <tr><th>법인등록번호</th><td colspan="2">${pb.corpNumber}</td></tr>
+          <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td colspan="2">${pb.address}</td></tr>
+          <tr><th>피담보채권</th><td colspan="2">[${debtor.name}]와 [우선수익자] 사이에 [${pb.loanAgreementDate || '대출약정일'}] 체결된 [대출약정서]에 기한 [대출원리금채권 등]</td></tr>
+          <tr><th>채무자</th><td colspan="2" class="font-bold">${debtor.name}</td></tr>
+          <tr><th>우선수익권금액</th><td colspan="2" class="font-bold text-indigo-900 text-sm">${pb.limitAmount}</td></tr>
+        </table>
+      `;
+    });
+    safeSetHtml('d1-annex2-pb-box', pbHtml);
+
+    if (!isMultiTruster) {
+      const t = contractState.trusters[0];
+      safeSetHtml('d1-annex2-trusters-box', `
+        <table class="doc-table">
+          <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${t.name}</td></tr>
+          <tr><th>법인등록번호(생년월일)</th><td>${t.idNumber}</td></tr>
+          <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${t.address}</td></tr>
+        </table>
+      `);
+    } else {
+      let tHtml = "";
+      contractState.trusters.forEach((t, i) => {
+        tHtml += `
+          <div class="mb-3">
+            <span class="font-bold text-xs text-blue-900">수익자 ${i + 1}</span>
+            <table class="doc-table">
+              <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${t.name}</td></tr>
+              <tr><th>법인등록번호(생년월일)</th><td>${t.idNumber}</td></tr>
+              <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${t.address}</td></tr>
+            </table>
+            <p class="text-[10.5px] text-slate-700 mt-1">※각 수익자의 지분은 신탁한 지분의 비율에 의함 (수익자별 지분율 : ${t.name} ${t.shareRatio || 0} %)</p>
+          </div>
+        `;
+      });
+      safeSetHtml('d1-annex2-trusters-box', tHtml);
+    }
+
+    safeSetHtml('d1-annex2-debtor-box', `
       <table class="doc-table">
-        <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${t.name}</td></tr>
-        <tr><th>법인등록번호(생년월일)</th><td>${t.idNumber}</td></tr>
-        <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${t.address}</td></tr>
+        <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${debtor.name}</td></tr>
+        <tr><th>법인등록번호(생년월일)</th><td>${debtor.idNumber}</td></tr>
+        <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${debtor.address}</td></tr>
       </table>
+    `);
+
+    // 별첨 3
+    safeSetText('d1-annex3-rate', contractState.contractMeta.feeRate);
+    safeSetText('d1-annex3-fee', `${contractState.contractMeta.feeAmountKor}(${contractState.contractMeta.feeAmountNum})`);
+
+    // 별첨 4 특약 동적 생성
+    const consentSubject = hasAgentBank ? "대리금융기관" : "우선수익자 전원";
+    const agentBankDisplayName = contractState.agentBankName || firstPbName;
+    const repTruster = contractState.trusters.find(t => t.isRepresentative) || contractState.trusters[0];
+    const repTrusterIdx = contractState.trusters.indexOf(repTruster) + 1;
+
+    let a4Html = `
+      <p><strong>제1조 (수익자의 범위)</strong><br>
+      ① 신탁특약에서 수익자라 함은 [별첨 2]의 [나. 수익자] 표에 기재된 사람을 말한다. 신탁특약에서 수익자라 함은 신탁특약에서 달리 정함이 없는 한 우선수익자를 포함하지 아니한다.<br>
+      ${hasAgentBank ? `② 우선수익자 전원은 본 신탁계약의 체결로써 ${agentBankDisplayName}${getJosa(agentBankDisplayName, '을/를')} 본 계약에 관한 대리금융기관으로 선임하여 본 신탁계약에 관한 우선수익자로서의 일체의 권한을 위 “대리금융기관”에 위임한다.` : ''}
+      </p>
+      <p><strong>제2조 (우선수익자의 수익권 등)</strong> 우선수익자는 별첨 2의 우선수익권금액 한도 내에서 피담보채권 상당액을 신탁본문 제22조 제1항의 순위에 따라 우선 변제받을 권리를 가진다.</p>
+      <p><strong>제3조 (우선수익자가 여럿인 경우의 의사결정 등)</strong> 우선수익자로서의 일반적인 의사결정은 최선순위 우선수익자의 의사에 따른다.</p>
+      <p><strong>제4조 (우선수익자 및 수익자의 변경 등)</strong><br>
+      ① 신탁본문 제8조 제1항에도 불구하고 우선수익자는 다른 우선수익자 전원에 대한 통지 및 수탁자의 사전 서면 동의가 있는 경우에 한하여 우선수익자를 변경하거나 우선수익권에 대하여 질권을 설정할 수 있다.<br>
+      ② 신탁본문 제8조 제2항에도 불구하고 수익자는 다른 수익자 전원 및 <strong>${consentSubject}</strong>의 사전 서면 동의 및 수탁자의 사전 서면 동의가 있는 경우에 한하여 수익자를 변경하거나 수익권에 대하여 질권을 설정할 수 있다.
+      </p>
+      <p><strong>제5조 (수탁자에 관한 사항)</strong> 수탁자는 채무자의 기한이익 상실 여부 또는 우선수익자의 피담보채권액을 직접 실사할 의무가 없으며, 제출 자료에 기하여 환가·정산 업무를 수행한다.</p>
+      <p><strong>제6조 (추가신탁 및 공동담보)</strong> 신탁재산 전부는 우선수익자의 피담보채권 만족 및 신탁보수·비용 회수를 위하여 공동담보로 제공된 것으로 본다.</p>
+      <p><strong>제7조 (신탁재산 처분 사유 발생시 점유·사용의 제한)</strong> 처분 사유 발생 시 수탁자는 우선수익자와 협의하여 위탁자의 신탁부동산에 대한 점유·사용 권한을 제한할 수 있다.</p>
+      <p><strong>제8조 (위탁자의 신탁재산 처분 등)</strong><br>
+      ① 위탁자는 우선수익자에 대한 채무를 변제하기 위하여 필요한 경우 <strong>${consentSubject}</strong> 및 수탁자의 사전 서면 동의를 얻어 신탁부동산의 일부 또는 전부를 처분할 수 있다.<br>
+      ③ 제1항에 따라 처분된 신탁부동산의 매수인이 매매대금을 완납하고 그에 대한 소유권이전을 위하여 위탁자가 <strong>${consentSubject}</strong>의 서면 동의를 얻어 신탁해지를 요청하는 경우 수탁자는 신탁계약을 해지하고 위탁자에게 소유권을 귀속시킬 수 있다.<br>
+      ④ 제3항의 경우 위탁자가 <strong>${consentSubject}</strong>의 서면 동의를 얻어 수탁자에게 서면 요청하는 경우 수탁자는 매수인과 직접 매매계약을 체결하고 소유권을 직접 이전할 수 있다.
+      </p>
     `;
-  } else {
-    let tHtml = "";
-    contractState.trusters.forEach((t, i) => {
-      tHtml += `
-        <div class="mb-3">
-          <span class="font-bold text-xs text-blue-900">수익자 ${i + 1}</span>
-          <table class="doc-table">
-            <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${t.name}</td></tr>
-            <tr><th>법인등록번호(생년월일)</th><td>${t.idNumber}</td></tr>
-            <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${t.address}</td></tr>
-          </table>
-          <p class="text-[10.5px] text-slate-700 mt-1">※각 수익자의 지분은 신탁한 지분의 비율에 의함 (수익자별 지분율 : ${t.name} ${t.shareRatio || 0} %)</p>
+
+    if (isMultiTruster) {
+      a4Html += `
+        <div class="p-2.5 bg-blue-50/70 border border-blue-200 rounded my-2">
+          <p><strong>제8조의 2 (위탁자가 수인인 경우)</strong><br>
+          ① 위탁자 중 일부 또는 지분의 일부에 대한 변동사항은 다른 지분의 권리관계에 영향을 미치지 아니한다.<br>
+          ② 위탁자 중 어느 1인에 관하여 본 신탁계약이 무효 또는 취소되는 경우에도 나머지 위탁자와의 관계에서 본 신탁계약은 유효하게 존속한다.<br>
+          ③ 위탁자가 수인인 경우 수인의 위탁자는 본 신탁계약상 위탁자의 의무를 연대하여 부담한다.<br>
+          ④ 각 수익자는 각 자신이 신탁한 신탁부동산의 지분비율에 의한 돈을 지급받을 수 있다.
+          </p>
+          <p class="mt-2"><strong>제8조의3 (대표위탁자 선정)</strong><br>
+          위탁자들은 자신의 대리인으로 위탁자${repTrusterIdx}인 <strong>${repTruster.name}</strong>${getJosa(repTruster.name, '을/를')} 대표위탁자로 선임하고, 대표위탁자가 위탁자 전원을 대리하여 권한을 행사한다.
+          </p>
         </div>
       `;
-    });
-    trustersBox.innerHTML = tHtml;
-  }
+    }
 
-  document.getElementById('d1-annex2-debtor-box').innerHTML = `
-    <table class="doc-table">
-      <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${debtor.name}</td></tr>
-      <tr><th>법인등록번호(생년월일)</th><td>${debtor.idNumber}</td></tr>
-      <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${debtor.address}</td></tr>
-    </table>
-  `;
-
-  // 별첨 3
-  document.getElementById('d1-annex3-rate').textContent = contractState.contractMeta.feeRate;
-  document.getElementById('d1-annex3-fee').textContent = `${contractState.contractMeta.feeAmountKor}(${contractState.contractMeta.feeAmountNum})`;
-
-  // 별첨 4 특약 동적 생성
-  const consentSubject = hasAgentBank ? "대리금융기관" : "우선수익자 전원";
-  const agentBankDisplayName = contractState.agentBankName || firstPbName;
-  const repTruster = contractState.trusters.find(t => t.isRepresentative) || contractState.trusters[0];
-  const repTrusterIdx = contractState.trusters.indexOf(repTruster) + 1;
-
-  let a4Html = `
-    <p><strong>제1조 (수익자의 범위)</strong><br>
-    ① 신탁특약에서 수익자라 함은 [별첨 2]의 [나. 수익자] 표에 기재된 사람을 말한다. 신탁특약에서 수익자라 함은 신탁특약에서 달리 정함이 없는 한 우선수익자를 포함하지 아니한다.<br>
-    ${hasAgentBank ? `② 우선수익자 전원은 본 신탁계약의 체결로써 ${agentBankDisplayName}${getJosa(agentBankDisplayName, '을/를')} 본 계약에 관한 대리금융기관으로 선임하여 본 신탁계약에 관한 우선수익자로서의 일체의 권한을 위 “대리금융기관”에 위임한다.` : ''}
-    </p>
-    <p><strong>제2조 (우선수익자의 수익권 등)</strong> 우선수익자는 별첨 2의 우선수익권금액 한도 내에서 피담보채권 상당액을 신탁본문 제22조 제1항의 순위에 따라 우선 변제받을 권리를 가진다.</p>
-    <p><strong>제3조 (우선수익자가 여럿인 경우의 의사결정 등)</strong> 우선수익자로서의 일반적인 의사결정은 최선순위 우선수익자의 의사에 따른다.</p>
-    <p><strong>제4조 (우선수익자 및 수익자의 변경 등)</strong><br>
-    ① 신탁본문 제8조 제1항에도 불구하고 우선수익자는 다른 우선수익자 전원에 대한 통지 및 수탁자의 사전 서면 동의가 있는 경우에 한하여 우선수익자를 변경하거나 우선수익권에 대하여 질권을 설정할 수 있다.<br>
-    ② 신탁본문 제8조 제2항에도 불구하고 수익자는 다른 수익자 전원 및 <strong>${consentSubject}</strong>의 사전 서면 동의 및 수탁자의 사전 서면 동의가 있는 경우에 한하여 수익자를 변경하거나 수익권에 대하여 질권을 설정할 수 있다.
-    </p>
-    <p><strong>제5조 (수탁자에 관한 사항)</strong> 수탁자는 채무자의 기한이익 상실 여부 또는 우선수익자의 피담보채권액을 직접 실사할 의무가 없으며, 제출 자료에 기하여 환가·정산 업무를 수행한다.</p>
-    <p><strong>제6조 (추가신탁 및 공동담보)</strong> 신탁재산 전부는 우선수익자의 피담보채권 만족 및 신탁보수·비용 회수를 위하여 공동담보로 제공된 것으로 본다.</p>
-    <p><strong>제7조 (신탁재산 처분 사유 발생시 점유·사용의 제한)</strong> 처분 사유 발생 시 수탁자는 우선수익자와 협의하여 위탁자의 신탁부동산에 대한 점유·사용 권한을 제한할 수 있다.</p>
-    <p><strong>제8조 (위탁자의 신탁재산 처분 등)</strong><br>
-    ① 위탁자는 우선수익자에 대한 채무를 변제하기 위하여 필요한 경우 <strong>${consentSubject}</strong> 및 수탁자의 사전 서면 동의를 얻어 신탁부동산의 일부 또는 전부를 처분할 수 있다.<br>
-    ③ 제1항에 따라 처분된 신탁부동산의 매수인이 매매대금을 완납하고 그에 대한 소유권이전을 위하여 위탁자가 <strong>${consentSubject}</strong>의 서면 동의를 얻어 신탁해지를 요청하는 경우 수탁자는 신탁계약을 해지하고 위탁자에게 소유권을 귀속시킬 수 있다.<br>
-    ④ 제3항의 경우 위탁자가 <strong>${consentSubject}</strong>의 서면 동의를 얻어 수탁자에게 서면 요청하는 경우 수탁자는 매수인과 직접 매매계약을 체결하고 소유권을 직접 이전할 수 있다.
-    </p>
-  `;
-
-  if (isMultiTruster) {
     a4Html += `
-      <div class="p-2.5 bg-blue-50/70 border border-blue-200 rounded my-2">
-        <p><strong>제8조의 2 (위탁자가 수인인 경우)</strong><br>
-        ① 위탁자 중 일부 또는 지분의 일부에 대한 변동사항은 다른 지분의 권리관계에 영향을 미치지 아니한다.<br>
-        ② 위탁자 중 어느 1인에 관하여 본 신탁계약이 무효 또는 취소되는 경우에도 나머지 위탁자와의 관계에서 본 신탁계약은 유효하게 존속한다.<br>
-        ③ 위탁자가 수인인 경우 수인의 위탁자는 본 신탁계약상 위탁자의 의무를 연대하여 부담한다.<br>
-        ④ 각 수익자는 각 자신이 신탁한 신탁부동산의 지분비율에 의한 돈을 지급받을 수 있다.
-        </p>
-        <p class="mt-2"><strong>제8조의3 (대표위탁자 선정)</strong><br>
-        위탁자들은 자신의 대리인으로 위탁자${repTrusterIdx}인 <strong>${repTruster.name}</strong>${getJosa(repTruster.name, '을/를')} 대표위탁자로 선임하고, 대표위탁자가 위탁자 전원을 대리하여 권한을 행사한다.
-        </p>
-      </div>
+      <p><strong>제9조 ~ 제17조</strong> (임대차보증금, 온비드 공매, 신탁종료, 소송수행, 조세, 세무·회계, 관할합의 및 본문 보완 규정은 표준 신탁특약과 동일함)</p>
+      <p class="p-2.5 bg-amber-50 border border-amber-300 rounded font-semibold text-amber-950">
+        <strong>제18조 (신탁보수)</strong><br>
+        ${!hasAgentBank ? `
+          신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 1순위 우선수익자인 <strong>${firstPbName}</strong>${getJosa(firstPbName, '이/가')} 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 <strong>${firstPbName}</strong>에게 (세금)계산서를 발급하기로 한다.
+        ` : `
+          신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 대리금융기관인 <strong>${agentBankDisplayName}</strong>${getJosa(agentBankDisplayName, '이/가')} 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 대리금융기관인 <strong>${agentBankDisplayName}</strong>에게 (세금)계산서를 발급하기로 한다.
+        `}
+      </p>
+      <p><strong>제19조 (신탁기간)</strong><br>
+      신탁본문 제3조에도 불구하고 본 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 [<strong>${contractState.contractMeta.trustPeriod}</strong>]까지로 하며, 신탁기간 만료시 우선수익자의 채무가 전액 변제되지 않은 경우, 신탁계약은 종료하지 아니한다.
+      </p>
     `;
+    safeSetHtml('d1-annex4-articles-box', a4Html);
+
+    // 서류 2 & 3 매핑
+    const mainTruster = contractState.trusters[0];
+    safeSetText('d2-1-name', mainTruster.name);
+    safeSetText('d2-1-id', mainTruster.idNumber);
+    safeSetText('d2-1-addr', mainTruster.address);
+    safeSetText('d2-1-confirm-name', mainTruster.name);
+    safeSetText('d2-1-date', formattedDateKorean);
+    safeSetText('d2-1-sig-name', mainTruster.name);
+
+    safeSetText('d2-2-name', mainTruster.name);
+    safeSetText('d2-2-bizno', mainTruster.idNumber);
+    safeSetText('d2-2-addr', mainTruster.address);
+    safeSetText('d2-2-baddr', mainTruster.address);
+    safeSetText('d2-2-rep', mainTruster.ceoName || mainTruster.name);
+    safeSetText('d2-2-date', formattedDateKorean);
+    safeSetText('d2-2-sig-full', `${mainTruster.name} ${mainTruster.ceoName || '대표이사 ' + mainTruster.name}`);
+
+    const firstPb = pbs[0] || {};
+    safeSetText('d2-3-name', firstPb.name || '');
+    safeSetText('d2-3-bizno', firstPb.corpNumber || '');
+    safeSetText('d2-3-addr', firstPb.address || '');
+    safeSetText('d2-3-rep', firstPb.ceoName || '대표자');
+    safeSetText('d2-3-date', formattedDateKorean);
+    safeSetText('d2-3-sig-full', `${firstPb.name || ''} ${firstPb.ceoName || '대표자'}`);
+
+    safeSetText('d3-1-name', mainTruster.name);
+    safeSetText('d3-1-bizno', mainTruster.idNumber);
+    safeSetText('d3-1-owner-name', mainTruster.ceoName ? mainTruster.ceoName.replace(/.*대표이사\s*/, '') : mainTruster.name);
+    safeSetText('d3-1-owner-share', mainTruster.shareRatio ? `${mainTruster.shareRatio}%` : "100%");
+    safeSetText('d3-1-author-name', mainTruster.ceoName || mainTruster.name);
+    safeSetText('d3-1-author-comp', mainTruster.name);
+    safeSetText('d3-1-date', formattedDateKorean);
+    safeSetText('d3-1-sig-full', `${mainTruster.name} ${mainTruster.ceoName || '대표이사'}`);
+
+    safeSetText('d3-2-name', firstPb.name || '');
+    safeSetText('d3-2-bizno', firstPb.corpNumber || '');
+    safeSetText('d3-2-author-name', firstPb.ceoName || '대표자');
+    safeSetText('d3-2-author-comp', firstPb.name || '');
+    safeSetText('d3-2-date', formattedDateKorean);
+    safeSetText('d3-2-sig-full', `${firstPb.name || ''} ${firstPb.ceoName || '대표자'}`);
+  } catch (err) {
+    console.error("Preview update error:", err);
   }
-
-  a4Html += `
-    <p><strong>제9조 ~ 제17조</strong> (임대차보증금, 온비드 공매, 신탁종료, 소송수행, 조세, 세무·회계, 관할합의 및 본문 보완 규정은 표준 신탁특약과 동일함)</p>
-    <p class="p-2.5 bg-amber-50 border border-amber-300 rounded font-semibold text-amber-950">
-      <strong>제18조 (신탁보수)</strong><br>
-      ${!hasAgentBank ? `
-        신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 1순위 우선수익자인 <strong>${firstPbName}</strong>${getJosa(firstPbName, '이/가')} 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 <strong>${firstPbName}</strong>에게 (세금)계산서를 발급하기로 한다.
-      ` : `
-        신탁본문 및 신탁특약의 다른 모든 조항에도 불구하고 [별첨3] 담보신탁보수는 대리금융기관인 <strong>${agentBankDisplayName}</strong>${getJosa(agentBankDisplayName, '이/가')} 신탁등기 접수일까지 수탁자에게 지급하기로 하고, 이 경우 수탁자는 대리금융기관인 <strong>${agentBankDisplayName}</strong>에게 (세금)계산서를 발급하기로 한다.
-      `}
-    </p>
-    <p><strong>제19조 (신탁기간)</strong><br>
-    신탁본문 제3조에도 불구하고 본 신탁계약에 따른 신탁기간은 담보신탁등기일로부터 [<strong>${contractState.contractMeta.trustPeriod}</strong>]까지로 하며, 신탁기간 만료시 우선수익자의 채무가 전액 변제되지 않은 경우, 신탁계약은 종료하지 아니한다.
-    </p>
-  `;
-  document.getElementById('d1-annex4-articles-box').innerHTML = a4Html;
-
-  // 서류 2 & 3 매핑
-  const mainTruster = contractState.trusters[0];
-  document.getElementById('d2-1-name').textContent = mainTruster.name;
-  document.getElementById('d2-1-id').textContent = mainTruster.idNumber;
-  document.getElementById('d2-1-addr').textContent = mainTruster.address;
-  document.getElementById('d2-1-confirm-name').textContent = mainTruster.name;
-  document.getElementById('d2-1-date').textContent = formattedDateKorean;
-  document.getElementById('d2-1-sig-name').textContent = mainTruster.name;
-
-  document.getElementById('d2-2-name').textContent = mainTruster.name;
-  document.getElementById('d2-2-bizno').textContent = mainTruster.idNumber;
-  document.getElementById('d2-2-addr').textContent = mainTruster.address;
-  document.getElementById('d2-2-baddr').textContent = mainTruster.address;
-  document.getElementById('d2-2-rep').textContent = mainTruster.ceoName || mainTruster.name;
-  document.getElementById('d2-2-date').textContent = formattedDateKorean;
-  document.getElementById('d2-2-sig-full').textContent = `${mainTruster.name} ${mainTruster.ceoName || '대표이사 ' + mainTruster.name}`;
-
-  const firstPb = pbs[0] || {};
-  document.getElementById('d2-3-name').textContent = firstPb.name || '';
-  document.getElementById('d2-3-bizno').textContent = firstPb.corpNumber || '';
-  document.getElementById('d2-3-addr').textContent = firstPb.address || '';
-  document.getElementById('d2-3-rep').textContent = firstPb.ceoName || '대표자';
-  document.getElementById('d2-3-date').textContent = formattedDateKorean;
-  document.getElementById('d2-3-sig-full').textContent = `${firstPb.name || ''} ${firstPb.ceoName || '대표자'}`;
-
-  document.getElementById('d3-1-name').textContent = mainTruster.name;
-  document.getElementById('d3-1-bizno').textContent = mainTruster.idNumber;
-  document.getElementById('d3-1-owner-name').textContent = mainTruster.ceoName ? mainTruster.ceoName.replace(/.*대표이사\s*/, '') : mainTruster.name;
-  document.getElementById('d3-1-owner-share').textContent = mainTruster.shareRatio ? `${mainTruster.shareRatio}%` : "100%";
-  document.getElementById('d3-1-author-name').textContent = mainTruster.ceoName || mainTruster.name;
-  document.getElementById('d3-1-author-comp').textContent = mainTruster.name;
-  document.getElementById('d3-1-date').textContent = formattedDateKorean;
-  document.getElementById('d3-1-sig-full').textContent = `${mainTruster.name} ${mainTruster.ceoName || '대표이사'}`;
-
-  document.getElementById('d3-2-name').textContent = firstPb.name || '';
-  document.getElementById('d3-2-bizno').textContent = firstPb.corpNumber || '';
-  document.getElementById('d3-2-author-name').textContent = firstPb.ceoName || '대표자';
-  document.getElementById('d3-2-author-comp').textContent = firstPb.name || '';
-  document.getElementById('d3-2-date').textContent = formattedDateKorean;
-  document.getElementById('d3-2-sig-full').textContent = `${firstPb.name || ''} ${firstPb.ceoName || '대표자'}`;
 }
 
 function switchDocSubTab(docId) {
@@ -1038,7 +1123,7 @@ function downloadAllDocsAsDocx() {
       combinedInnerHtml += clone.innerHTML;
     }
   });
-  const filename = `신탁서류3종_통합본_${document.getElementById('contract-date').value}.docx`;
+  const filename = `신탁서류3종_통합본_${safeGetValue('contract-date', '2026-04-09')}.docx`;
   const fullHtml = buildWordDocumentHtml(combinedInnerHtml, "신탁서류3종 통합본");
 
   if (typeof htmlDocx !== 'undefined') {
@@ -1054,70 +1139,44 @@ function downloadAllDocsAsDocx() {
 }
 
 // =========================================================================
-// 탭 전환, 503 과부하 자동 재시도 & 모델 우회 OCR 엔진
+// 관리자 인증 및 503 과부하 자동 우회 OCR 엔진
 // =========================================================================
-function switchTab(tabId) {
-  if (tabId === 'settings' && !isAdminAuthenticated) {
-    document.getElementById('admin-pw-input').value = '';
-    document.getElementById('admin-auth-error').classList.add('hidden');
-    document.getElementById('admin-auth-modal').classList.remove('hidden');
-    return;
-  }
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-  document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.classList.remove('bg-blue-600', 'text-white', 'shadow');
-    btn.classList.add('text-slate-400', 'hover:text-white');
-  });
-  const activeBtn = document.getElementById(`nav-${tabId}`);
-  if (activeBtn) {
-    activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
-    activeBtn.classList.remove('text-slate-400');
-  }
-  if (tabId === 'database') renderVendorTables();
-  if (tabId === 'generator') updateDocumentPreviews();
-  if (tabId === 'settings') refreshApiKeyStatusUI();
-}
-
 function verifyAdminPassword() {
-  const input = document.getElementById('admin-pw-input').value;
+  const input = safeGetValue('admin-pw-input');
   const pwd = localStorage.getItem('admin_system_pw') || 'admin123';
   if (input === pwd) {
     isAdminAuthenticated = true;
-    document.getElementById('admin-auth-modal').classList.add('hidden');
+    document.getElementById('admin-auth-modal')?.classList.add('hidden');
     showToast('관리자 인증 완료');
     switchTab('settings');
   } else {
-    document.getElementById('admin-auth-error').classList.remove('hidden');
+    document.getElementById('admin-auth-error')?.classList.remove('hidden');
   }
 }
 
-function cancelAdminAuth() { document.getElementById('admin-auth-modal').classList.add('hidden'); }
+function cancelAdminAuth() { document.getElementById('admin-auth-modal')?.classList.add('hidden'); }
 function lockAdminSettings() { isAdminAuthenticated = false; switchTab('dashboard'); showToast('로그아웃 되었습니다.'); }
 
 function changeAdminPassword() {
-  const newPw = document.getElementById('new-admin-pw').value;
-  const confirmPw = document.getElementById('confirm-admin-pw').value;
+  const newPw = safeGetValue('new-admin-pw');
+  const confirmPw = safeGetValue('confirm-admin-pw');
   if (!newPw || newPw !== confirmPw) { showToast('비밀번호가 일치하지 않습니다.'); return; }
   localStorage.setItem('admin_system_pw', newPw);
   showToast('비밀번호가 변경되었습니다.');
 }
 
 function saveAdminApiKey() {
-  const k = document.getElementById('gemini-api-key').value.trim();
-  if (!k) return;
-  localStorage.setItem('gemini_ocr_api_key', k);
+  const k = safeGetValue('gemini-api-key').trim();
+  if (!k) { showToast('API Key를 입력해 주세요.'); return; }
+  setStoredApiKey(k);
   refreshApiKeyStatusUI();
-  showToast('API Key가 영구 저장되었습니다.');
+  showToast('API Key가 안전하게 영구 저장되었습니다.');
 }
 
-// Sleep 헬퍼
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// 2단계 비표준 JSON 자동 복구 파서
 function safeExtractJSON(rawText) {
   if (!rawText) throw new Error("AI 응답 본문이 비어있습니다.");
   let clean = rawText.trim().replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -1143,7 +1202,6 @@ function safeExtractJSON(rawText) {
   }
 }
 
-// ★ 핵심: 503/429 지수 백오프 자동 재시도 & 다중 모델 우회(Failover) 호출기
 async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
   let lastError = null;
 
@@ -1160,7 +1218,7 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
-    const MAX_RETRIES = 2; // 모델당 최대 2회 추가 재시도
+    const MAX_RETRIES = 2;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -1183,21 +1241,19 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
           parsedMsg = j.error?.message || errText;
         } catch(e) {}
 
-        // 503(과부하) 또는 429(할당량 집중) 감지 시 지수 백오프 대기 후 재시도
         if (response.status === 503 || response.status === 429) {
           lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
           if (attempt < MAX_RETRIES) {
-            const waitMs = (attempt + 1) * 1500; // 1.5초 -> 3.0초
+            const waitMs = (attempt + 1) * 1500;
             appendDiagnosticLog(`[서버 과부하 ${response.status}] ${waitMs / 1000}초 후 자동 재시도 (${attempt + 1}/${MAX_RETRIES})...`, 'warn');
             if (onStepUpdate) onStepUpdate(`서버 혼잡 감지: ${waitMs / 1000}초 후 자동 재시도 중...`);
             await sleep(waitMs);
             continue;
           } else {
             appendDiagnosticLog(`모델 "${model}" 응답 지연 지속. 다음 예비 모델로 즉시 우회합니다.`, 'warn');
-            break; // 내부 루프 탈출 -> 다음 예비 모델로 이동
+            break;
           }
         } else {
-          // 404 등 기타 오류 시에도 다음 예비 모델로 즉시 우회 시도
           lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
           appendDiagnosticLog(`모델 "${model}" 전환 (${response.status}): 다음 모델 시도`, 'warn');
           break;
@@ -1205,7 +1261,6 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
       } catch (netErr) {
         lastError = netErr;
         if (attempt < MAX_RETRIES) {
-          appendDiagnosticLog(`네트워크 재시도 중...`, 'warn');
           await sleep(1500);
           continue;
         } else {
@@ -1215,13 +1270,17 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
     }
   }
 
-  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다.");
 }
 
 async function testGoogleAPIConnection() {
-  const key = getStoredApiKey() || document.getElementById('gemini-api-key').value.trim();
-  if (!key) { showToast('저장된 API Key가 없습니다.'); return; }
-  appendDiagnosticLog("API 연결 테스트 및 자동 우회 점검 시작...");
+  const inputKey = safeGetValue('gemini-api-key').trim();
+  if (inputKey.length > 5) setStoredApiKey(inputKey);
+
+  const key = getStoredApiKey();
+  if (!key) { showToast('API Key를 먼저 입력해 주세요.'); return; }
+
+  appendDiagnosticLog("API 연결 테스트 시작...");
   try {
     const payload = { contents: [{ parts: [{ text: "ping" }] }] };
     const result = await callWithRetryAndFailover(payload, key);
@@ -1246,7 +1305,7 @@ function appendDiagnosticLog(msg, type = 'info') {
   terminal.scrollTop = terminal.scrollHeight;
 }
 
-function clearDiagnosticLog() { document.getElementById('diagnostic-terminal').innerHTML = ''; }
+function clearDiagnosticLog() { safeSetHtml('diagnostic-terminal', ''); }
 
 function setupFileUploadListeners() {
   const dropZone = document.getElementById('drop-zone');
@@ -1265,9 +1324,9 @@ function setupFileUploadListeners() {
 
 async function handleSelectedFile(file) {
   currentUploadedFile = file;
-  document.getElementById('file-preview-card').classList.remove('hidden');
-  document.getElementById('preview-filename').textContent = file.name;
-  document.getElementById('preview-file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  document.getElementById('file-preview-card')?.classList.remove('hidden');
+  safeSetText('preview-filename', file.name);
+  safeSetText('preview-file-size', (file.size / 1024).toFixed(1) + ' KB');
   appendDiagnosticLog(`파일 로드: ${file.name}`);
   const reader = new FileReader();
   reader.onload = async () => {
@@ -1278,7 +1337,6 @@ async function handleSelectedFile(file) {
   reader.readAsDataURL(file);
 }
 
-// ★ 보완된 고정밀 OCR 실행 함수 (자동 재시도 & 예비 모델 우회 적용)
 async function executeHighPrecisionOCR() {
   if (!cachedFileBase64) return;
   const key = getStoredApiKey();
@@ -1289,10 +1347,12 @@ async function executeHighPrecisionOCR() {
   const stepText = document.getElementById('ocr-step-text');
   const badge = document.getElementById('ocr-status-badge');
 
-  pBar.classList.remove('hidden');
+  pBar?.classList.remove('hidden');
   if (pFill) pFill.style.width = '50%';
-  badge.textContent = 'AI 분석 및 자동 우회 작동 중...';
-  badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
+  if (badge) {
+    badge.textContent = 'AI 분석 및 자동 우회 작동 중...';
+    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
+  }
 
   const promptText = `대한민국 사업자등록증 및 등기사항전부증명서(등기부등본)의 다음 6가지 정보를 정밀 판독하여 반드시 아래 JSON 형식으로만 반환하세요:
 {
@@ -1316,7 +1376,6 @@ async function executeHighPrecisionOCR() {
   };
 
   try {
-    // 단일 호출 대신 지수 백오프 재시도 & 다중 모델 우회 엔진 호출
     const result = await callWithRetryAndFailover(payload, key, (statusMsg) => {
       if (stepText) stepText.textContent = statusMsg;
     });
@@ -1324,35 +1383,39 @@ async function executeHighPrecisionOCR() {
     const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
     const parsed = safeExtractJSON(rawText);
 
-    document.getElementById('ocr-company-name').value = parsed.companyName || '';
-    document.getElementById('ocr-representative').value = parsed.representative || '';
-    document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
-    document.getElementById('ocr-address').value = parsed.address || '';
-    document.getElementById('ocr-biz-no').value = parsed.bizNo || '';
-    document.getElementById('ocr-biz-type').value = parsed.bizType || '';
+    if (document.getElementById('ocr-company-name')) document.getElementById('ocr-company-name').value = parsed.companyName || '';
+    if (document.getElementById('ocr-representative')) document.getElementById('ocr-representative').value = parsed.representative || '';
+    if (document.getElementById('ocr-corp-no')) document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
+    if (document.getElementById('ocr-address')) document.getElementById('ocr-address').value = parsed.address || '';
+    if (document.getElementById('ocr-biz-no')) document.getElementById('ocr-biz-no').value = parsed.bizNo || '';
+    if (document.getElementById('ocr-biz-type')) document.getElementById('ocr-biz-type').value = parsed.bizType || '';
 
     if (pFill) pFill.style.width = '100%';
-    badge.textContent = `파싱 성공 (${result.model})`;
-    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
+    if (badge) {
+      badge.textContent = `파싱 성공 (${result.model})`;
+      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
+    }
     appendDiagnosticLog(`[추출 완료] 상호: ${parsed.companyName} | 대표: ${parsed.representative}`, 'success');
     showToast(`[${parsed.companyName}] 서류 정보 추출 완료!`);
   } catch (err) {
-    badge.textContent = '파싱 실패';
-    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
+    if (badge) {
+      badge.textContent = '파싱 실패';
+      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
+    }
     appendDiagnosticLog(`최종 오류: ${err.message}`, 'error');
     showToast(`오류: ${err.message.substring(0, 45)}...`);
   } finally {
-    setTimeout(() => pBar.classList.add('hidden'), 600);
+    setTimeout(() => pBar?.classList.add('hidden'), 600);
   }
 }
 
 function saveExtractedToDB() {
-  const comp = document.getElementById('ocr-company-name').value.trim();
-  const rep = document.getElementById('ocr-representative').value.trim();
-  const corpNo = document.getElementById('ocr-corp-no').value.trim();
-  const addr = document.getElementById('ocr-address').value.trim();
-  const bizNo = document.getElementById('ocr-biz-no').value.trim();
-  const btype = document.getElementById('ocr-biz-type').value.trim();
+  const comp = safeGetValue('ocr-company-name').trim();
+  const rep = safeGetValue('ocr-representative').trim();
+  const corpNo = safeGetValue('ocr-corp-no').trim();
+  const addr = safeGetValue('ocr-address').trim();
+  const bizNo = safeGetValue('ocr-biz-no').trim();
+  const btype = safeGetValue('ocr-biz-type').trim();
   if (!comp || !rep) { showToast('필수 정보를 입력해 주세요.'); return; }
 
   const newVendor = {
@@ -1367,8 +1430,8 @@ function saveExtractedToDB() {
 }
 
 function clearOCRForm() {
-  document.getElementById('ocr-result-form').reset();
-  document.getElementById('file-preview-card').classList.add('hidden');
+  document.getElementById('ocr-result-form')?.reset();
+  document.getElementById('file-preview-card')?.classList.add('hidden');
   cachedFileBase64 = null;
 }
 
@@ -1430,7 +1493,7 @@ function quickAssignFromDB(id, role) {
 }
 
 function filterVendorTable() {
-  const q = document.getElementById('db-search-input').value.toLowerCase();
+  const q = safeGetValue('db-search-input').toLowerCase();
   document.querySelectorAll('#vendor-main-tbody tr').forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
@@ -1443,14 +1506,14 @@ function deleteVendor(id) {
   showToast('삭제되었습니다.');
 }
 
-function openAddVendorModal() { document.getElementById('add-vendor-modal').classList.remove('hidden'); }
-function closeAddVendorModal() { document.getElementById('add-vendor-modal').classList.add('hidden'); }
+function openAddVendorModal() { document.getElementById('add-vendor-modal')?.classList.remove('hidden'); }
+function closeAddVendorModal() { document.getElementById('add-vendor-modal')?.classList.add('hidden'); }
 
 function submitManualVendor() {
-  const comp = document.getElementById('modal-company').value.trim();
-  const rep = document.getElementById('modal-rep').value.trim();
-  const no = document.getElementById('modal-corpno').value.trim();
-  const addr = document.getElementById('modal-address').value.trim();
+  const comp = safeGetValue('modal-company').trim();
+  const rep = safeGetValue('modal-rep').trim();
+  const no = safeGetValue('modal-corpno').trim();
+  const addr = safeGetValue('modal-address').trim();
   if (!comp) return;
 
   vendorDatabase.unshift({
@@ -1465,9 +1528,50 @@ function submitManualVendor() {
 
 function showToast(msg) {
   const c = document.getElementById('toast-container');
+  if (!c) return;
   const t = document.createElement('div');
   t.className = 'pointer-events-auto bg-slate-900 text-white text-xs px-4 py-3 rounded-xl border border-cyan-500/50 shadow-2xl flex items-center gap-2';
   t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i><span>${msg}</span>`;
   c.appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
+
+// HTML inline onclick에서 언제든 호출 가능하도록 전역(window)에 명시적 바인딩
+Object.assign(window, {
+  switchTab,
+  switchDocSubTab,
+  resetVendorDBToDefault,
+  openAddVendorModal,
+  closeAddVendorModal,
+  submitManualVendor,
+  filterVendorTable,
+  deleteVendor,
+  quickAssignFromDB,
+  addTrusterRow,
+  removeTrusterRow,
+  updateTrusterField,
+  setRepresentativeTruster,
+  openTrusterDropdown,
+  handleTrusterTyping,
+  openDebtorDropdown,
+  handleDebtorTyping,
+  handleDebtorManualChange,
+  addPriorityBeneficiaryRow,
+  removePriorityBeneficiaryRow,
+  updatePBField,
+  openPBDropdown,
+  handlePBTyping,
+  handleAgentBankToggle,
+  updateDocumentPreviews,
+  downloadCurrentDocAsDocx,
+  downloadAllDocsAsDocx,
+  verifyAdminPassword,
+  cancelAdminAuth,
+  lockAdminSettings,
+  changeAdminPassword,
+  saveAdminApiKey,
+  testGoogleAPIConnection,
+  clearDiagnosticLog,
+  clearOCRForm,
+  saveExtractedToDB
+});
