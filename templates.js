@@ -89,7 +89,7 @@ window.injectDocumentTemplates = function() {
         <div class="border border-slate-700 p-4 space-y-3 bg-slate-50 text-[11px]">
           <div>
             <strong>1. 담보보수</strong><br>
-            보수산정 방법 : 수익권증서상의 수익한도금액 X 약 <span id="d1-annex3-rate"></span><br>
+            보수산정 방법 : 수익권증서상의 수익한도금액 X 약 <span id="d1-annex3-rate" class="font-bold text-amber-900"></span><br>
             보수액 : <strong id="d1-annex3-fee" class="text-cyan-900 font-bold"></strong> (VAT 별도)
           </div>
           <div>
@@ -158,7 +158,7 @@ window.injectDocumentTemplates = function() {
         <tr><th class="w-1/5">법인(단체)명</th><td class="w-1/3">한글: <strong id="d2-2-name"></strong></td><th class="w-1/5">사업자번호 등 실명번호</th><td id="d2-2-bizno"></td></tr>
         <tr><th>본점 주소</th><td colspan="3" id="d2-2-addr"></td></tr>
         <tr><th>사업장 주소</th><td colspan="3" id="d2-2-baddr"></td></tr>
-        <tr><th>업종 (업태/종목)</th><td colspan="3">부동산업 / 신탁 및 자산관리 등</td></tr>
+        <tr><th>업종 (업태/종목)</th><td colspan="3" id="d2-2-biztype">부동산업 / 신탁 및 자산관리 등</td></tr>
       </table>
       <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
       <table class="doc-table">
