@@ -1,10 +1,185 @@
-// 서류 3종(총 6개 뷰)의 원본 법률 양식을 #print-area에 렌더링하는 모듈
+// 1. 개인용 고객거래확인서 단일 카드 생성 함수 (위탁자 개인용)
+window.buildIndividualCddHtml = function(party, roleLabel, formattedDate, isPageBreak) {
+  const name = party.name || '';
+  const idNum = party.idNumber || '';
+  const addr = party.address || '';
+
+  return `
+    <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
+      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+        <div>
+          <span class="text-[11px] text-blue-700 font-bold block">별지1. [${roleLabel} — 개인·개인사업자용]</span>
+          <h1 class="text-xl font-bold font-serif">고객거래 확인서 [개인ᆞ개인사업자 用]</h1>
+        </div>
+        <table class="border border-slate-700 text-center text-[10px] w-28">
+          <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+          <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
+        </table>
+      </div>
+      <p class="text-[10px] text-slate-600 leading-tight mt-2">「특정 금융거래정보의 보고 및 이용 등에 관한 법률」 제5조의2에 따라 고객님께서 회사와 거래 시에는 고객확인 및 검증을 위하여 아래의 내용을 기재하셔야 합니다.</p>
+      <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-2"><span>▶ 고객 기본정보 (${roleLabel})</span><span>고객구분(체크): ▣ 개인 &nbsp;&nbsp; □ 개인사업자</span></div>
+      <table class="doc-table">
+        <tr><th class="w-1/6">성명</th><td class="w-1/3">한글: <strong>${name}</strong></td><th class="w-1/6">생년월일/식별정보</th><td>${idNum}</td></tr>
+        <tr><th>자택/직장 구분</th><td>▣ 자택 &nbsp;&nbsp; □ 직장</td><th>연락처</th><td>TEL: &nbsp;&nbsp;&nbsp;&nbsp; Mobile: 010-****-****</td></tr>
+        <tr><th>주소</th><td colspan="3">${addr}</td></tr>
+        <tr><th>직업구분</th><td colspan="3">□ 급여소득자 &nbsp;&nbsp; ▣ 개인사업자 &nbsp;&nbsp; □ 전문직 &nbsp;&nbsp; □ 주부 &nbsp;&nbsp; □ 학생 &nbsp;&nbsp; □ 기타</td></tr>
+      </table>
+      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+      <table class="doc-table">
+        <tr><th class="w-1/4">거래 목적</th><td>□ 토지신탁 &nbsp;&nbsp; ▣ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td></tr>
+        <tr><th>자금의 원천 및 출처</th><td>▣ 사업소득 &nbsp;&nbsp; □ 부동산임대소득 &nbsp;&nbsp; □ 금융소득 &nbsp;&nbsp; □ 기타</td></tr>
+        <tr><th>거래 자금의 실소유자 여부</th><td>▣ 예 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; □ 아니오</td></tr>
+      </table>
+      <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-3">본 거래의 당사자인 (<strong>${name}</strong>)은 상기 거래와 관련한 내용을 (<strong>충분히 이해하였음</strong>)을 확인합니다.</div>
+      <div class="text-right pt-4 text-[12px] space-y-1.5">
+        <p class="font-bold text-slate-900">${formattedDate}</p>
+        <p>[본인 작성 시] &nbsp;&nbsp; 성명 : <strong class="underline text-sm font-bold">${name}</strong> &nbsp;&nbsp; (인)</p>
+      </div>
+    </div>
+  `;
+};
+
+// 2. 법인용 고객거래확인서 단일 카드 생성 함수 (위탁자 법인 & 우선수익자 법인 공통)
+window.buildCorpCddHtml = function(party, roleLabel, isFinancial, formattedDate, isPageBreak) {
+  const name = party.name || '';
+  const bizNo = party.bizNo && party.bizNo !== 'N/A' ? party.bizNo : (party.corpNumber || party.idNumber || '');
+  const addr = party.address || '';
+  const bizType = isFinancial ? '금융업 / 여신 및 대금업' : (party.bizType || '부동산업 / 신탁 및 자산관리 등');
+  const rawCeo = party.ceoName || party.name || '대표이사';
+  const pureCeo = String(rawCeo).replace(/^(대표이사|대표자|은행장|이사장)\s*/, '').trim() || rawCeo;
+  const fullSig = `${name} ${rawCeo.includes(pureCeo) ? rawCeo : '대표이사 ' + pureCeo}`;
+
+  return `
+    <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
+      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+        <div>
+          <span class="text-[11px] ${isFinancial ? 'text-amber-700' : 'text-blue-700'} font-bold block">별지1. [${roleLabel} — 법인·단체용]</span>
+          <h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1>
+        </div>
+        <table class="border border-slate-700 text-center text-[10px] w-28">
+          <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+          <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
+        </table>
+      </div>
+      <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-2">
+        <span>▶ 고객 기본정보 (${roleLabel})</span>
+        <span>고객구분(체크): ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span>
+      </div>
+      <table class="doc-table">
+        <tr><th class="w-1/5">법인(단체)명</th><td class="w-1/3">한글: <strong>${name}</strong></td><th class="w-1/5">사업자번호 등 실명번호</th><td>${bizNo}</td></tr>
+        <tr><th>본점 주소</th><td colspan="3">${addr}</td></tr>
+        <tr><th>사업장 주소</th><td colspan="3">${addr}</td></tr>
+        <tr><th>업종 (업태/종목)</th><td colspan="3">${bizType}</td></tr>
+      </table>
+      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
+      <table class="doc-table">
+        <tr><th class="w-1/5">대표자 성명</th><td class="w-1/3"><strong>${pureCeo}</strong></td><th class="w-1/5">국적</th><td>대한민국</td></tr>
+      </table>
+      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
+      <table class="doc-table">
+        <tr><th class="w-1/4">거래 목적</th><td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 ${isFinancial ? '(우선수익권 취득)' : ''} &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td></tr>
+        <tr><th>거래 자금의 원천 및 출처</th><td>${isFinancial ? '■ 금융자금 (대출채권 피담보채권 확보)' : '■ 운영자금 &nbsp;&nbsp; □ 차입금 &nbsp;&nbsp; □ 유형자산처분 &nbsp;&nbsp; □ 기타'}</td></tr>
+      </table>
+      <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-3">상기 기재한 내용이 사실과 일치하며, 고객확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.</div>
+      <div class="text-right pt-4 text-[12px] space-y-1.5">
+        <p class="font-bold text-slate-900">${formattedDate}</p>
+        <p>[대표자 작성 시] &nbsp;&nbsp; <strong class="underline text-sm font-bold">${fullSig}</strong> &nbsp;&nbsp; (인)</p>
+      </div>
+    </div>
+  `;
+};
+
+// 3. 실제소유자확인서 단일 카드 생성 함수 (일반법인 미대상 vs 금융기관 생략대상 자동 분기)
+window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, formattedDate, isPageBreak) {
+  const name = party.name || '';
+  const bizNo = party.bizNo && party.bizNo !== 'N/A' ? party.bizNo : (party.corpNumber || party.idNumber || '');
+  const rawCeo = party.ceoName || party.name || '대표이사';
+  const pureCeo = String(rawCeo).replace(/^(대표이사|대표자|은행장|이사장)\s*/, '').trim() || rawCeo;
+  const fullSig = `${name} ${rawCeo.includes(pureCeo) ? rawCeo : (isFinancial ? '대표자 ' : '대표이사 ') + pureCeo}`;
+  const shareRatio = party.shareRatio ? `${party.shareRatio}%` : '100%';
+
+  if (!isFinancial) {
+    // 일반 영리법인 (위탁자 법인 - 확인 미대상, 주주명부 기준)
+    return `
+      <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
+        <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+          <div>
+            <span class="text-[11px] text-blue-700 font-bold block">별지2. [${roleLabel} — 일반영리법인용]</span>
+            <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
+          </div>
+          <table class="border border-slate-700 text-center text-[10px] w-28">
+            <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+            <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
+          </table>
+        </div>
+        <div class="text-[11px] font-bold text-slate-900 pt-2">▶ 법인(단체) 기본 정보 (${roleLabel})</div>
+        <table class="doc-table">
+          <tr><th class="w-1/4">법인(단체)명</th><td class="w-1/4"><strong>${name}</strong></td><th class="w-1/4">사업자번호 등 실명번호</th><td class="w-1/4">${bizNo}</td></tr>
+          <tr><th>실제소유자 확인 생략 여부</th><td colspan="3">□ 대상 (□ 국가·지자체 □ 공공단체 □ 금융회사등 □ 사업보고서 제출대상)<br><strong>■ 미대상</strong> (자본시장법 제159조 제출대상 외 일반영리법인)</td></tr>
+        </table>
+        <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 확인 정보 (3단계 절차)</div>
+        <table class="doc-table">
+          <tr><th class="w-1/4">실제소유자 확인 방법</th><td colspan="2">■ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약</td></tr>
+          <tr><th>[1단계]</th><td colspan="2">1-① 25%이상의 지분을 소유한 자가 있으며 확인됩니까? &nbsp; <strong>■ 예</strong> &nbsp;&nbsp; □ 아니오</td></tr>
+        </table>
+        <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (자연인)</div>
+        <table class="doc-table">
+          <tr><th class="w-1/4">성명</th><td class="w-1/4"><strong>${pureCeo}</strong></td><th class="w-1/4">국적</th><td class="w-1/4">대한민국</td></tr>
+          <tr><th>생년월일/식별정보</th><td>-</td><th>지분율(%)</th><td><strong>${shareRatio}</strong></td></tr>
+        </table>
+        <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
+        <table class="doc-table">
+          <tr><th class="w-1/4">성명</th><td class="w-1/4">${pureCeo}</td><th class="w-1/4">소속 회사명</th><td class="w-1/4">${name}</td></tr>
+        </table>
+        <div class="text-right pt-4 text-[12px] space-y-1.5">
+          <p class="font-bold text-slate-900">${formattedDate}</p>
+          <p>작성자 : &nbsp;&nbsp; <strong class="underline text-sm font-bold">${fullSig}</strong> &nbsp;&nbsp; (인)</p>
+        </div>
+      </div>
+    `;
+  } else {
+    // 금융기관 (우선수익자 - 확인 생략 대상)
+    return `
+      <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
+        <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+          <div>
+            <span class="text-[11px] text-amber-700 font-bold block">별지2. [${roleLabel} — 금융기관 생략대상용]</span>
+            <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
+          </div>
+          <table class="border border-slate-700 text-center text-[10px] w-28">
+            <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
+            <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
+          </table>
+        </div>
+        <div class="text-[11px] font-bold text-slate-900 pt-2">▶ 법인(단체) 기본 정보 (${roleLabel})</div>
+        <table class="doc-table">
+          <tr><th class="w-1/4">법인(단체)명</th><td class="w-1/4"><strong>${name}</strong></td><th class="w-1/4">사업자번호 등 실명번호</th><td class="w-1/4">${bizNo}</td></tr>
+          <tr><th>실제소유자 확인 생략 여부</th><td colspan="3"><strong>■ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 ■ 금융회사등 □ 사업보고서 제출대상)</strong><br>□ 미대상</td></tr>
+        </table>
+        <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (확인 생략 대상 - 공란 처리)</div>
+        <table class="doc-table bg-slate-50 text-slate-400">
+          <tr><th class="w-1/4">성명</th><td class="w-1/4">- (금융회사등 확인 생략) -</td><th class="w-1/4">국적</th><td class="w-1/4">-</td></tr>
+        </table>
+        <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
+        <table class="doc-table">
+          <tr><th class="w-1/4">성명</th><td class="w-1/4">${pureCeo}</td><th class="w-1/4">소속 기관명</th><td class="w-1/4">${name}</td></tr>
+        </table>
+        <div class="text-right pt-4 text-[12px] space-y-1.5">
+          <p class="font-bold text-slate-900">${formattedDate}</p>
+          <p>작성자 : &nbsp;&nbsp; <strong class="underline text-sm font-bold">${fullSig}</strong> &nbsp;&nbsp; (인)</p>
+        </div>
+      </div>
+    `;
+  }
+};
+
+// 4. 기본 3대 서식 컨테이너 주입 함수
 window.injectDocumentTemplates = function() {
   const printArea = document.getElementById('print-area');
   if (!printArea) return;
 
   printArea.innerHTML = `
-    <!-- 1. 담보신탁계약서 (본문 제1조 ~ 제31조 및 별첨 1~4 전문) -->
+    <!-- [뷰 1] 담보신탁계약서 (본문 제1조 ~ 제31조 및 별첨 1~4 전문) -->
     <div id="doc-view-1" class="doc-paper p-8 sm:p-14 text-xs leading-relaxed space-y-6">
       <div class="text-center border-b-2 border-slate-900 pb-6 mb-8">
         <h1 class="text-3xl font-bold tracking-tight mb-8">부동산담보신탁계약서</h1>
@@ -114,159 +289,14 @@ window.injectDocumentTemplates = function() {
       </div>
     </div>
 
-    <!-- 2-①. 고객거래확인서 [개인·개인사업자 用] (위탁자 개인용) -->
-    <div id="doc-view-2-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
-      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
-        <div><span class="text-[11px] text-slate-500 block">별지1.</span><h1 class="text-xl font-bold font-serif">고객거래 확인서 [개인ᆞ개인사업자 用]</h1></div>
-        <table class="border border-slate-700 text-center text-[10px] w-28">
-          <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
-          <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
-        </table>
-      </div>
-      <p class="text-[10px] text-slate-600 leading-tight">「특정 금융거래정보의 보고 및 이용 등에 관한 법률」 제5조의2에 따라 고객님께서 회사와 거래 시에는 고객확인 및 검증을 위하여 아래의 내용을 기재하셔야 합니다.</p>
-      <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1"><span>▶ 고객 기본정보</span><span>고객구분(체크): ▣ 개인 &nbsp;&nbsp; □ 개인사업자</span></div>
-      <table class="doc-table">
-        <tr><th class="w-1/6">성명</th><td class="w-1/3">한글: <strong id="d2-1-name"></strong></td><th class="w-1/6">생년월일/식별정보</th><td id="d2-1-id"></td></tr>
-        <tr><th>자택/직장 구분</th><td>▣ 자택 &nbsp;&nbsp; □ 직장</td><th>연락처</th><td>TEL: &nbsp;&nbsp;&nbsp;&nbsp; Mobile: 010-****-****</td></tr>
-        <tr><th>주소</th><td colspan="3" id="d2-1-addr"></td></tr>
-        <tr><th>직업구분</th><td colspan="3">□ 급여소득자 &nbsp;&nbsp; ▣ 개인사업자 &nbsp;&nbsp; □ 전문직 &nbsp;&nbsp; □ 주부 &nbsp;&nbsp; □ 학생 &nbsp;&nbsp; □ 기타</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">거래 목적</th><td>□ 토지신탁 &nbsp;&nbsp; ▣ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td></tr>
-        <tr><th>자금의 원천 및 출처</th><td>▣ 사업소득 &nbsp;&nbsp; □ 부동산임대소득 &nbsp;&nbsp; □ 금융소득 &nbsp;&nbsp; □ 기타</td></tr>
-        <tr><th>거래 자금의 실소유자 여부</th><td>▣ 예 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; □ 아니오</td></tr>
-      </table>
-      <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-4">본 거래의 당사자인 (<strong id="d2-1-confirm-name"></strong>)은 상기 거래와 관련한 내용을 (<strong>충분히 이해하였음</strong>)을 확인합니다.</div>
-      <div class="text-right pt-6 text-[12px] space-y-2">
-        <p class="font-bold text-slate-900" id="d2-1-date"></p>
-        <p>[본인 작성 시] &nbsp;&nbsp; 성명 : <strong id="d2-1-sig-name" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
-      </div>
+    <!-- [뷰 2] 고객거래확인서 (등록된 모든 위탁자 및 모든 우선수익자 전원 자동 생성 컨테이너) -->
+    <div id="doc-view-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
+      <div id="all-cdd-container"></div>
     </div>
 
-    <!-- 2-②. 고객거래확인서 [법인·단체 用] (위탁자 법인용) -->
-    <div id="doc-view-2-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
-      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
-        <div><span class="text-[11px] text-slate-500 block">별지1.</span><h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1></div>
-        <table class="border border-slate-700 text-center text-[10px] w-28">
-          <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
-          <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
-        </table>
-      </div>
-      <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1"><span>▶ 고객 기본정보 (위탁자 법인용)</span><span>고객구분(체크): ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span></div>
-      <table class="doc-table">
-        <tr><th class="w-1/5">법인(단체)명</th><td class="w-1/3">한글: <strong id="d2-2-name"></strong></td><th class="w-1/5">사업자번호 등 실명번호</th><td id="d2-2-bizno"></td></tr>
-        <tr><th>본점 주소</th><td colspan="3" id="d2-2-addr"></td></tr>
-        <tr><th>사업장 주소</th><td colspan="3" id="d2-2-baddr"></td></tr>
-        <tr><th>업종 (업태/종목)</th><td colspan="3" id="d2-2-biztype">부동산업 / 신탁 및 자산관리 등</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
-      <table class="doc-table">
-        <tr><th class="w-1/5">대표자 성명</th><td class="w-1/3"><strong id="d2-2-rep"></strong></td><th class="w-1/5">국적</th><td>대한민국</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">거래 목적</th><td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 &nbsp;&nbsp; □ 분양관리신탁 &nbsp;&nbsp; □ 기타</td></tr>
-        <tr><th>거래 자금의 원천 및 출처</th><td>■ 운영자금 &nbsp;&nbsp; □ 차입금 &nbsp;&nbsp; □ 유형자산처분 &nbsp;&nbsp; □ 기타</td></tr>
-      </table>
-      <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-4">상기 기재한 내용이 사실과 일치하며, 고객확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.</div>
-      <div class="text-right pt-6 text-[12px] space-y-2">
-        <p class="font-bold text-slate-900" id="d2-2-date"></p>
-        <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-2-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
-      </div>
-    </div>
-
-    <!-- 2-③. 고객거래확인서 [법인·단체 用] (우선수익자 금융기관용) -->
-    <div id="doc-view-2-3" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
-      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
-        <div><span class="text-[11px] text-slate-500 block">별지1.</span><h1 class="text-xl font-bold font-serif">고객거래 확인서 [법인ᆞ단체 用]</h1></div>
-        <table class="border border-slate-700 text-center text-[10px] w-28">
-          <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
-          <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
-        </table>
-      </div>
-      <div class="text-[11px] font-bold text-slate-900 flex justify-between pt-1"><span>▶ 고객 기본정보 (1순위 우선수익자 - 금융기관)</span><span>고객구분: ■ 영리 법인(단체) &nbsp;&nbsp; □ 비영리 법인(단체)</span></div>
-      <table class="doc-table">
-        <tr><th class="w-1/5">법인(단체)명</th><td class="w-1/3">한글: <strong id="d2-3-name"></strong></td><th class="w-1/5">사업자번호 등 실명번호</th><td id="d2-3-bizno"></td></tr>
-        <tr><th>본점 주소</th><td colspan="3" id="d2-3-addr"></td></tr>
-        <tr><th>업종 (업태/종목)</th><td>금융업</td><th>설립목적</th><td>대금업</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 대표자 정보</div>
-      <table class="doc-table">
-        <tr><th class="w-1/5">대표자 성명</th><td class="w-1/3"><strong id="d2-3-rep"></strong></td><th class="w-1/5">국적</th><td>대한민국</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 거래 정보 (EDD 대상)</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">거래 목적</th><td>□ 토지신탁 &nbsp;&nbsp; ■ 담보신탁 (우선수익권 담보취득) &nbsp;&nbsp; □ 기타</td></tr>
-        <tr><th>거래 자금의 출처</th><td>■ 금융자금 (대출채권 피담보채권 확보)</td></tr>
-      </table>
-      <div class="bg-slate-50 p-3 border border-slate-300 rounded text-[11px] mt-4">상기 기재한 내용이 사실과 일치하며, 고객확인과 관련하여 내용을 충분히 안내 받았음을 확인합니다.</div>
-      <div class="text-right pt-6 text-[12px] space-y-2">
-        <p class="font-bold text-slate-900" id="d2-3-date"></p>
-        <p>[대표자 작성 시] &nbsp;&nbsp; <strong id="d2-3-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
-      </div>
-    </div>
-
-    <!-- 3-①. 실제소유자확인서 [법인·단체 用] (위탁자 법인) -->
-    <div id="doc-view-3-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
-      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
-        <div><span class="text-[11px] text-slate-500 block">별지2.</span><h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1></div>
-        <table class="border border-slate-700 text-center text-[10px] w-28">
-          <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
-          <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
-        </table>
-      </div>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 기본 정보 (위탁자 법인)</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">법인(단체)명</th><td class="w-1/4"><strong id="d3-1-name"></strong></td><th class="w-1/4">사업자번호 등 실명번호</th><td class="w-1/4" id="d3-1-bizno"></td></tr>
-        <tr><th>실제소유자 확인 생략 여부</th><td colspan="3">□ 대상 &nbsp;&nbsp; <strong>■ 미대상</strong> (자본시장법 제159조 제출대상 외 일반영리법인)</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 확인 정보 (3단계 절차)</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">실제소유자 확인 방법</th><td colspan="2">■ 주주명부 &nbsp;&nbsp; □ 사원명부 &nbsp;&nbsp; □ 이사명부 &nbsp;&nbsp; □ 정관/규약</td></tr>
-        <tr><th>[1단계]</th><td colspan="2">1-① 25%이상의 지분을 소유한 자가 있으며 확인됩니까? &nbsp; <strong>■ 예</strong> &nbsp;&nbsp; □ 아니오</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (자연인)</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">성명</th><td class="w-1/4"><strong id="d3-1-owner-name"></strong></td><th class="w-1/4">국적</th><td class="w-1/4">대한민국</td></tr>
-        <tr><th>생년월일/식별정보</th><td id="d3-1-owner-birth">-</td><th>지분율(%)</th><td><strong id="d3-1-owner-share">100%</strong></td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">성명</th><td class="w-1/4" id="d3-1-author-name"></td><th class="w-1/4">소속 회사명</th><td class="w-1/4" id="d3-1-author-comp"></td></tr>
-      </table>
-      <div class="text-right pt-6 text-[12px] space-y-2">
-        <p class="font-bold text-slate-900" id="d3-1-date"></p>
-        <p>작성자 : &nbsp;&nbsp; <strong id="d3-1-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
-      </div>
-    </div>
-
-    <!-- 3-②. 실제소유자확인서 [법인·단체 用] (우선수익자용 - 금융회사등 생략) -->
-    <div id="doc-view-3-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-4">
-      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
-        <div><span class="text-[11px] text-slate-500 block">별지2.</span><h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1></div>
-        <table class="border border-slate-700 text-center text-[10px] w-28">
-          <tr class="bg-slate-100"><td class="border border-slate-700 py-0.5">담당자</td><td class="border border-slate-700 py-0.5">부서장</td></tr>
-          <tr><td class="border border-slate-700 h-10"></td><td class="border border-slate-700 h-10"></td></tr>
-        </table>
-      </div>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 법인(단체) 기본 정보</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">법인(단체)명</th><td class="w-1/4"><strong id="d3-2-name"></strong></td><th class="w-1/4">사업자번호 등 실명번호</th><td class="w-1/4" id="d3-2-bizno"></td></tr>
-        <tr><th>실제소유자 확인 생략 여부</th><td colspan="3"><strong>■ 대상 (□ 국가ᆞ지방자치단체 □ 공공단체 ■ 금융회사등 □ 사업보고서 제출대상)</strong></td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 실제소유자 정보 (확인 생략 대상 - 공란 처리)</div>
-      <table class="doc-table bg-slate-50 text-slate-400">
-        <tr><th class="w-1/4">성명</th><td class="w-1/4">- (생략) -</td><th class="w-1/4">국적</th><td class="w-1/4">-</td></tr>
-      </table>
-      <div class="text-[11px] font-bold text-slate-900 pt-1">▶ 작성자 정보</div>
-      <table class="doc-table">
-        <tr><th class="w-1/4">성명</th><td class="w-1/4" id="d3-2-author-name"></td><th class="w-1/4">소속 기관명</th><td class="w-1/4" id="d3-2-author-comp"></td></tr>
-      </table>
-      <div class="text-right pt-6 text-[12px] space-y-2">
-        <p class="font-bold text-slate-900" id="d3-2-date"></p>
-        <p>작성자 : &nbsp;&nbsp; <strong id="d3-2-sig-full" class="underline text-sm font-bold"></strong> &nbsp;&nbsp; (인)</p>
-      </div>
+    <!-- [뷰 3] 실제소유자확인서 (등록된 모든 법인 위탁자 및 모든 우선수익자 전원 자동 생성 컨테이너) -->
+    <div id="doc-view-3" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
+      <div id="all-bo-container"></div>
     </div>
   `;
 };
