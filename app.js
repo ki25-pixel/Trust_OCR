@@ -1,4 +1,3 @@
-// 과부하 시 순차적으로 우회할 모델 체인
 const FAILOVER_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.7-flash",
@@ -20,21 +19,18 @@ function setElHtml(id, html) {
 // 1. 통화 포맷터(₩), 한글 금액 자동 변환기, 보수 요율 자동 산출기
 // =========================================================================
 
-// 문자열에서 순수 숫자만 추출
 function parseNumericAmount(val) {
   if (!val) return 0;
   const digits = String(val).replace(/[^0-9]/g, '');
   return digits ? parseInt(digits, 10) : 0;
 }
 
-// 숫자를 '₩0,000,000-' 형식으로 포맷팅
 function formatWonSymbol(val) {
   const num = parseNumericAmount(val);
   if (!num) return "₩0-";
   return `₩${num.toLocaleString('ko-KR')}-`;
 }
 
-// 숫자를 한국어 법률 금액('금 일천오백만원정')으로 자동 변환
 function numberToKoreanCurrency(num) {
   const n = parseNumericAmount(num);
   if (!n || n <= 0) return "금 영원정";
@@ -54,9 +50,7 @@ function numberToKoreanCurrency(num) {
       let p = part;
       for (let i = 0; i < 4; i++) {
         const d = p % 10;
-        if (d > 0) {
-          partStr = digits[d] + smallUnits[i] + partStr;
-        }
+        if (d > 0) partStr = digits[d] + smallUnits[i] + partStr;
         p = Math.floor(p / 10);
       }
       result = partStr + bigUnits[unitIdx] + result;
@@ -64,32 +58,26 @@ function numberToKoreanCurrency(num) {
     temp = Math.floor(temp / 10000);
     unitIdx++;
   }
-
   return `금 ${result}원정`;
 }
 
-// 담보보수 요율 자동 산출 = (담보보수 / 우선수익권금액 합계) * 100
 function recalculateFeeAndRate() {
   const feeNumStr = document.getElementById('meta-fee-num')?.value || contractState.contractMeta.feeAmountNum;
   const feeVal = parseNumericAmount(feeNumStr);
 
-  // 1) 한글 보수액 자동 산출
   const korStr = numberToKoreanCurrency(feeVal);
   contractState.contractMeta.feeAmountKor = korStr;
   const korInput = document.getElementById('meta-fee-kor');
   if (korInput) korInput.value = korStr;
 
-  // 2) 우선수익권금액 총합계 산출
   let totalLimit = 0;
   contractState.priorityBeneficiaries.forEach(pb => {
     totalLimit += parseNumericAmount(pb.limitAmount);
   });
 
-  // 3) 담보보수 요율 계산
   let rateStr = "0%";
   if (totalLimit > 0 && feeVal > 0) {
     const rawRate = (feeVal / totalLimit) * 100;
-    // 소수점 최대 3자리까지 깔끔하게 정리 (예: 0.500 -> 0.5%)
     const formattedRate = parseFloat(rawRate.toFixed(3));
     rateStr = `${formattedRate}%`;
   }
@@ -125,7 +113,6 @@ window.formatPBLimitBlur = function(index, inputEl) {
   window.updateDocumentPreviews();
 };
 
-// 한국어 조사 자동 처리 헬퍼
 function getJosa(word, josaType) {
   if (!word) return "";
   const trimmed = String(word).trim();
@@ -263,12 +250,12 @@ let contractState = {
     feeAmountKor: "금 일천오백만원정",
     feeAmountNum: "₩15,000,000-",
     trustPeriod: "24개월",
-    propertySummary: "서울특별시 강남구 테헤란로 100 대 850㎡ 및 지상 철근콘크리트 평슬래브 5층 근린생활시설"
+    propertySummary: `1. 토지\n전북특별자치도 전주시 덕진구 팔복동2가 13-2 대 391㎡\n2. 토지\n전북특별자치도 전주시 덕진구 팔복동2가 13-7 대 467㎡\n3. 건물\n전북특별자치도 전주시 덕진구 팔복동2가 13-2, 13-7 [도로명주소] 기린대로 662\n철근콘크리트 조적조 평슬래브지붕 5층 근린생활시설 및 주택`
   }
 };
 
 // =========================================================================
-// 3. 메인 탭 & 서브탭 전환
+// 3. 메인 탭 & 3대 서식 서브탭 전환
 // =========================================================================
 
 window.switchTab = function(tabId) {
@@ -321,14 +308,11 @@ window.switchDocSubTab = function(docId) {
 
     const viewMap = {
       'doc1': 'doc-view-1',
-      'doc2-1': 'doc-view-2-1',
-      'doc2-2': 'doc-view-2-2',
-      'doc2-3': 'doc-view-2-3',
-      'doc3-1': 'doc-view-3-1',
-      'doc3-2': 'doc-view-3-2'
+      'doc2': 'doc-view-2',
+      'doc3': 'doc-view-3'
     };
 
-    const targetViewId = viewMap[docId] || `doc-view-${docId.replace(/^doc/, '')}`;
+    const targetViewId = viewMap[docId] || 'doc-view-1';
     const activeView = document.getElementById(targetViewId);
     const activeBtn = document.getElementById(`subtab-${docId}`);
 
@@ -346,28 +330,6 @@ function ensureTemplatesInjected() {
   const printArea = document.getElementById('print-area');
   if (printArea && printArea.children.length === 0 && typeof window.injectDocumentTemplates === 'function') {
     window.injectDocumentTemplates();
-  }
-}
-
-// 확인서 징구 대상 드롭다운 동기화
-function syncCddSelectorOptions() {
-  const tSelect = document.getElementById('cdd-truster-select');
-  const pbSelect = document.getElementById('cdd-pb-select');
-
-  if (tSelect) {
-    const prevVal = tSelect.value || "0";
-    tSelect.innerHTML = contractState.trusters.map((t, idx) => 
-      `<option value="${idx}">위탁자${idx + 1}: ${t.name || '미입력'}</option>`
-    ).join('');
-    tSelect.value = (parseInt(prevVal, 10) < contractState.trusters.length) ? prevVal : "0";
-  }
-
-  if (pbSelect) {
-    const prevVal = pbSelect.value || "0";
-    pbSelect.innerHTML = contractState.priorityBeneficiaries.map((pb, idx) => 
-      `<option value="${idx}">우선수익자${idx + 1}: ${pb.name || '미입력'}</option>`
-    ).join('');
-    pbSelect.value = (parseInt(prevVal, 10) < contractState.priorityBeneficiaries.length) ? prevVal : "0";
   }
 }
 
@@ -440,6 +402,7 @@ function initializeApplication() {
     loadPersistentVendorDatabase();
     renderVendorTables();
     setupFileUploadListeners();
+    setupPoaDropZoneListeners();
     setupGlobalClickOutside();
     syncDebtorInputsFromState();
 
@@ -449,7 +412,7 @@ function initializeApplication() {
     refreshApiKeyStatusUI();
     window.updateDocumentPreviews();
 
-    appendDiagnosticLog("시스템 준비 완료 (드래그앤드롭 OCR, 보수·요율 자동산출, 서류 3종 연동 완료)");
+    appendDiagnosticLog("시스템 준비 완료 (전 관계자 확인서 자동생성 & 위임장 부동산 표시 OCR 가동)");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -526,7 +489,6 @@ window.handleTrusterTyping = function(index, val) {
   const exactMatch = vendorDatabase.find(v => v.companyName === String(val).trim());
   if (exactMatch) { applyVendorToTruster(index, exactMatch); return; }
   window.openTrusterDropdown(index, false);
-  syncCddSelectorOptions();
   window.updateDocumentPreviews();
 };
 
@@ -611,7 +573,6 @@ window.handlePBTyping = function(index, val) {
   const exactMatch = vendorDatabase.find(v => v.companyName === String(val).trim());
   if (exactMatch) { applyVendorToPB(index, exactMatch); return; }
   window.openPBDropdown(index, false);
-  syncCddSelectorOptions();
   window.updateDocumentPreviews();
 };
 
@@ -659,7 +620,7 @@ function renderDropdownItems(dropdownEl, list, onSelectCallback) {
 }
 
 // =========================================================================
-// 6. 동적 위탁자 & 우선수익자 UI 빌더 (추가/삭제 기능 완벽 복구)
+// 6. 동적 위탁자 & 우선수익자 UI 빌더 (개인/법인 선택 토글 포함)
 // =========================================================================
 
 function renderTrusterUI() {
@@ -683,8 +644,14 @@ function renderTrusterUI() {
     const row = document.createElement('div');
     row.className = 'p-3 bg-slate-900/90 rounded-lg border border-slate-700 space-y-2';
     row.innerHTML = `
-      <div class="flex items-center justify-between">
-        <span class="font-bold text-xs text-blue-300">위탁자 ${index + 1} ${t.isRepresentative ? '<span class="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800 ml-1">대표위탁자</span>' : ''}</span>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-xs text-blue-300">위탁자 ${index + 1} ${t.isRepresentative ? '<span class="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800 ml-1">대표위탁자</span>' : ''}</span>
+          <select onchange="window.updateTrusterField(${index}, 'type', this.value)" class="bg-slate-950 border border-slate-700 text-slate-300 rounded px-2 py-0.5 text-[11px] focus:outline-none">
+            <option value="corporation" ${t.type === 'corporation' ? 'selected' : ''}>법인</option>
+            <option value="individual" ${t.type === 'individual' ? 'selected' : ''}>개인</option>
+          </select>
+        </div>
         <div class="flex items-center gap-3">
           <label class="text-[11px] text-slate-300 flex items-center gap-1 cursor-pointer">
             <input type="checkbox" ${t.isDebtor ? 'checked' : ''} onchange="window.updateTrusterField(${index}, 'isDebtor', this.checked)" class="rounded bg-slate-800 text-blue-500">
@@ -733,7 +700,6 @@ function renderTrusterUI() {
     container.appendChild(row);
   });
 
-  syncCddSelectorOptions();
   checkDebtorSync();
 }
 
@@ -790,8 +756,6 @@ function renderPriorityBeneficiaryUI() {
   }
   const chkEl = document.getElementById('check-manual-agent');
   if (chkEl) chkEl.checked = autoAgent || contractState.hasManualAgentBank;
-
-  syncCddSelectorOptions();
 }
 
 window.addTrusterRow = function() {
@@ -811,7 +775,7 @@ window.addTrusterRow = function() {
   });
   renderTrusterUI();
   window.updateDocumentPreviews();
-  showToast(`위탁자 ${idx} 입력란이 추가되었습니다.`);
+  showToast(`위탁자 ${idx} 추가 완료! (고객거래확인서 및 실제소유자확인서도 자동 추가됨)`);
 };
 
 window.removeTrusterRow = function(index) {
@@ -827,7 +791,7 @@ window.updateTrusterField = function(index, field, value) {
   if (!contractState.trusters[index]) return;
   contractState.trusters[index][field] = value;
   if (field === 'isDebtor') checkDebtorSync();
-  syncCddSelectorOptions();
+  if (field === 'type') renderTrusterUI();
   window.updateDocumentPreviews();
 };
 
@@ -886,7 +850,7 @@ window.addPriorityBeneficiaryRow = function() {
   renderPriorityBeneficiaryUI();
   recalculateFeeAndRate();
   window.updateDocumentPreviews();
-  showToast(`우선수익자 ${idx} 입력란이 추가되었습니다.`);
+  showToast(`우선수익자 ${idx} 추가 완료! (고객거래확인서 및 실제소유자확인서도 자동 추가됨)`);
 };
 
 window.removePriorityBeneficiaryRow = function(index) {
@@ -901,10 +865,7 @@ window.removePriorityBeneficiaryRow = function(index) {
 window.updatePBField = function(index, field, value) {
   if (!contractState.priorityBeneficiaries[index]) return;
   contractState.priorityBeneficiaries[index][field] = value;
-  if (field === 'limitAmount') {
-    recalculateFeeAndRate();
-  }
-  syncCddSelectorOptions();
+  if (field === 'limitAmount') recalculateFeeAndRate();
   window.updateDocumentPreviews();
 };
 
@@ -914,7 +875,7 @@ window.handleAgentBankToggle = function() {
 };
 
 // =========================================================================
-// 7. 계약서 및 부속서류(고객거래확인서·실제소유자확인서) 실시간 렌더링 엔진
+// 7. 계약서 및 전 관계자 확인서(CDD·실소유자) 일괄 자동 생성 엔진
 // =========================================================================
 
 window.updateDocumentPreviews = function() {
@@ -1056,29 +1017,28 @@ window.updateDocumentPreviews = function() {
     sigHtml += `</div>`;
     setElHtml('d1-signatures-box', sigHtml);
 
-    // 4. 별첨 1
+    // 4. 별첨 1 (줄바꿈 유지 포맷팅)
+    const propFormatted = String(contractState.contractMeta.propertySummary || '')
+      .split('\n')
+      .map(line => `<p>${line}</p>`)
+      .join('');
+
     if (!isMultiTruster) {
       setElHtml('d1-annex1-box', `
-        <p>1. 토지 및 건물 : ${contractState.contractMeta.propertySummary}</p>
+        <div class="space-y-1">${propFormatted}</div>
         <p class="font-semibold text-right pt-2">(이상 소유자 ${contractState.trusters[0]?.name || ''})</p>
         <p class="text-right font-bold">- 이 상 -</p>
       `);
     } else {
-      let a1Html = "";
+      let a1Html = `<div class="space-y-1 mb-3">${propFormatted}</div>`;
       contractState.trusters.forEach((t, i) => {
-        a1Html += `
-          <div class="mb-2">
-            <p>【위탁자${i + 1} 소유 부동산】</p>
-            <p>${contractState.contractMeta.propertySummary} (지분 비율 ${t.shareRatio || 100}%)</p>
-            <p class="font-semibold text-right">- 이상 ${t.name || ''} 소유 -</p>
-          </div>
-        `;
+        a1Html += `<p class="font-semibold text-right">- 위탁자${i + 1} (${t.name || ''}) 신탁 지분 비율 ${t.shareRatio || 100}% -</p>`;
       });
       a1Html += `<p class="text-right font-bold pt-2">- 이 상 -</p>`;
       setElHtml('d1-annex1-box', a1Html);
     }
 
-    // 5. 별첨 2 (우선수익권금액 ₩ 표시)
+    // 5. 별첨 2
     let pbHtml = "";
     pbs.forEach(pb => {
       const displayLimit = pb.limitAmount ? String(pb.limitAmount).replace(/\\/g, '₩') : '₩0-';
@@ -1131,7 +1091,7 @@ window.updateDocumentPreviews = function() {
       </table>
     `);
 
-    // 6. 별첨 3 (자동 산출된 요율 및 ₩ 보수액 연동)
+    // 6. 별첨 3
     const cleanFeeNum = String(contractState.contractMeta.feeAmountNum || '').replace(/\\/g, '₩');
     setElText('d1-annex3-rate', contractState.contractMeta.feeRate);
     setElText('d1-annex3-fee', `${contractState.contractMeta.feeAmountKor}(${cleanFeeNum})`);
@@ -1194,69 +1154,245 @@ window.updateDocumentPreviews = function() {
     setElHtml('d1-annex4-articles-box', a4Html);
 
     // =========================================================================
-    // 8. 고객거래확인서(2-①, 2-②, 2-③) 및 실제소유자확인서(3-①, 3-②) 완벽 연동
+    // ★ [핵심] 모든 위탁자 및 모든 우선수익자의 고객거래확인서·실제소유자확인서 무제한 자동 생성
     // =========================================================================
-    const selTrusterIdx = parseInt(document.getElementById('cdd-truster-select')?.value || "0", 10);
-    const selPbIdx = parseInt(document.getElementById('cdd-pb-select')?.value || "0", 10);
+    let allCddHtml = "";
+    let cddCount = 0;
 
-    const targetTruster = contractState.trusters[selTrusterIdx] || contractState.trusters[0] || {};
-    const targetPb = pbs[selPbIdx] || pbs[0] || {};
+    // 1) 모든 위탁자 순회하며 고객거래확인서(개인용 또는 법인용) 생성
+    contractState.trusters.forEach((t, idx) => {
+      const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
+      const isBreak = cddCount > 0;
+      if (t.type === 'individual') {
+        allCddHtml += window.buildIndividualCddHtml(t, roleLabel, formattedDateKorean, isBreak);
+      } else {
+        allCddHtml += window.buildCorpCddHtml(t, roleLabel, false, formattedDateKorean, isBreak);
+      }
+      cddCount++;
+    });
 
-    const cleanCeoName = (rawCeo, fallbackName) => {
-      if (!rawCeo) return fallbackName || '대표자';
-      return String(rawCeo).replace(/^(대표이사|대표자|은행장|이사장)\s*/, '').trim() || fallbackName;
-    };
+    // 2) 모든 우선수익자 순회하며 고객거래확인서(금융기관 법인용) 생성
+    pbs.forEach((pb, idx) => {
+      const roleLabel = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
+      const isBreak = cddCount > 0;
+      allCddHtml += window.buildCorpCddHtml(pb, roleLabel, true, formattedDateKorean, isBreak);
+      cddCount++;
+    });
 
-    const trusterPureCeo = cleanCeoName(targetTruster.ceoName, targetTruster.name);
-    const pbPureCeo = cleanCeoName(targetPb.ceoName, targetPb.name);
+    setElHtml('all-cdd-container', allCddHtml);
+    setElText('badge-cdd-count', `총 ${cddCount}부`);
 
-    // 2-① 위탁자 개인용
-    setElText('d2-1-name', targetTruster.name);
-    setElText('d2-1-id', targetTruster.idNumber);
-    setElText('d2-1-addr', targetTruster.address);
-    setElText('d2-1-confirm-name', targetTruster.name);
-    setElText('d2-1-date', formattedDateKorean);
-    setElText('d2-1-sig-name', targetTruster.name);
+    // 3) 모든 위탁자(법인) 및 모든 우선수익자 순회하며 실제소유자확인서 생성
+    let allBoHtml = "";
+    let boCount = 0;
 
-    // 2-② 위탁자 법인용
-    setElText('d2-2-name', targetTruster.name);
-    setElText('d2-2-bizno', targetTruster.bizNo || targetTruster.idNumber);
-    setElText('d2-2-addr', targetTruster.address);
-    setElText('d2-2-baddr', targetTruster.address);
-    setElText('d2-2-biztype', targetTruster.bizType || '부동산업 / 신탁 및 자산관리');
-    setElText('d2-2-rep', trusterPureCeo);
-    setElText('d2-2-date', formattedDateKorean);
-    setElText('d2-2-sig-full', `${targetTruster.name || ''} ${targetTruster.ceoName || '대표이사 ' + trusterPureCeo}`);
+    contractState.trusters.forEach((t, idx) => {
+      // 개인 위탁자도 법인 전환 시 또는 기본 표시를 위해 포함하되, 개인이면 안내 표시와 함께 생성하거나 법인 위탁자 전원 생성
+      const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
+      const isBreak = boCount > 0;
+      allBoHtml += window.buildBeneficialOwnerHtml(t, roleLabel, false, formattedDateKorean, isBreak);
+      boCount++;
+    });
 
-    // 2-③ 우선수익자 금융기관용
-    setElText('d2-3-name', targetPb.name);
-    setElText('d2-3-bizno', targetPb.bizNo || targetPb.corpNumber);
-    setElText('d2-3-addr', targetPb.address);
-    setElText('d2-3-rep', pbPureCeo);
-    setElText('d2-3-date', formattedDateKorean);
-    setElText('d2-3-sig-full', `${targetPb.name || ''} ${targetPb.ceoName || '대표자 ' + pbPureCeo}`);
+    pbs.forEach((pb, idx) => {
+      const roleLabel = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
+      const isBreak = boCount > 0;
+      allBoHtml += window.buildBeneficialOwnerHtml(pb, roleLabel, true, formattedDateKorean, isBreak);
+      boCount++;
+    });
 
-    // 3-① 실제소유자확인서 (위탁자 법인)
-    setElText('d3-1-name', targetTruster.name);
-    setElText('d3-1-bizno', targetTruster.bizNo || targetTruster.idNumber);
-    setElText('d3-1-owner-name', trusterPureCeo);
-    setElText('d3-1-owner-share', targetTruster.shareRatio ? `${targetTruster.shareRatio}%` : "100%");
-    setElText('d3-1-author-name', trusterPureCeo);
-    setElText('d3-1-author-comp', targetTruster.name);
-    setElText('d3-1-date', formattedDateKorean);
-    setElText('d3-1-sig-full', `${targetTruster.name || ''} ${targetTruster.ceoName || '대표이사 ' + trusterPureCeo}`);
+    setElHtml('all-bo-container', allBoHtml);
+    setElText('badge-bo-count', `총 ${boCount}부`);
 
-    // 3-② 실제소유자확인서 (우선수익자 - 금융기관 생략)
-    setElText('d3-2-name', targetPb.name);
-    setElText('d3-2-bizno', targetPb.bizNo || targetPb.corpNumber);
-    setElText('d3-2-author-name', pbPureCeo);
-    setElText('d3-2-author-comp', targetPb.name);
-    setElText('d3-2-date', formattedDateKorean);
-    setElText('d3-2-sig-full', `${targetPb.name || ''} ${targetPb.ceoName || '대표자 ' + pbPureCeo}`);
   } catch (err) {
     console.warn("미리보기 업데이트 오류:", err);
   }
 };
+
+// =========================================================================
+// 8. 위임장('부동산의 표시') HWP 바이너리 디코더 & AI OCR 자동 추출 엔진
+// =========================================================================
+
+window.triggerPoaFileSelect = function(e) {
+  if (e) e.stopPropagation();
+  const input = document.getElementById('poa-file-input');
+  if (input) {
+    input.value = '';
+    input.click();
+  }
+};
+
+window.onPoaFileChange = function(e) {
+  const files = e.target?.files;
+  if (files && files.length > 0) {
+    handlePoaFile(files[0]);
+  }
+};
+
+function setupPoaDropZoneListeners() {
+  const zone = document.getElementById('poa-drop-zone');
+  if (!zone) return;
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+    zone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    zone.addEventListener(ev, () => zone.classList.add('border-cyan-400', 'bg-slate-900/90'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(ev => {
+    zone.addEventListener(ev, () => zone.classList.remove('border-cyan-400', 'bg-slate-900/90'), false);
+  });
+
+  zone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      handlePoaFile(files[0]);
+    }
+  }, false);
+}
+
+// 한글(.hwp) 바이너리 파일 내부에서 유니코드(UTF-16LE) 한글 텍스트 및 압축 스트림을 추출하는 함수
+async function extractTextFromHwpBuffer(arrayBuffer) {
+  const uint8 = new Uint8Array(arrayBuffer);
+  let extractedChunks = [];
+
+  // 1) 비압축 영역(PrvText 미리보기 텍스트 등)에서 연속된 UTF-16LE 한글/숫자/주소 문자열 스캔
+  const decodeUtf16 = (bytes) => {
+    let str = "";
+    for (let i = 0; i + 1 < bytes.length; i += 2) {
+      const code = bytes[i] | (bytes[i + 1] << 8);
+      if (
+        (code >= 0xAC00 && code <= 0xD7A3) || // 한글 음절
+        (code >= 0x0020 && code <= 0x007E) || // 영문/숫자/기호
+        code === 0x33A1 || // ㎡
+        code === 0x000A || code === 0x000D
+      ) {
+        str += String.fromCharCode(code);
+      } else if (str.length >= 4) {
+        if (/[가-힣]/.test(str)) extractedChunks.push(str.trim());
+        str = "";
+      } else {
+        str = "";
+      }
+    }
+    if (str.length >= 4 && /[가-힣]/.test(str)) extractedChunks.push(str.trim());
+  };
+
+  decodeUtf16(uint8);
+
+  // 2) HWP 5.0 BodyText 압축 스트림(Raw Deflate) 스캔 및 pako 해제 시도
+  if (typeof pako !== 'undefined') {
+    for (let offset = 512; offset < uint8.length - 64; offset += 512) {
+      try {
+        const sub = uint8.subarray(offset);
+        const inflated = pako.inflateRaw(sub);
+        if (inflated && inflated.length > 20) {
+          decodeUtf16(inflated);
+        }
+      } catch (e) {}
+    }
+  }
+
+  const combined = extractedChunks.join('\n');
+  return combined;
+}
+
+async function handlePoaFile(file) {
+  const key = getStoredApiKey();
+  if (!key) {
+    showToast('설정(Admin) 탭에서 Gemini API Key를 먼저 등록해 주세요.');
+    return;
+  }
+
+  const badge = document.getElementById('poa-ocr-badge');
+  if (badge) {
+    badge.textContent = `위임장 분석 중 (${file.name})...`;
+    badge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 animate-pulse font-semibold';
+  }
+
+  const isHwp = file.name.toLowerCase().endsWith('.hwp');
+
+  const poaPrompt = `당신은 대한민국 부동산 등기위임장 및 등기서류 전문 AI 검수관입니다.
+전달된 등기위임장 문서(또는 추출 텍스트)에서 **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 빠짐없이 추출하여 아래 JSON 형식으로만 반환하세요.
+- 토지/건물 일련번호(1. 토지, 2. 건물 등), 소재지 지번, 도로명주소, 지목, 면적(㎡), 건물 구조 및 층별 면적, 공유자 지분 내역 등을 원문 그대로 줄바꿈(\\n)을 유지하여 정확히 기재하세요.
+
+{
+  "propertyDisplay": "1. 토지\\n...\\n2. 건물\\n..."
+}`;
+
+  try {
+    let payload;
+
+    if (isHwp) {
+      const arrayBuffer = await file.arrayBuffer();
+      const hwpExtractedText = await extractTextFromHwpBuffer(arrayBuffer);
+
+      if (!hwpExtractedText || hwpExtractedText.length < 10) {
+        throw new Error("HWP 바이너리에서 텍스트를 읽을 수 없습니다. 한글에서 PDF로 저장 후 첨부해 주세요.");
+      }
+
+      payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { text: `[위임장 HWP 추출 텍스트]\n${hwpExtractedText.substring(0, 15000)}\n\n${poaPrompt}` }
+          ]
+        }],
+        generationConfig: { responseMimeType: "application/json" }
+      };
+    } else {
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
+      payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { inlineData: { mimeType, data: base64Data } },
+            { text: poaPrompt }
+          ]
+        }],
+        generationConfig: { responseMimeType: "application/json" }
+      };
+    }
+
+    const result = await callWithRetryAndFailover(payload, key);
+    const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parsed = safeExtractJSON(rawText);
+
+    if (parsed && parsed.propertyDisplay) {
+      const propTextarea = document.getElementById('meta-property-summary');
+      if (propTextarea) propTextarea.value = parsed.propertyDisplay;
+      contractState.contractMeta.propertySummary = parsed.propertyDisplay;
+      window.updateDocumentPreviews();
+
+      if (badge) {
+        badge.textContent = `추출 완료 (${result.model})`;
+        badge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold';
+      }
+      showToast('위임장의 [부동산의 표시] 내역이 별첨1에 자동 기재되었습니다!');
+    } else {
+      throw new Error("부동산의 표시 항목을 찾지 못했습니다.");
+    }
+  } catch (err) {
+    if (badge) {
+      badge.textContent = '위임장 추출 실패';
+      badge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400';
+    }
+    showToast(`위임장 추출 오류: ${err.message}`);
+  }
+}
 
 // =========================================================================
 // 9. WORD (.docx) 다운로드 엔진
@@ -1308,12 +1444,9 @@ window.downloadCurrentDocAsDocx = function() {
   const activePaper = document.querySelector('.doc-paper:not(.hidden)');
   if (!activePaper) return;
   const subtabKey = currentDocSubTab;
-  let filename = "담보신탁계약서";
-  if (subtabKey === 'doc2-1') filename = "고객거래확인서_위탁자개인용";
-  else if (subtabKey === 'doc2-2') filename = "고객거래확인서_위탁자법인용";
-  else if (subtabKey === 'doc2-3') filename = "고객거래확인서_우선수익자용";
-  else if (subtabKey === 'doc3-1') filename = "실제소유자확인서_위탁자법인용";
-  else if (subtabKey === 'doc3-2') filename = "실제소유자확인서_우선수익자용";
+  let filename = "1_부동산담보신탁계약서";
+  if (subtabKey === 'doc2') filename = "2_고객거래확인서_전관계자일괄";
+  else if (subtabKey === 'doc3') filename = "3_실제소유자확인서_전관계자일괄";
 
   const clone = activePaper.cloneNode(true);
   clone.querySelectorAll('.no-print').forEach(el => el.remove());
@@ -1334,7 +1467,7 @@ window.downloadCurrentDocAsDocx = function() {
 window.downloadAllDocsAsDocx = function() {
   ensureTemplatesInjected();
   window.updateDocumentPreviews();
-  const docs = ['doc-view-1', 'doc-view-2-1', 'doc-view-2-2', 'doc-view-2-3', 'doc-view-3-1', 'doc-view-3-2'];
+  const docs = ['doc-view-1', 'doc-view-2', 'doc-view-3'];
   let combinedInnerHtml = "";
   docs.forEach((id, idx) => {
     const el = document.getElementById(id);
@@ -1346,7 +1479,7 @@ window.downloadAllDocsAsDocx = function() {
     }
   });
   const dateStr = document.getElementById('contract-date')?.value || '2026-04-09';
-  const filename = `신탁서류3종_통합본_${dateStr}.docx`;
+  const filename = `신탁서류3종_전관계자통합본_${dateStr}.docx`;
   const fullHtml = buildWordDocumentHtml(combinedInnerHtml, "신탁서류3종 통합본");
 
   if (typeof htmlDocx !== 'undefined') {
@@ -1362,14 +1495,14 @@ window.downloadAllDocsAsDocx = function() {
 };
 
 // =========================================================================
-// 10. 파일 업로드(드래그앤드롭 + 클릭 선택) & 503 자동우회 OCR 엔진
+// 10. 사업자등록증/등기부등본 OCR 업로드 및 거래처 DB 관리
 // =========================================================================
 
 window.triggerFileSelect = function(e) {
   if (e) e.stopPropagation();
   const fileInput = document.getElementById('file-input');
   if (fileInput) {
-    fileInput.value = ''; // 동일 파일 재선택 허용
+    fileInput.value = '';
     fileInput.click();
   }
 };
@@ -1401,15 +1534,11 @@ function setupFileUploadListeners() {
   });
 
   ['dragenter', 'dragover'].forEach(ev => {
-    dropZone.addEventListener(ev, () => {
-      dropZone.classList.add('border-cyan-400', 'bg-slate-900');
-    }, false);
+    dropZone.addEventListener(ev, () => dropZone.classList.add('border-cyan-400', 'bg-slate-900'), false);
   });
 
   ['dragleave', 'drop'].forEach(ev => {
-    dropZone.addEventListener(ev, () => {
-      dropZone.classList.remove('border-cyan-400', 'bg-slate-900');
-    }, false);
+    dropZone.addEventListener(ev, () => dropZone.classList.remove('border-cyan-400', 'bg-slate-900'), false);
   });
 
   dropZone.addEventListener('drop', (e) => {
@@ -1437,7 +1566,6 @@ async function handleSelectedFile(file) {
     cachedFileBase64 = dataUrl.split(',')[1];
     cachedMimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
-    // 이미지 미리보기 표시
     if (cachedMimeType.startsWith('image/') && imgEl) {
       imgEl.src = dataUrl;
       imgEl.classList.remove('hidden');
