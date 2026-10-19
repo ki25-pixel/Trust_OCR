@@ -1,4 +1,3 @@
-// 과부하 시 순차적으로 우회할 모델 체인
 const FAILOVER_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.7-flash",
@@ -764,7 +763,7 @@ window.addTrusterRow = function() {
   });
   renderTrusterUI();
   window.updateDocumentPreviews();
-  showToast(`위탁자 ${idx} 추가 완료!`);
+  showToast(`위탁자 ${idx} 추가 완료! (확인서도 자동 추가됨)`);
 };
 
 window.removeTrusterRow = function(index) {
@@ -831,7 +830,7 @@ window.addPriorityBeneficiaryRow = function() {
   renderPriorityBeneficiaryUI();
   recalculateFeeAndRate();
   window.updateDocumentPreviews();
-  showToast(`우선수익자 ${idx} 추가 완료!`);
+  showToast(`우선수익자 ${idx} 추가 완료! (확인서도 자동 추가됨)`);
 };
 
 window.removePriorityBeneficiaryRow = function(index) {
@@ -1014,7 +1013,7 @@ window.updateDocumentPreviews = function() {
     } else {
       let a1Html = `<div class="space-y-1 mb-3">${propFormatted}</div>`;
       contractState.trusters.forEach((t, i) => {
-        a1Html += `<p class="font-semibold text-right">- 위탁자${i + 1} (${t.name || ''}) 신탁 지분 비율 ${t.shareRatio || 100}0% -</p>`;
+        a1Html += `<p class="font-semibold text-right">- 위탁자${i + 1} (${t.name || ''}) 신탁 지분 비율 ${t.shareRatio || 100}% -</p>`;
       });
       a1Html += `<p class="text-right font-bold pt-2">- 이 상 -</p>`;
       setElHtml('d1-annex1-box', a1Html);
@@ -1137,7 +1136,7 @@ window.updateDocumentPreviews = function() {
     setElHtml('d1-annex4-articles-box', a4Html);
 
     // ==============================================================
-    // ★ [핵심] 모든 위탁자 및 모든 우선수익자의 고객거래확인서 및 실제소유자확인서 전원 자동 일괄 생성
+    // ★ [핵심] 모든 위탁자 및 모든 우선수익자의 고객거래확인서·실제소유자확인서 전원 자동 일괄 생성
     // ==============================================================
     let allCddHtml = "";
     let cddCount = 0;
@@ -1233,7 +1232,29 @@ function setupPoaDropZoneListeners() {
   }, false);
 }
 
-// HWP 바이너리 텍스트 디코더
+// 고속 최적화된 PDF 첫 페이지 전용 래스터화 (Scale 1.0)
+async function rasterizeFirstPage(file) {
+  if (typeof pdfjsLib === 'undefined') return null;
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdfDoc = await loadingTask.promise;
+    const page = await pdfDoc.getPage(1);
+    const viewport = page.getViewport({ scale: 1.0 }); // 속도 최적화를 위해 1.0 배율 적용
+
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+
+    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+  } catch (e) {
+    console.warn("PDF 래스터화 오류:", e);
+    return null;
+  }
+}
+
 async function extractTextFromHwpBuffer(arrayBuffer) {
   const uint8 = new Uint8Array(arrayBuffer);
   let extractedChunks = [];
@@ -1313,19 +1334,26 @@ async function handlePoaFile(file) {
         generationConfig: { responseMimeType: "application/json" }
       };
     } else {
-      const base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      let base64Data = null;
       const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
+      if (mimeType === 'application/pdf') {
+        base64Data = await rasterizeFirstPage(file);
+      }
+      if (!base64Data) {
+        base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
 
       payload = {
         contents: [{
           role: "user",
           parts: [
-            { inlineData: { mimeType, data: base64Data } },
+            { inlineData: { mimeType: mimeType === 'application/pdf' ? 'image/jpeg' : mimeType, data: base64Data } },
             { text: poaPrompt }
           ]
         }],
@@ -1461,7 +1489,7 @@ window.downloadAllDocsAsDocx = function() {
 };
 
 // =========================================================================
-// 10. 관리자 설정, 503 과부하 자동 재시도 & 모델 우회 OCR 엔진
+// 10. 관리자 설정, 503 과부하 자동 재시도 & 모델 우회 고속 OCR 엔진
 // =========================================================================
 
 window.verifyAdminPassword = function() {
@@ -1799,6 +1827,7 @@ window.deleteVendor = function(id) {
   showToast('삭제되었습니다.');
 };
 
+window.openAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.add('hidden'); }; // 보완 필요 시 아래 오픈 함수 사용
 window.openAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.remove('hidden'); };
 window.closeAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.add('hidden'); };
 
