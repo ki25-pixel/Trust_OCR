@@ -89,7 +89,7 @@ window.buildCorpCddHtml = function(party, roleLabel, isFinancial, formattedDate,
   `;
 };
 
-// 3. 실제소유자확인서 단일 카드 생성 함수 (일반법인 미대상 vs 금융기관 생략대상 자동 분기)
+// 3. 실제소유자확인서 단일 카드 생성 함수 (위탁자 법인 미대상 vs 우선수익자 금융기관 생략대상)
 window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, formattedDate, isPageBreak) {
   const name = party.name || '';
   const bizNo = party.bizNo && party.bizNo !== 'N/A' ? party.bizNo : (party.corpNumber || party.idNumber || '');
@@ -99,12 +99,11 @@ window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, format
   const shareRatio = party.shareRatio ? `${party.shareRatio}%` : '100%';
 
   if (!isFinancial) {
-    // 일반 영리법인 (위탁자 법인 - 확인 미대상, 주주명부 기준)
     return `
       <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
           <div>
-            <span class="text-[11px] text-blue-700 font-bold block">별지2. [${roleLabel} — 일반영리법인용]</span>
+            <span class="text-[11px] text-blue-700 font-bold block">별지2. [${roleLabel} — 위탁자 법인용]</span>
             <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
           </div>
           <table class="border border-slate-700 text-center text-[10px] w-28">
@@ -138,12 +137,11 @@ window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, format
       </div>
     `;
   } else {
-    // 금융기관 (우선수익자 - 확인 생략 대상)
     return `
       <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
           <div>
-            <span class="text-[11px] text-amber-700 font-bold block">별지2. [${roleLabel} — 금융기관 생략대상용]</span>
+            <span class="text-[11px] text-amber-700 font-bold block">별지2. [${roleLabel} — 우선수익자 금융기관용]</span>
             <h1 class="text-xl font-bold font-serif">실제소유자 확인서 [법인ᆞ단체 用]</h1>
           </div>
           <table class="border border-slate-700 text-center text-[10px] w-28">
@@ -173,7 +171,7 @@ window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, format
   }
 };
 
-// 4. 기본 3대 서식 컨테이너 주입 함수
+// 4. 6개 세분화 서식 컨테이너 주입 함수
 window.injectDocumentTemplates = function() {
   const printArea = document.getElementById('print-area');
   if (!printArea) return;
@@ -289,14 +287,29 @@ window.injectDocumentTemplates = function() {
       </div>
     </div>
 
-    <!-- [뷰 2] 고객거래확인서 (등록된 모든 위탁자 및 모든 우선수익자 전원 자동 생성 컨테이너) -->
-    <div id="doc-view-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
-      <div id="all-cdd-container"></div>
+    <!-- [뷰 2-1] 고객거래확인서 (위탁자 개인용 - 다수 위탁자 시 연속 생성) -->
+    <div id="doc-view-2-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
+      <div id="cdd-truster-ind-container"></div>
     </div>
 
-    <!-- [뷰 3] 실제소유자확인서 (등록된 모든 법인 위탁자 및 모든 우선수익자 전원 자동 생성 컨테이너) -->
-    <div id="doc-view-3" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
-      <div id="all-bo-container"></div>
+    <!-- [뷰 2-2] 고객거래확인서 (위탁자 법인용 - 다수 위탁자 시 연속 생성) -->
+    <div id="doc-view-2-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
+      <div id="cdd-truster-corp-container"></div>
+    </div>
+
+    <!-- [뷰 2-3] 고객거래확인서 (우선수익자용 - 다수 우선수익자 시 연속 생성) -->
+    <div id="doc-view-2-3" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
+      <div id="cdd-pb-container"></div>
+    </div>
+
+    <!-- [뷰 3-1] 실제소유자확인서 (위탁자 법인용 - 다수 위탁자 시 연속 생성) -->
+    <div id="doc-view-3-1" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
+      <div id="bo-truster-container"></div>
+    </div>
+
+    <!-- [뷰 3-2] 실제소유자확인서 (우선수익자용 - 다수 우선수익자 시 연속 생성) -->
+    <div id="doc-view-3-2" class="doc-paper hidden p-8 sm:p-14 text-xs leading-relaxed space-y-8">
+      <div id="bo-pb-container"></div>
     </div>
   `;
 };
