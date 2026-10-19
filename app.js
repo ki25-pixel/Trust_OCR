@@ -250,12 +250,12 @@ let contractState = {
     feeAmountKor: "금 일천오백만원정",
     feeAmountNum: "₩15,000,000-",
     trustPeriod: "24개월",
-    propertySummary: "서울특별시 강남구 테헤란로 100 대 850㎡ 및 지상 철근콘크리트 평슬래브 5층 근린생활시설"
+    propertySummary: `1. 토지\n전북특별자치도 전주시 덕진구 팔복동2가 13-2 대 391㎡\n2. 토지\n전북특별자치도 전주시 덕진구 팔복동2가 13-7 대 467㎡\n3. 건물\n전북특별자치도 전주시 덕진구 팔복동2가 13-2, 13-7 [도로명주소] 기린대로 662\n철근콘크리트 조적조 평슬래브지붕 5층 근린생활시설 및 주택`
   }
 };
 
 // =========================================================================
-// 3. 메인 탭 & 서브탭 전환
+// 3. 메인 탭 & 3대 서식 서브탭 전환
 // =========================================================================
 
 window.switchTab = function(tabId) {
@@ -412,7 +412,7 @@ function initializeApplication() {
     refreshApiKeyStatusUI();
     window.updateDocumentPreviews();
 
-    appendDiagnosticLog("시스템 준비 완료 (고속 캔버스 래스터화 및 비동기 OCR 엔진 가동)");
+    appendDiagnosticLog("시스템 준비 완료 (전 관계자 확인서 자동생성 & 위임장 부동산 표시 OCR 가동)");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -497,6 +497,8 @@ function applyVendorToTruster(index, v) {
   if (!t || !v) return;
   t.name = v.companyName || '';
   t.idNumber = v.corpRegNo || '';
+  t.bizNo = v.bizNo || '';
+  t.bizType = v.bizType || '부동산업 / 신탁 및 자산관리';
   t.address = v.address || '';
   t.type = v.type || 'corporation';
   t.ceoName = v.ceoName || (t.type === 'corporation' ? `대표이사 ${v.representative || ''}` : '');
@@ -618,7 +620,7 @@ function renderDropdownItems(dropdownEl, list, onSelectCallback) {
 }
 
 // =========================================================================
-// 6. 동적 위탁자 & 우선수익자 UI 빌더
+// 6. 동적 위탁자 & 우선수익자 UI 빌더 (개인/법인 선택 토글 포함)
 // =========================================================================
 
 function renderTrusterUI() {
@@ -759,11 +761,21 @@ function renderPriorityBeneficiaryUI() {
 window.addTrusterRow = function() {
   const idx = contractState.trusters.length + 1;
   contractState.trusters.push({
-    id: `T${idx}`, type: "corporation", name: "", idNumber: "", bizNo: "", bizType: "부동산업", ceoName: "", address: "", isDebtor: false, isRepresentative: false, shareRatio: "50"
+    id: `T${idx}`,
+    type: "corporation",
+    name: "",
+    idNumber: "",
+    bizNo: "",
+    bizType: "부동산업",
+    ceoName: "",
+    address: "",
+    isDebtor: false,
+    isRepresentative: false,
+    shareRatio: "50"
   });
   renderTrusterUI();
   window.updateDocumentPreviews();
-  showToast(`위탁자 ${idx} 추가 완료! (확인서도 자동 추가됨)`);
+  showToast(`위탁자 ${idx} 추가 완료! (고객거래확인서 및 실제소유자확인서도 자동 추가됨)`);
 };
 
 window.removeTrusterRow = function(index) {
@@ -825,12 +837,20 @@ function checkDebtorSync() {
 window.addPriorityBeneficiaryRow = function() {
   const idx = contractState.priorityBeneficiaries.length + 1;
   contractState.priorityBeneficiaries.push({
-    id: `PB${idx}`, rank: `1순위`, name: "", corpNumber: "", bizNo: "", ceoName: "", address: "", loanAgreementDate: "2026.04.09.", limitAmount: "₩1,000,000,000-"
+    id: `PB${idx}`,
+    rank: `1순위`,
+    name: "",
+    corpNumber: "",
+    bizNo: "",
+    ceoName: "",
+    address: "",
+    loanAgreementDate: "2026.04.09.",
+    limitAmount: "₩1,000,000,000-"
   });
   renderPriorityBeneficiaryUI();
   recalculateFeeAndRate();
   window.updateDocumentPreviews();
-  showToast(`우선수익자 ${idx} 추가 완료! (확인서도 자동 추가됨)`);
+  showToast(`우선수익자 ${idx} 추가 완료! (고객거래확인서 및 실제소유자확인서도 자동 추가됨)`);
 };
 
 window.removePriorityBeneficiaryRow = function(index) {
@@ -997,9 +1017,8 @@ window.updateDocumentPreviews = function() {
     sigHtml += `</div>`;
     setElHtml('d1-signatures-box', sigHtml);
 
-    // 4. 별첨 1
-    const rawPropSummary = contractState.metaPropertySummary || contractState.contractMeta.propertySummary || '';
-    const propFormatted = String(rawPropSummary)
+    // 4. 별첨 1 (줄바꿈 유지 포맷팅)
+    const propFormatted = String(contractState.contractMeta.propertySummary || '')
       .split('\n')
       .map(line => `<p>${line}</p>`)
       .join('');
@@ -1037,16 +1056,15 @@ window.updateDocumentPreviews = function() {
     });
     setElHtml('d1-annex2-pb-box', pbHtml);
 
-    const trustersBox = document.getElementById('d1-annex2-trusters-box');
     if (!isMultiTruster) {
       const t = contractState.trusters[0] || {};
-      trustersBox.innerHTML = `
+      setElHtml('d1-annex2-trusters-box', `
         <table class="doc-table">
           <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${t.name || ''}</td></tr>
           <tr><th>법인등록번호(생년월일)</th><td>${t.idNumber || ''}</td></tr>
           <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${t.address || ''}</td></tr>
         </table>
-      `;
+      `);
     } else {
       let tHtml = "";
       contractState.trusters.forEach((t, i) => {
@@ -1062,7 +1080,7 @@ window.updateDocumentPreviews = function() {
           </div>
         `;
       });
-      trustersBox.innerHTML = tHtml;
+      setElHtml('d1-annex2-trusters-box', tHtml);
     }
 
     setElHtml('d1-annex2-debtor-box', `
@@ -1135,12 +1153,13 @@ window.updateDocumentPreviews = function() {
     `;
     setElHtml('d1-annex4-articles-box', a4Html);
 
-    // ==============================================================
-    // ★ [핵심] 모든 위탁자 및 모든 우선수익자의 고객거래확인서·실제소유자확인서 전원 자동 일괄 생성
-    // ==============================================================
+    // =========================================================================
+    // ★ [핵심] 모든 위탁자 및 모든 우선수익자의 고객거래확인서·실제소유자확인서 무제한 자동 생성
+    // =========================================================================
     let allCddHtml = "";
     let cddCount = 0;
 
+    // 1) 모든 위탁자 순회하며 고객거래확인서(개인용 또는 법인용) 생성
     contractState.trusters.forEach((t, idx) => {
       const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
       const isBreak = cddCount > 0;
@@ -1152,6 +1171,7 @@ window.updateDocumentPreviews = function() {
       cddCount++;
     });
 
+    // 2) 모든 우선수익자 순회하며 고객거래확인서(금융기관 법인용) 생성
     pbs.forEach((pb, idx) => {
       const roleLabel = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
       const isBreak = cddCount > 0;
@@ -1160,11 +1180,14 @@ window.updateDocumentPreviews = function() {
     });
 
     setElHtml('all-cdd-container', allCddHtml);
+    setElText('badge-cdd-count', `총 ${cddCount}부`);
 
+    // 3) 모든 위탁자(법인) 및 모든 우선수익자 순회하며 실제소유자확인서 생성
     let allBoHtml = "";
     let boCount = 0;
 
     contractState.trusters.forEach((t, idx) => {
+      // 개인 위탁자도 법인 전환 시 또는 기본 표시를 위해 포함하되, 개인이면 안내 표시와 함께 생성하거나 법인 위탁자 전원 생성
       const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
       const isBreak = boCount > 0;
       allBoHtml += window.buildBeneficialOwnerHtml(t, roleLabel, false, formattedDateKorean, isBreak);
@@ -1179,6 +1202,7 @@ window.updateDocumentPreviews = function() {
     });
 
     setElHtml('all-bo-container', allBoHtml);
+    setElText('badge-bo-count', `총 ${boCount}부`);
 
   } catch (err) {
     console.warn("미리보기 업데이트 오류:", err);
@@ -1186,7 +1210,7 @@ window.updateDocumentPreviews = function() {
 };
 
 // =========================================================================
-// 8. 위임장 HWP/PDF/이미지 파일 업로드 및 부동산 표시 자동 OCR 추출 엔진
+// 8. 위임장('부동산의 표시') HWP 바이너리 디코더 & AI OCR 자동 추출 엔진
 // =========================================================================
 
 window.triggerPoaFileSelect = function(e) {
@@ -1232,41 +1256,21 @@ function setupPoaDropZoneListeners() {
   }, false);
 }
 
-// 고속 최적화된 PDF 첫 페이지 전용 래스터화 (Scale 1.0)
-async function rasterizeFirstPage(file) {
-  if (typeof pdfjsLib === 'undefined') return null;
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdfDoc = await loadingTask.promise;
-    const page = await pdfDoc.getPage(1);
-    const viewport = page.getViewport({ scale: 1.0 }); // 속도 최적화를 위해 1.0 배율 적용
-
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
-
-    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-    return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-  } catch (e) {
-    console.warn("PDF 래스터화 오류:", e);
-    return null;
-  }
-}
-
+// 한글(.hwp) 바이너리 파일 내부에서 유니코드(UTF-16LE) 한글 텍스트 및 압축 스트림을 추출하는 함수
 async function extractTextFromHwpBuffer(arrayBuffer) {
   const uint8 = new Uint8Array(arrayBuffer);
   let extractedChunks = [];
 
+  // 1) 비압축 영역(PrvText 미리보기 텍스트 등)에서 연속된 UTF-16LE 한글/숫자/주소 문자열 스캔
   const decodeUtf16 = (bytes) => {
     let str = "";
     for (let i = 0; i + 1 < bytes.length; i += 2) {
       const code = bytes[i] | (bytes[i + 1] << 8);
       if (
-        (code >= 0xAC00 && code <= 0xD7A3) ||
-        (code >= 0x0020 && code <= 0x007E) ||
-        code === 0x33A1 || code === 0x000A || code === 0x000D
+        (code >= 0xAC00 && code <= 0xD7A3) || // 한글 음절
+        (code >= 0x0020 && code <= 0x007E) || // 영문/숫자/기호
+        code === 0x33A1 || // ㎡
+        code === 0x000A || code === 0x000D
       ) {
         str += String.fromCharCode(code);
       } else if (str.length >= 4) {
@@ -1281,16 +1285,21 @@ async function extractTextFromHwpBuffer(arrayBuffer) {
 
   decodeUtf16(uint8);
 
+  // 2) HWP 5.0 BodyText 압축 스트림(Raw Deflate) 스캔 및 pako 해제 시도
   if (typeof pako !== 'undefined') {
     for (let offset = 512; offset < uint8.length - 64; offset += 512) {
       try {
         const sub = uint8.subarray(offset);
         const inflated = pako.inflateRaw(sub);
-        if (inflated && inflated.length > 20) decodeUtf16(inflated);
+        if (inflated && inflated.length > 20) {
+          decodeUtf16(inflated);
+        }
       } catch (e) {}
     }
   }
-  return extractedChunks.join('\n');
+
+  const combined = extractedChunks.join('\n');
+  return combined;
 }
 
 async function handlePoaFile(file) {
@@ -1318,6 +1327,7 @@ async function handlePoaFile(file) {
 
   try {
     let payload;
+
     if (isHwp) {
       const arrayBuffer = await file.arrayBuffer();
       const hwpExtractedText = await extractTextFromHwpBuffer(arrayBuffer);
@@ -1329,31 +1339,27 @@ async function handlePoaFile(file) {
       payload = {
         contents: [{
           role: "user",
-          parts: [{ text: `[위임장 HWP 추출 텍스트]\n${hwpExtractedText.substring(0, 15000)}\n\n${poaPrompt}` }]
+          parts: [
+            { text: `[위임장 HWP 추출 텍스트]\n${hwpExtractedText.substring(0, 15000)}\n\n${poaPrompt}` }
+          ]
         }],
         generationConfig: { responseMimeType: "application/json" }
       };
     } else {
-      let base64Data = null;
-      const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      if (mimeType === 'application/pdf') {
-        base64Data = await rasterizeFirstPage(file);
-      }
-      if (!base64Data) {
-        base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
+      const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
       payload = {
         contents: [{
           role: "user",
           parts: [
-            { inlineData: { mimeType: mimeType === 'application/pdf' ? 'image/jpeg' : mimeType, data: base64Data } },
+            { inlineData: { mimeType, data: base64Data } },
             { text: poaPrompt }
           ]
         }],
@@ -1489,8 +1495,107 @@ window.downloadAllDocsAsDocx = function() {
 };
 
 // =========================================================================
-// 10. 관리자 설정, 503 과부하 자동 재시도 & 모델 우회 고속 OCR 엔진
+// 10. 사업자등록증/등기부등본 OCR 업로드 및 거래처 DB 관리
 // =========================================================================
+
+window.triggerFileSelect = function(e) {
+  if (e) e.stopPropagation();
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) {
+    fileInput.value = '';
+    fileInput.click();
+  }
+};
+
+window.onFileInputChange = function(e) {
+  const files = e.target?.files;
+  if (files && files.length > 0) {
+    handleSelectedFile(files[0]);
+  }
+};
+
+window.reRunOCR = function() {
+  if (cachedFileBase64) {
+    executeHighPrecisionOCR();
+  } else {
+    showToast('먼저 파일을 업로드해 주세요.');
+  }
+};
+
+function setupFileUploadListeners() {
+  const dropZone = document.getElementById('drop-zone');
+  if (!dropZone) return;
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    dropZone.addEventListener(ev, () => dropZone.classList.add('border-cyan-400', 'bg-slate-900'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(ev => {
+    dropZone.addEventListener(ev, () => dropZone.classList.remove('border-cyan-400', 'bg-slate-900'), false);
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      handleSelectedFile(files[0]);
+    }
+  }, false);
+}
+
+async function handleSelectedFile(file) {
+  currentUploadedFile = file;
+  document.getElementById('file-preview-card')?.classList.remove('hidden');
+  setElText('preview-filename', file.name);
+  setElText('preview-file-size', (file.size / 1024).toFixed(1) + ' KB');
+  appendDiagnosticLog(`파일 첨부됨: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+
+  const imgEl = document.getElementById('preview-image');
+  const canvasEl = document.getElementById('preview-canvas');
+  const placeholderEl = document.getElementById('preview-placeholder');
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    cachedFileBase64 = dataUrl.split(',')[1];
+    cachedMimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
+    if (cachedMimeType.startsWith('image/') && imgEl) {
+      imgEl.src = dataUrl;
+      imgEl.classList.remove('hidden');
+      canvasEl?.classList.add('hidden');
+      placeholderEl?.classList.add('hidden');
+    } else if (cachedMimeType === 'application/pdf' && typeof pdfjsLib !== 'undefined' && canvasEl) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.2 });
+        canvasEl.width = viewport.width;
+        canvasEl.height = viewport.height;
+        await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
+        canvasEl.classList.remove('hidden');
+        imgEl?.classList.add('hidden');
+        placeholderEl?.classList.add('hidden');
+      } catch (pdfErr) {
+        canvasEl.classList.add('hidden');
+        imgEl?.classList.add('hidden');
+        placeholderEl?.classList.remove('hidden');
+      }
+    } else {
+      placeholderEl?.classList.remove('hidden');
+    }
+
+    executeHighPrecisionOCR();
+  };
+  reader.readAsDataURL(file);
+}
 
 window.verifyAdminPassword = function() {
   const input = document.getElementById('admin-pw-input')?.value || '';
@@ -1827,7 +1932,6 @@ window.deleteVendor = function(id) {
   showToast('삭제되었습니다.');
 };
 
-window.openAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.add('hidden'); }; // 보완 필요 시 아래 오픈 함수 사용
 window.openAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.remove('hidden'); };
 window.closeAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.add('hidden'); };
 
