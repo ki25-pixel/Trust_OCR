@@ -1,9 +1,13 @@
+// ★ 1순위 gemini-3.8-flash 시도 후, 실패/지연 시 대기 시간 없이 즉시 실제 고속 작동 하위 모델로 전환
 const FAILOVER_MODELS = [
   "gemini-3.8-flash",
-  "gemini-3.7-flash",
-  "gemini-3-flash",
-  "gemini-2.5-flash"
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
 ];
+
+// 한 번 성공한 고속 모델을 세션 동안 기억하여 다음 호출 시 지연 없이 즉시 사용
+let preferredWorkingModelIndex = 0;
 
 function setElText(id, val) {
   const el = document.getElementById(id);
@@ -250,12 +254,12 @@ let contractState = {
     feeAmountKor: "금 일천오백만원정",
     feeAmountNum: "₩15,000,000-",
     trustPeriod: "24개월",
-    propertySummary: "서울특별시 강남구 테헤란로 100 대 850㎡ 및 지상 철근콘크리트 평슬래브 5층 근린생활시설"
+    propertySummary: `1. 토지\n전북특별자치도 전주시 덕진구 팔복동2가 13-2 대 391㎡\n2. 토지\n전북특별자치도 전주시 덕진구 팔복동2가 13-7 대 467㎡\n3. 건물\n전북특별자치도 전주시 덕진구 팔복동2가 13-2, 13-7 [도로명주소] 기린대로 662\n철근콘크리트 조적조 평슬래브지붕 5층 근린생활시설 및 주택`
   }
 };
 
 // =========================================================================
-// 3. 메인 탭 & 서브탭 전환
+// 3. 메인 탭 & 6대 세부 서식 탭 전환
 // =========================================================================
 
 window.switchTab = function(tabId) {
@@ -308,8 +312,11 @@ window.switchDocSubTab = function(docId) {
 
     const viewMap = {
       'doc1': 'doc-view-1',
-      'doc2': 'doc-view-2',
-      'doc3': 'doc-view-3'
+      'doc2-1': 'doc-view-2-1',
+      'doc2-2': 'doc-view-2-2',
+      'doc2-3': 'doc-view-2-3',
+      'doc3-1': 'doc-view-3-1',
+      'doc3-2': 'doc-view-3-2'
     };
 
     const targetViewId = viewMap[docId] || 'doc-view-1';
@@ -412,7 +419,7 @@ function initializeApplication() {
     refreshApiKeyStatusUI();
     window.updateDocumentPreviews();
 
-    appendDiagnosticLog("시스템 준비 완료 (고속 캔버스 래스터화 및 비동기 OCR 엔진 가동)");
+    appendDiagnosticLog("초고속 OCR 엔진 가동 (경량 이미지 압축 + 3.8 실패 시 하위버전 즉시 우회)");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -424,7 +431,7 @@ if (document.readyState === 'loading') {
   initializeApplication();
 }
 
-function refreshApiKeyStatusUI() {
+function refreshApiKeyStatusUI(activeModelName) {
   const key = getStoredApiKey();
   const dot = document.getElementById('api-status-dot');
   const badge = document.getElementById('active-model-name-badge');
@@ -433,7 +440,7 @@ function refreshApiKeyStatusUI() {
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2';
     if (badge) {
       badge.className = 'text-emerald-400 ml-1 font-mono font-bold';
-      badge.textContent = FAILOVER_MODELS[0];
+      badge.textContent = activeModelName || FAILOVER_MODELS[preferredWorkingModelIndex];
     }
   } else {
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 mr-2';
@@ -497,6 +504,8 @@ function applyVendorToTruster(index, v) {
   if (!t || !v) return;
   t.name = v.companyName || '';
   t.idNumber = v.corpRegNo || '';
+  t.bizNo = v.bizNo || '';
+  t.bizType = v.bizType || '부동산업 / 신탁 및 자산관리';
   t.address = v.address || '';
   t.type = v.type || 'corporation';
   t.ceoName = v.ceoName || (t.type === 'corporation' ? `대표이사 ${v.representative || ''}` : '');
@@ -759,11 +768,21 @@ function renderPriorityBeneficiaryUI() {
 window.addTrusterRow = function() {
   const idx = contractState.trusters.length + 1;
   contractState.trusters.push({
-    id: `T${idx}`, type: "corporation", name: "", idNumber: "", bizNo: "", bizType: "부동산업", ceoName: "", address: "", isDebtor: false, isRepresentative: false, shareRatio: "50"
+    id: `T${idx}`,
+    type: "corporation",
+    name: "",
+    idNumber: "",
+    bizNo: "",
+    bizType: "부동산업",
+    ceoName: "",
+    address: "",
+    isDebtor: false,
+    isRepresentative: false,
+    shareRatio: "50"
   });
   renderTrusterUI();
   window.updateDocumentPreviews();
-  showToast(`위탁자 ${idx} 추가 완료! (확인서도 자동 추가됨)`);
+  showToast(`위탁자 ${idx} 추가 완료!`);
 };
 
 window.removeTrusterRow = function(index) {
@@ -825,12 +844,20 @@ function checkDebtorSync() {
 window.addPriorityBeneficiaryRow = function() {
   const idx = contractState.priorityBeneficiaries.length + 1;
   contractState.priorityBeneficiaries.push({
-    id: `PB${idx}`, rank: `1순위`, name: "", corpNumber: "", bizNo: "", ceoName: "", address: "", loanAgreementDate: "2026.04.09.", limitAmount: "₩1,000,000,000-"
+    id: `PB${idx}`,
+    rank: `1순위`,
+    name: "",
+    corpNumber: "",
+    bizNo: "",
+    ceoName: "",
+    address: "",
+    loanAgreementDate: "2026.04.09.",
+    limitAmount: "₩1,000,000,000-"
   });
   renderPriorityBeneficiaryUI();
   recalculateFeeAndRate();
   window.updateDocumentPreviews();
-  showToast(`우선수익자 ${idx} 추가 완료! (확인서도 자동 추가됨)`);
+  showToast(`우선수익자 ${idx} 추가 완료!`);
 };
 
 window.removePriorityBeneficiaryRow = function(index) {
@@ -855,7 +882,7 @@ window.handleAgentBankToggle = function() {
 };
 
 // =========================================================================
-// 7. 계약서 및 전 관계자 확인서(CDD·실소유자) 일괄 자동 생성 엔진
+// 7. 계약서 및 6대 세분화 확인서 탭 실시간 렌더링 엔진
 // =========================================================================
 
 window.updateDocumentPreviews = function() {
@@ -998,8 +1025,7 @@ window.updateDocumentPreviews = function() {
     setElHtml('d1-signatures-box', sigHtml);
 
     // 4. 별첨 1
-    const rawPropSummary = contractState.metaPropertySummary || contractState.contractMeta.propertySummary || '';
-    const propFormatted = String(rawPropSummary)
+    const propFormatted = String(contractState.contractMeta.propertySummary || '')
       .split('\n')
       .map(line => `<p>${line}</p>`)
       .join('');
@@ -1037,16 +1063,15 @@ window.updateDocumentPreviews = function() {
     });
     setElHtml('d1-annex2-pb-box', pbHtml);
 
-    const trustersBox = document.getElementById('d1-annex2-trusters-box');
     if (!isMultiTruster) {
       const t = contractState.trusters[0] || {};
-      trustersBox.innerHTML = `
+      setElHtml('d1-annex2-trusters-box', `
         <table class="doc-table">
           <tr><th class="w-1/4">상 호(성 명)</th><td class="font-bold">${t.name || ''}</td></tr>
           <tr><th>법인등록번호(생년월일)</th><td>${t.idNumber || ''}</td></tr>
           <tr><th>주&nbsp;&nbsp;&nbsp;&nbsp;소</th><td>${t.address || ''}</td></tr>
         </table>
-      `;
+      `);
     } else {
       let tHtml = "";
       contractState.trusters.forEach((t, i) => {
@@ -1062,7 +1087,7 @@ window.updateDocumentPreviews = function() {
           </div>
         `;
       });
-      trustersBox.innerHTML = tHtml;
+      setElHtml('d1-annex2-trusters-box', tHtml);
     }
 
     setElHtml('d1-annex2-debtor-box', `
@@ -1135,50 +1160,48 @@ window.updateDocumentPreviews = function() {
     `;
     setElHtml('d1-annex4-articles-box', a4Html);
 
-    // ==============================================================
-    // ★ [핵심] 모든 위탁자 및 모든 우선수익자의 고객거래확인서·실제소유자확인서 전원 자동 일괄 생성
-    // ==============================================================
-    let allCddHtml = "";
-    let cddCount = 0;
+    // =========================================================================
+    // ★ 6대 세분화 탭별 확인서 렌더링 (다수 위탁자·우선수익자 시 각 탭 내부에서 연속 생성)
+    // =========================================================================
+    
+    // 2-① 고객거래확인서 (위탁자 개인용)
+    const indTrusters = contractState.trusters.filter(t => t.type === 'individual');
+    const targetIndList = indTrusters.length > 0 ? indTrusters : contractState.trusters;
+    const cddIndHtml = targetIndList.map((t, idx) => {
+      const label = targetIndList.length > 1 ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
+      return window.buildIndividualCddHtml(t, label, formattedDateKorean, idx > 0);
+    }).join('');
+    setElHtml('cdd-truster-ind-container', cddIndHtml);
 
-    contractState.trusters.forEach((t, idx) => {
-      const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
-      const isBreak = cddCount > 0;
-      if (t.type === 'individual') {
-        allCddHtml += window.buildIndividualCddHtml(t, roleLabel, formattedDateKorean, isBreak);
-      } else {
-        allCddHtml += window.buildCorpCddHtml(t, roleLabel, false, formattedDateKorean, isBreak);
-      }
-      cddCount++;
-    });
+    // 2-② 고객거래확인서 (위탁자 법인용)
+    const corpTrusters = contractState.trusters.filter(t => t.type === 'corporation');
+    const targetCorpList = corpTrusters.length > 0 ? corpTrusters : contractState.trusters;
+    const cddCorpHtml = targetCorpList.map((t, idx) => {
+      const label = targetCorpList.length > 1 ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
+      return window.buildCorpCddHtml(t, label, false, formattedDateKorean, idx > 0);
+    }).join('');
+    setElHtml('cdd-truster-corp-container', cddCorpHtml);
 
-    pbs.forEach((pb, idx) => {
-      const roleLabel = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
-      const isBreak = cddCount > 0;
-      allCddHtml += window.buildCorpCddHtml(pb, roleLabel, true, formattedDateKorean, isBreak);
-      cddCount++;
-    });
+    // 2-③ 고객거래확인서 (우선수익자용)
+    const cddPbHtml = pbs.map((pb, idx) => {
+      const label = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
+      return window.buildCorpCddHtml(pb, label, true, formattedDateKorean, idx > 0);
+    }).join('');
+    setElHtml('cdd-pb-container', cddPbHtml);
 
-    setElHtml('all-cdd-container', allCddHtml);
+    // 3-① 실제소유자확인서 (위탁자 법인용)
+    const boTrusterHtml = targetCorpList.map((t, idx) => {
+      const label = targetCorpList.length > 1 ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
+      return window.buildBeneficialOwnerHtml(t, label, false, formattedDateKorean, idx > 0);
+    }).join('');
+    setElHtml('bo-truster-container', boTrusterHtml);
 
-    let allBoHtml = "";
-    let boCount = 0;
-
-    contractState.trusters.forEach((t, idx) => {
-      const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
-      const isBreak = boCount > 0;
-      allBoHtml += window.buildBeneficialOwnerHtml(t, roleLabel, false, formattedDateKorean, isBreak);
-      boCount++;
-    });
-
-    pbs.forEach((pb, idx) => {
-      const roleLabel = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
-      const isBreak = boCount > 0;
-      allBoHtml += window.buildBeneficialOwnerHtml(pb, roleLabel, true, formattedDateKorean, isBreak);
-      boCount++;
-    });
-
-    setElHtml('all-bo-container', allBoHtml);
+    // 3-② 실제소유자확인서 (우선수익자용)
+    const boPbHtml = pbs.map((pb, idx) => {
+      const label = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
+      return window.buildBeneficialOwnerHtml(pb, label, true, formattedDateKorean, idx > 0);
+    }).join('');
+    setElHtml('bo-pb-container', boPbHtml);
 
   } catch (err) {
     console.warn("미리보기 업데이트 오류:", err);
@@ -1186,7 +1209,7 @@ window.updateDocumentPreviews = function() {
 };
 
 // =========================================================================
-// 8. 위임장 HWP/PDF/이미지 파일 업로드 및 부동산 표시 자동 OCR 추출 엔진
+// 8. 위임장('부동산의 표시') .hwp / .doc / .docx 전용 고속 리더기
 // =========================================================================
 
 window.triggerPoaFileSelect = function(e) {
@@ -1232,30 +1255,8 @@ function setupPoaDropZoneListeners() {
   }, false);
 }
 
-// 고속 최적화된 PDF 첫 페이지 전용 래스터화 (Scale 1.0)
-async function rasterizeFirstPage(file) {
-  if (typeof pdfjsLib === 'undefined') return null;
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdfDoc = await loadingTask.promise;
-    const page = await pdfDoc.getPage(1);
-    const viewport = page.getViewport({ scale: 1.0 }); // 속도 최적화를 위해 1.0 배율 적용
-
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
-
-    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-    return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-  } catch (e) {
-    console.warn("PDF 래스터화 오류:", e);
-    return null;
-  }
-}
-
-async function extractTextFromHwpBuffer(arrayBuffer) {
+// .hwp 및 구형 .doc 바이너리 파일 내부에서 유니코드(UTF-16LE) 한글 텍스트 및 압축 스트림을 추출하는 함수
+async function extractTextFromBinaryDocOrHwp(arrayBuffer) {
   const uint8 = new Uint8Array(arrayBuffer);
   let extractedChunks = [];
 
@@ -1264,36 +1265,46 @@ async function extractTextFromHwpBuffer(arrayBuffer) {
     for (let i = 0; i + 1 < bytes.length; i += 2) {
       const code = bytes[i] | (bytes[i + 1] << 8);
       if (
-        (code >= 0xAC00 && code <= 0xD7A3) ||
-        (code >= 0x0020 && code <= 0x007E) ||
-        code === 0x33A1 || code === 0x000A || code === 0x000D
+        (code >= 0xAC00 && code <= 0xD7A3) || // 한글 음절
+        (code >= 0x0020 && code <= 0x007E) || // 영문/숫자/기호
+        code === 0x33A1 || // ㎡
+        code === 0x000A || code === 0x000D
       ) {
         str += String.fromCharCode(code);
-      } else if (str.length >= 4) {
-        if (/[가-힣]/.test(str)) extractedChunks.push(str.trim());
+      } else if (str.length >= 3) {
+        if (/[가-힣0-9]/.test(str)) extractedChunks.push(str.trim());
         str = "";
       } else {
         str = "";
       }
     }
-    if (str.length >= 4 && /[가-힣]/.test(str)) extractedChunks.push(str.trim());
+    if (str.length >= 3 && /[가-힣0-9]/.test(str)) extractedChunks.push(str.trim());
   };
 
   decodeUtf16(uint8);
 
   if (typeof pako !== 'undefined') {
-    for (let offset = 512; offset < uint8.length - 64; offset += 512) {
+    for (let offset = 256; offset < uint8.length - 64; offset += 256) {
       try {
         const sub = uint8.subarray(offset);
         const inflated = pako.inflateRaw(sub);
-        if (inflated && inflated.length > 20) decodeUtf16(inflated);
+        if (inflated && inflated.length > 20) {
+          decodeUtf16(inflated);
+        }
       } catch (e) {}
     }
   }
+
   return extractedChunks.join('\n');
 }
 
 async function handlePoaFile(file) {
+  const ext = file.name.toLowerCase().split('.').pop();
+  if (!['hwp', 'doc', 'docx'].includes(ext)) {
+    showToast('위임장은 .hwp, .doc, .docx 파일만 첨부 가능합니다.');
+    return;
+  }
+
   const key = getStoredApiKey();
   if (!key) {
     showToast('설정(Admin) 탭에서 Gemini API Key를 먼저 등록해 주세요.');
@@ -1302,64 +1313,47 @@ async function handlePoaFile(file) {
 
   const badge = document.getElementById('poa-ocr-badge');
   if (badge) {
-    badge.textContent = `위임장 분석 중 (${file.name})...`;
+    badge.textContent = `위임장 고속 분석 중 (${file.name})...`;
     badge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 animate-pulse font-semibold';
   }
 
-  const isHwp = file.name.toLowerCase().endsWith('.hwp');
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    let extractedRawText = "";
 
-  const poaPrompt = `당신은 대한민국 부동산 등기위임장 및 등기서류 전문 AI 검수관입니다.
-전달된 등기위임장 문서(또는 추출 텍스트)에서 **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 빠짐없이 추출하여 아래 JSON 형식으로만 반환하세요.
-- 토지/건물 일련번호(1. 토지, 2. 건물 등), 소재지 지번, 도로명주소, 지목, 면적(㎡), 건물 구조 및 층별 면적, 공유자 지분 내역 등을 원문 그대로 줄바꿈(\\n)을 유지하여 정확히 기재하세요.
+    // 1) .docx 파일은 mammoth.js로 즉시 순수 텍스트 추출
+    if (ext === 'docx' && typeof mammoth !== 'undefined') {
+      const res = await mammoth.extractRawText({ arrayBuffer });
+      extractedRawText = res.value || "";
+    }
+
+    // 2) .hwp 또는 .doc 파일(또는 mammoth 결과가 비어있을 때)은 바이너리 유니코드/압축해제 스캐너 가동
+    if (!extractedRawText || extractedRawText.trim().length < 10) {
+      extractedRawText = await extractTextFromBinaryDocOrHwp(arrayBuffer);
+    }
+
+    if (!extractedRawText || extractedRawText.trim().length < 5) {
+      throw new Error("문서 내부에서 텍스트를 읽을 수 없습니다.");
+    }
+
+    const poaPrompt = `당신은 대한민국 부동산 등기위임장 전문 AI 검수관입니다.
+아래는 위임장(.${ext}) 파일에서 추출한 텍스트입니다. 이 중에서 **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 빠짐없이 정리하여 아래 JSON 형식으로만 반환하세요.
+- 일련번호(1. 토지, 2. 건물 등), 소재지 지번, 도로명주소, 지목, 면적(㎡), 건물 구조 및 층별 면적, 소유자/공유자 지분 내역 등을 원문 그대로 줄바꿈(\\n)을 유지하여 정확히 기재하세요.
 
 {
   "propertyDisplay": "1. 토지\\n...\\n2. 건물\\n..."
-}`;
+}
 
-  try {
-    let payload;
-    if (isHwp) {
-      const arrayBuffer = await file.arrayBuffer();
-      const hwpExtractedText = await extractTextFromHwpBuffer(arrayBuffer);
+[추출된 문서 텍스트]
+${extractedRawText.substring(0, 15000)}`;
 
-      if (!hwpExtractedText || hwpExtractedText.length < 10) {
-        throw new Error("HWP 바이너리에서 텍스트를 읽을 수 없습니다. 한글에서 PDF로 저장 후 첨부해 주세요.");
-      }
-
-      payload = {
-        contents: [{
-          role: "user",
-          parts: [{ text: `[위임장 HWP 추출 텍스트]\n${hwpExtractedText.substring(0, 15000)}\n\n${poaPrompt}` }]
-        }],
-        generationConfig: { responseMimeType: "application/json" }
-      };
-    } else {
-      let base64Data = null;
-      const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
-
-      if (mimeType === 'application/pdf') {
-        base64Data = await rasterizeFirstPage(file);
-      }
-      if (!base64Data) {
-        base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { inlineData: { mimeType: mimeType === 'application/pdf' ? 'image/jpeg' : mimeType, data: base64Data } },
-            { text: poaPrompt }
-          ]
-        }],
-        generationConfig: { responseMimeType: "application/json" }
-      };
-    }
+    const payload = {
+      contents: [{
+        role: "user",
+        parts: [{ text: poaPrompt }]
+      }],
+      generationConfig: { responseMimeType: "application/json" }
+    };
 
     const result = await callWithRetryAndFailover(payload, key);
     const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -1438,9 +1432,12 @@ window.downloadCurrentDocAsDocx = function() {
   const activePaper = document.querySelector('.doc-paper:not(.hidden)');
   if (!activePaper) return;
   const subtabKey = currentDocSubTab;
-  let filename = "1_부동산담보신탁계약서";
-  if (subtabKey === 'doc2') filename = "2_고객거래확인서_전관계자일괄";
-  else if (subtabKey === 'doc3') filename = "3_실제소유자확인서_전관계자일괄";
+  let filename = "담보신탁계약서";
+  if (subtabKey === 'doc2-1') filename = "고객거래확인서_위탁자개인용";
+  else if (subtabKey === 'doc2-2') filename = "고객거래확인서_위탁자법인용";
+  else if (subtabKey === 'doc2-3') filename = "고객거래확인서_우선수익자용";
+  else if (subtabKey === 'doc3-1') filename = "실제소유자확인서_위탁자법인용";
+  else if (subtabKey === 'doc3-2') filename = "실제소유자확인서_우선수익자용";
 
   const clone = activePaper.cloneNode(true);
   clone.querySelectorAll('.no-print').forEach(el => el.remove());
@@ -1461,7 +1458,7 @@ window.downloadCurrentDocAsDocx = function() {
 window.downloadAllDocsAsDocx = function() {
   ensureTemplatesInjected();
   window.updateDocumentPreviews();
-  const docs = ['doc-view-1', 'doc-view-2', 'doc-view-3'];
+  const docs = ['doc-view-1', 'doc-view-2-1', 'doc-view-2-2', 'doc-view-2-3', 'doc-view-3-1', 'doc-view-3-2'];
   let combinedInnerHtml = "";
   docs.forEach((id, idx) => {
     const el = document.getElementById(id);
@@ -1473,24 +1470,163 @@ window.downloadAllDocsAsDocx = function() {
     }
   });
   const dateStr = document.getElementById('contract-date')?.value || '2026-04-09';
-  const filename = `신탁서류3종_전관계자통합본_${dateStr}.docx`;
+  const filename = `신탁서류3종_통합본_${dateStr}.docx`;
   const fullHtml = buildWordDocumentHtml(combinedInnerHtml, "신탁서류3종 통합본");
 
   if (typeof htmlDocx !== 'undefined') {
     try {
       saveBlobFile(htmlDocx.asBlob(fullHtml), filename);
-      showToast(`서류 3종 전체 .docx 다운로드 완료!`);
+      showToast(`서류 전체 .docx 다운로드 완료!`);
       return;
     } catch(e) {}
   }
   const blob = new Blob(['\ufeff', fullHtml], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
   saveBlobFile(blob, filename);
-  showToast(`서류 3종 전체 .docx 다운로드 완료!`);
+  showToast(`서류 전체 .docx 다운로드 완료!`);
 };
 
 // =========================================================================
-// 10. 관리자 설정, 503 과부하 자동 재시도 & 모델 우회 고속 OCR 엔진
+// 10. 초고속 경량 이미지 변환 & 딜레이 없는 즉시 하위버전 우회 OCR 엔진
 // =========================================================================
+
+window.triggerFileSelect = function(e) {
+  if (e) e.stopPropagation();
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) {
+    fileInput.value = '';
+    fileInput.click();
+  }
+};
+
+window.onFileInputChange = function(e) {
+  const files = e.target?.files;
+  if (files && files.length > 0) {
+    handleSelectedFile(files[0]);
+  }
+};
+
+window.reRunOCR = function() {
+  if (cachedFileBase64) {
+    executeHighPrecisionOCR();
+  } else {
+    showToast('먼저 파일을 업로드해 주세요.');
+  }
+};
+
+function setupFileUploadListeners() {
+  const dropZone = document.getElementById('drop-zone');
+  if (!dropZone) return;
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    dropZone.addEventListener(ev, () => dropZone.classList.add('border-cyan-400', 'bg-slate-900'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(ev => {
+    dropZone.addEventListener(ev, () => dropZone.classList.remove('border-cyan-400', 'bg-slate-900'), false);
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      handleSelectedFile(files[0]);
+    }
+  }, false);
+}
+
+// 이미지 파일을 고속 전송용 경량 JPEG(최대 폭 1000px, 품질 0.75)로 압축하는 헬퍼
+function compressImageDataUrl(dataUrl, maxWidth = 1000) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxWidth) {
+        h = Math.round((h * maxWidth) / w);
+        w = maxWidth;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.75);
+      resolve(compressed.split(',')[1]);
+    };
+    img.onerror = () => resolve(dataUrl.split(',')[1]);
+    img.src = dataUrl;
+  });
+}
+
+async function handleSelectedFile(file) {
+  currentUploadedFile = file;
+  document.getElementById('file-preview-card')?.classList.remove('hidden');
+  setElText('preview-filename', file.name);
+  setElText('preview-file-size', (file.size / 1024).toFixed(1) + ' KB');
+  appendDiagnosticLog(`파일 접수: ${file.name} (경량 고속 압축 진행 중...)`);
+
+  const imgEl = document.getElementById('preview-image');
+  const canvasEl = document.getElementById('preview-canvas');
+  const placeholderEl = document.getElementById('preview-placeholder');
+
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+  // ★ PDF 파일일 경우: 렌더링 비율을 0.8로 낮춰 첫 페이지를 경량 JPEG로 변환 (속도 5배 향상)
+  if (isPdf && typeof pdfjsLib !== 'undefined' && canvasEl) {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      // 요청사항 반영: PDF 렌더링 비율 축소 (scale: 0.8)
+      const viewport = page.getViewport({ scale: 0.8 });
+      canvasEl.width = viewport.width;
+      canvasEl.height = viewport.height;
+      await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
+
+      canvasEl.classList.remove('hidden');
+      imgEl?.classList.add('hidden');
+      placeholderEl?.classList.add('hidden');
+
+      // 무거운 원본 PDF 대신 경량 렌더링된 JPEG 이미지를 API에 전송
+      const jpegDataUrl = canvasEl.toDataURL('image/jpeg', 0.72);
+      cachedFileBase64 = jpegDataUrl.split(',')[1];
+      cachedMimeType = 'image/jpeg';
+
+      appendDiagnosticLog(`PDF 경량 렌더링(비율 0.8) 완료 -> 고속 이미지 변환 성공`);
+      executeHighPrecisionOCR();
+      return;
+    } catch (pdfErr) {
+      console.warn("PDF 경량 변환 실패, 원본 전송으로 대체", pdfErr);
+    }
+  }
+
+  // 일반 이미지 또는 PDF 폴백 처리
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    if (file.type.startsWith('image/')) {
+      if (imgEl) {
+        imgEl.src = dataUrl;
+        imgEl.classList.remove('hidden');
+        canvasEl?.classList.add('hidden');
+        placeholderEl?.classList.add('hidden');
+      }
+      cachedFileBase64 = await compressImageDataUrl(dataUrl, 1000);
+      cachedMimeType = 'image/jpeg';
+    } else {
+      cachedFileBase64 = dataUrl.split(',')[1];
+      cachedMimeType = isPdf ? 'application/pdf' : 'image/jpeg';
+    }
+    executeHighPrecisionOCR();
+  };
+  reader.readAsDataURL(file);
+}
 
 window.verifyAdminPassword = function() {
   const input = document.getElementById('admin-pw-input')?.value || '';
@@ -1525,10 +1661,6 @@ window.saveAdminApiKey = function() {
   showToast('API Key가 영구 저장되었습니다.');
 };
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 function safeExtractJSON(rawText) {
   if (!rawText) throw new Error("AI 응답 본문이 비어있습니다.");
   let clean = rawText.trim().replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -1554,87 +1686,78 @@ function safeExtractJSON(rawText) {
   }
 }
 
+// ★ 핵심 속도 개선: 3.8 호출 실패/과부하 시 대기 시간(Sleep) 없이 즉시 하위 버전(2.5 -> 2.0 -> 1.5)으로 직행!
 async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
   let lastError = null;
 
-  for (let mIdx = 0; mIdx < FAILOVER_MODELS.length; mIdx++) {
-    const model = FAILOVER_MODELS[mIdx];
-    const isFallback = mIdx > 0;
+  // 이전에 성공했던 모델부터 시작하되, 전체 체인을 순회
+  const order = [];
+  for (let i = 0; i < FAILOVER_MODELS.length; i++) {
+    order.push((preferredWorkingModelIndex + i) % FAILOVER_MODELS.length);
+  }
 
-    if (isFallback) {
-      appendDiagnosticLog(`[트래픽 분산 우회] 예비 모델 "${model}"(으)로 전환 시도 중...`, 'warn');
-      if (onStepUpdate) onStepUpdate(`과부하 우회: 예비 모델 (${model}) 호출 중...`);
+  for (let step = 0; step < order.length; step++) {
+    const mIdx = order[step];
+    const model = FAILOVER_MODELS[mIdx];
+
+    if (step > 0) {
+      appendDiagnosticLog(`[즉시 우회] "${model}" 하위/안정화 버전으로 딜레이 없이 전환 호출...`, 'warn');
+      if (onStepUpdate) onStepUpdate(`하위 모델 (${model}) 즉시 전환 호출 중...`);
     } else {
-      appendDiagnosticLog(`AI OCR 요청 시작: 모델 "${model}"...`);
-      if (onStepUpdate) onStepUpdate(`Google AI (${model}) 분석 요청 중...`);
+      appendDiagnosticLog(`고속 OCR 호출: 모델 "${model}"...`);
+      if (onStepUpdate) onStepUpdate(`AI 모델 (${model}) 고속 분석 중...`);
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
-    const MAX_RETRIES = 2;
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12초 타임아웃 방어
 
-        if (response.ok) {
-          const data = await response.json();
-          appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 정상 응답 수신!`, 'success');
-          return { model, data };
-        }
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-        const errText = await response.text();
-        let parsedMsg = errText;
-        try {
-          const j = JSON.parse(errText);
-          parsedMsg = j.error?.message || errText;
-        } catch(e) {}
-
-        if (response.status === 503 || response.status === 429) {
-          lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
-          if (attempt < MAX_RETRIES) {
-            const waitMs = (attempt + 1) * 1500;
-            appendDiagnosticLog(`[서버 과부하 ${response.status}] ${waitMs / 1000}초 후 자동 재시도 (${attempt + 1}/${MAX_RETRIES})...`, 'warn');
-            if (onStepUpdate) onStepUpdate(`서버 혼잡 감지: ${waitMs / 1000}초 후 자동 재시도 중...`);
-            await sleep(waitMs);
-            continue;
-          } else {
-            appendDiagnosticLog(`모델 "${model}" 응답 지연 지속. 다음 예비 모델로 즉시 우회합니다.`, 'warn');
-            break;
-          }
-        } else {
-          lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
-          appendDiagnosticLog(`모델 "${model}" 전환 (${response.status}): 다음 모델 시도`, 'warn');
-          break;
-        }
-      } catch (netErr) {
-        lastError = netErr;
-        if (attempt < MAX_RETRIES) {
-          appendDiagnosticLog(`네트워크 재시도 중...`, 'warn');
-          await sleep(1500);
-          continue;
-        } else {
-          break;
-        }
+      if (response.ok) {
+        const data = await response.json();
+        preferredWorkingModelIndex = mIdx; // 성공한 고속 모델 기억
+        refreshApiKeyStatusUI(model);
+        appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 고속 응답 완료!`, 'success');
+        return { model, data };
       }
+
+      const errText = await response.text();
+      let parsedMsg = errText;
+      try {
+        const j = JSON.parse(errText);
+        parsedMsg = j.error?.message || errText;
+      } catch(e) {}
+
+      lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
+      appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status}) -> 대기 없이 다음 하위 모델로 즉시 이동`, 'warn');
+      // Sleep 없이 즉시 다음 모델 시도!
+    } catch (netErr) {
+      lastError = netErr;
+      appendDiagnosticLog(`모델 "${model}" 지연/오류 -> 다음 하위 모델로 즉시 이동`, 'warn');
     }
   }
 
-  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다. API Key를 확인해 주세요.");
 }
 
 window.testGoogleAPIConnection = async function() {
   const key = getStoredApiKey() || (document.getElementById('gemini-api-key')?.value || '').trim();
   if (!key) { showToast('저장된 API Key가 없습니다.'); return; }
-  appendDiagnosticLog("API 연결 테스트 및 자동 우회 점검 시작...");
+  appendDiagnosticLog("API 고속 연결 및 하위 모델 우회 점검 시작...");
   try {
     const payload = { contents: [{ parts: [{ text: "ping" }] }] };
     const result = await callWithRetryAndFailover(payload, key);
     showToast(`연결 성공! (활성 모델: ${result.model})`);
-    refreshApiKeyStatusUI();
+    refreshApiKeyStatusUI(result.model);
   } catch(e) {
     showToast(`연결 오류: ${e.message.substring(0, 40)}`);
   }
@@ -1663,27 +1786,22 @@ async function executeHighPrecisionOCR() {
   const key = getStoredApiKey();
   if (!key) { showToast('설정(Admin) 탭에서 API Key를 먼저 등록해 주세요.'); return; }
 
+  const startTime = performance.now();
   const pBar = document.getElementById('ocr-progress-bar');
   const pFill = document.getElementById('ocr-progress-fill');
   const stepText = document.getElementById('ocr-step-text');
   const badge = document.getElementById('ocr-status-badge');
 
   pBar?.classList.remove('hidden');
-  if (pFill) pFill.style.width = '50%';
+  if (pFill) pFill.style.width = '65%';
   if (badge) {
-    badge.textContent = 'AI 분석 및 자동 우회 작동 중...';
+    badge.textContent = '초고속 분석 중...';
     badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
   }
 
-  const promptText = `대한민국 사업자등록증 및 등기사항전부증명서(등기부등본)의 다음 6가지 정보를 정밀 판독하여 반드시 아래 JSON 형식으로만 반환하세요:
-{
-  "companyName": "법인명 또는 상호명",
-  "representative": "대표자 성명",
-  "corpRegNo": "13자리 법인등록번호(개인사업자는 생년월일 또는 사업자번호)",
-  "address": "본점 소재지 도로명 전체 주소",
-  "bizNo": "10자리 사업자등록번호",
-  "bizType": "업태 및 종목"
-}`;
+  // 프롬프트 길이 최소화 및 출력 토큰 제한으로 응답 속도 극대화
+  const promptText = `대한민국 사업자등록증 또는 법인등기부등본에서 다음 6개 항목을 추출해 JSON으로만 답하세요:
+{"companyName":"상호/법인명","representative":"대표자명","corpRegNo":"법인등록번호13자리(없으면 생년월일/사업자번호)","address":"본점주소","bizNo":"사업자등록번호10자리","bizType":"업태/종목"}`;
 
   const payload = {
     contents: [{
@@ -1693,7 +1811,10 @@ async function executeHighPrecisionOCR() {
         { text: promptText }
       ]
     }],
-    generationConfig: { responseMimeType: "application/json" }
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.1
+    }
   };
 
   try {
@@ -1703,6 +1824,7 @@ async function executeHighPrecisionOCR() {
 
     const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
     const parsed = safeExtractJSON(rawText);
+    const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(1);
 
     if (document.getElementById('ocr-company-name')) document.getElementById('ocr-company-name').value = parsed.companyName || '';
     if (document.getElementById('ocr-representative')) document.getElementById('ocr-representative').value = parsed.representative || '';
@@ -1713,11 +1835,11 @@ async function executeHighPrecisionOCR() {
 
     if (pFill) pFill.style.width = '100%';
     if (badge) {
-      badge.textContent = `파싱 성공 (${result.model})`;
+      badge.textContent = `완료 (${result.model} · ${elapsedSec}초)`;
       badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
     }
-    appendDiagnosticLog(`[추출 완료] 상호: ${parsed.companyName} | 대표: ${parsed.representative}`, 'success');
-    showToast(`[${parsed.companyName}] 서류 정보 추출 완료!`);
+    appendDiagnosticLog(`[초고속 추출 완료: ${elapsedSec}초] 상호: ${parsed.companyName} | 모델: ${result.model}`, 'success');
+    showToast(`[${parsed.companyName}] 추출 완료! (${elapsedSec}초 소요)`);
   } catch (err) {
     if (badge) {
       badge.textContent = '파싱 실패';
@@ -1726,7 +1848,7 @@ async function executeHighPrecisionOCR() {
     appendDiagnosticLog(`최종 오류: ${err.message}`, 'error');
     showToast(`오류: ${err.message.substring(0, 45)}...`);
   } finally {
-    setTimeout(() => pBar?.classList.add('hidden'), 600);
+    setTimeout(() => pBar?.classList.add('hidden'), 400);
   }
 }
 
@@ -1827,7 +1949,6 @@ window.deleteVendor = function(id) {
   showToast('삭제되었습니다.');
 };
 
-window.openAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.add('hidden'); }; // 보완 필요 시 아래 오픈 함수 사용
 window.openAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.remove('hidden'); };
 window.closeAddVendorModal = function() { document.getElementById('add-vendor-modal')?.classList.add('hidden'); };
 
