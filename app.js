@@ -1,5 +1,4 @@
-// 과부하 시 순차적으로 우회할 모델 체인 (가장 응답이 빨랐던 모델을 동적으로 0순위에 배치)
-let FAILOVER_MODELS = [
+const FAILOVER_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.7-flash",
   "gemini-3-flash",
@@ -413,7 +412,7 @@ function initializeApplication() {
     refreshApiKeyStatusUI();
     window.updateDocumentPreviews();
 
-    appendDiagnosticLog("초고속 AI OCR 엔진 준비 완료 (이미지 경량화 & 병렬 스트리밍 적용)");
+    appendDiagnosticLog("시스템 준비 완료 (전 관계자 확인서 자동생성 & 위임장 부동산 표시 OCR 가동)");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -621,7 +620,7 @@ function renderDropdownItems(dropdownEl, list, onSelectCallback) {
 }
 
 // =========================================================================
-// 6. 동적 위탁자 & 우선수익자 UI 빌더
+// 6. 동적 위탁자 & 우선수익자 UI 빌더 (개인/법인 선택 토글 포함)
 // =========================================================================
 
 function renderTrusterUI() {
@@ -1018,7 +1017,7 @@ window.updateDocumentPreviews = function() {
     sigHtml += `</div>`;
     setElHtml('d1-signatures-box', sigHtml);
 
-    // 4. 별첨 1
+    // 4. 별첨 1 (줄바꿈 유지 포맷팅)
     const propFormatted = String(contractState.contractMeta.propertySummary || '')
       .split('\n')
       .map(line => `<p>${line}</p>`)
@@ -1154,10 +1153,13 @@ window.updateDocumentPreviews = function() {
     `;
     setElHtml('d1-annex4-articles-box', a4Html);
 
-    // 8. 모든 위탁자 및 모든 우선수익자의 고객거래확인서·실제소유자확인서 무제한 자동 생성
+    // =========================================================================
+    // ★ [핵심] 모든 위탁자 및 모든 우선수익자의 고객거래확인서·실제소유자확인서 무제한 자동 생성
+    // =========================================================================
     let allCddHtml = "";
     let cddCount = 0;
 
+    // 1) 모든 위탁자 순회하며 고객거래확인서(개인용 또는 법인용) 생성
     contractState.trusters.forEach((t, idx) => {
       const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
       const isBreak = cddCount > 0;
@@ -1169,6 +1171,7 @@ window.updateDocumentPreviews = function() {
       cddCount++;
     });
 
+    // 2) 모든 우선수익자 순회하며 고객거래확인서(금융기관 법인용) 생성
     pbs.forEach((pb, idx) => {
       const roleLabel = `${pb.rank} 우선수익자${pbs.length > 1 ? ' ' + (idx + 1) : ''} (${pb.name || '미입력'})`;
       const isBreak = cddCount > 0;
@@ -1179,10 +1182,12 @@ window.updateDocumentPreviews = function() {
     setElHtml('all-cdd-container', allCddHtml);
     setElText('badge-cdd-count', `총 ${cddCount}부`);
 
+    // 3) 모든 위탁자(법인) 및 모든 우선수익자 순회하며 실제소유자확인서 생성
     let allBoHtml = "";
     let boCount = 0;
 
     contractState.trusters.forEach((t, idx) => {
+      // 개인 위탁자도 법인 전환 시 또는 기본 표시를 위해 포함하되, 개인이면 안내 표시와 함께 생성하거나 법인 위탁자 전원 생성
       const roleLabel = isMultiTruster ? `위탁자${idx + 1} (${t.name || '미입력'})` : `위탁자 (${t.name || '미입력'})`;
       const isBreak = boCount > 0;
       allBoHtml += window.buildBeneficialOwnerHtml(t, roleLabel, false, formattedDateKorean, isBreak);
@@ -1205,127 +1210,8 @@ window.updateDocumentPreviews = function() {
 };
 
 // =========================================================================
-// 8. 초고속 이미지/PDF 경량화 엔진 & HWP 고속 핀포인트 디코더
+// 8. 위임장('부동산의 표시') HWP 바이너리 디코더 & AI OCR 자동 추출 엔진
 // =========================================================================
-
-// 대용량 PDF 첫 페이지 또는 고해상도 이미지를 1200px 이하의 가벼운 JPEG(품질 0.85)로 압축하여 전송 속도를 5배 높이는 헬퍼
-async function optimizeFilePayloadForFastOCR(file) {
-  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-
-  // 1) PDF인 경우: PDF.js로 첫 페이지를 가벼운 JPEG로 래스터화 (전체 멀티페이지 PDF 전송 방지)
-  if (isPdf && typeof pdfjsLib !== 'undefined') {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 1.5 });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-      const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      return {
-        mimeType: 'image/jpeg',
-        base64: jpegDataUrl.split(',')[1],
-        previewCanvas: canvas
-      };
-    } catch (e) {
-      // 실패 시 원본 fallback
-    }
-  }
-
-  // 2) 이미지인 경우: 가로/세로 최대 1600px로 리사이징 및 JPEG 0.85 압축
-  if (file.type.startsWith('image/')) {
-    try {
-      const dataUrl = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      const img = await new Promise((res, rej) => {
-        const i = new Image();
-        i.onload = () => res(i);
-        i.onerror = rej;
-        i.src = dataUrl;
-      });
-      const MAX_DIM = 1600;
-      let w = img.width;
-      let h = img.height;
-      if (w > MAX_DIM || h > MAX_DIM) {
-        if (w > h) { h = Math.round(h * (MAX_DIM / w)); w = MAX_DIM; }
-        else { w = Math.round(w * (MAX_DIM / h)); h = MAX_DIM; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
-      return {
-        mimeType: 'image/jpeg',
-        base64: compressedUrl.split(',')[1],
-        previewDataUrl: dataUrl
-      };
-    } catch (e) {}
-  }
-
-  // 3) 기본 Base64 fallback
-  const rawUrl = await new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-  return {
-    mimeType: file.type || 'application/pdf',
-    base64: rawUrl.split(',')[1],
-    previewDataUrl: rawUrl
-  };
-}
-
-// HWP 고속 핀포인트 텍스트 추출기 (불필요한 512바이트 루프 제거 -> 0.05초 내 완료)
-async function extractTextFromHwpBufferFast(arrayBuffer) {
-  const uint8 = new Uint8Array(arrayBuffer);
-  let extractedChunks = [];
-
-  const decodeUtf16 = (bytes) => {
-    let str = "";
-    for (let i = 0; i + 1 < bytes.length; i += 2) {
-      const code = bytes[i] | (bytes[i + 1] << 8);
-      if (
-        (code >= 0xAC00 && code <= 0xD7A3) ||
-        (code >= 0x0020 && code <= 0x007E) ||
-        code === 0x33A1 || code === 0x000A || code === 0x000D
-      ) {
-        str += String.fromCharCode(code);
-      } else {
-        if (str.length >= 4 && /[가-힣]/.test(str)) extractedChunks.push(str.trim());
-        str = "";
-      }
-    }
-    if (str.length >= 4 && /[가-힣]/.test(str)) extractedChunks.push(str.trim());
-  };
-
-  // 1) 비압축 UTF-16LE 영역 즉시 스캔
-  decodeUtf16(uint8);
-
-  // 2) OLE 섹터 경계(512바이트 배수) 중 유효 압축 블록만 최대 25개 이내로 고속 해제
-  if (typeof pako !== 'undefined' && extractedChunks.join('').length < 200) {
-    let attempts = 0;
-    for (let offset = 512; offset < uint8.length - 128 && attempts < 25; offset += 512) {
-      // HWP raw deflate 스트림이나 zlib 헤더 가능성이 있는 섹터만 시도
-      try {
-        const inflated = pako.inflateRaw(uint8.subarray(offset, Math.min(offset + 32768, uint8.length)));
-        if (inflated && inflated.length > 32) {
-          decodeUtf16(inflated);
-          attempts++;
-        }
-      } catch (e) {}
-    }
-  }
-
-  return extractedChunks.join('\n');
-}
 
 window.triggerPoaFileSelect = function(e) {
   if (e) e.stopPropagation();
@@ -1348,18 +1234,72 @@ function setupPoaDropZoneListeners() {
   if (!zone) return;
 
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
-    zone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+    zone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
   });
+
   ['dragenter', 'dragover'].forEach(ev => {
     zone.addEventListener(ev, () => zone.classList.add('border-cyan-400', 'bg-slate-900/90'), false);
   });
+
   ['dragleave', 'drop'].forEach(ev => {
     zone.addEventListener(ev, () => zone.classList.remove('border-cyan-400', 'bg-slate-900/90'), false);
   });
+
   zone.addEventListener('drop', (e) => {
     const files = e.dataTransfer?.files;
-    if (files && files.length > 0) handlePoaFile(files[0]);
+    if (files && files.length > 0) {
+      handlePoaFile(files[0]);
+    }
   }, false);
+}
+
+// 한글(.hwp) 바이너리 파일 내부에서 유니코드(UTF-16LE) 한글 텍스트 및 압축 스트림을 추출하는 함수
+async function extractTextFromHwpBuffer(arrayBuffer) {
+  const uint8 = new Uint8Array(arrayBuffer);
+  let extractedChunks = [];
+
+  // 1) 비압축 영역(PrvText 미리보기 텍스트 등)에서 연속된 UTF-16LE 한글/숫자/주소 문자열 스캔
+  const decodeUtf16 = (bytes) => {
+    let str = "";
+    for (let i = 0; i + 1 < bytes.length; i += 2) {
+      const code = bytes[i] | (bytes[i + 1] << 8);
+      if (
+        (code >= 0xAC00 && code <= 0xD7A3) || // 한글 음절
+        (code >= 0x0020 && code <= 0x007E) || // 영문/숫자/기호
+        code === 0x33A1 || // ㎡
+        code === 0x000A || code === 0x000D
+      ) {
+        str += String.fromCharCode(code);
+      } else if (str.length >= 4) {
+        if (/[가-힣]/.test(str)) extractedChunks.push(str.trim());
+        str = "";
+      } else {
+        str = "";
+      }
+    }
+    if (str.length >= 4 && /[가-힣]/.test(str)) extractedChunks.push(str.trim());
+  };
+
+  decodeUtf16(uint8);
+
+  // 2) HWP 5.0 BodyText 압축 스트림(Raw Deflate) 스캔 및 pako 해제 시도
+  if (typeof pako !== 'undefined') {
+    for (let offset = 512; offset < uint8.length - 64; offset += 512) {
+      try {
+        const sub = uint8.subarray(offset);
+        const inflated = pako.inflateRaw(sub);
+        if (inflated && inflated.length > 20) {
+          decodeUtf16(inflated);
+        }
+      } catch (e) {}
+    }
+  }
+
+  const combined = extractedChunks.join('\n');
+  return combined;
 }
 
 async function handlePoaFile(file) {
@@ -1371,40 +1311,59 @@ async function handlePoaFile(file) {
 
   const badge = document.getElementById('poa-ocr-badge');
   if (badge) {
-    badge.textContent = `위임장 고속 분석 중 (${file.name})...`;
+    badge.textContent = `위임장 분석 중 (${file.name})...`;
     badge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 animate-pulse font-semibold';
   }
 
   const isHwp = file.name.toLowerCase().endsWith('.hwp');
-  const poaPrompt = `등기위임장에서 '부동산의 표시' 란의 부동산 목록 전체를 원문 줄바꿈(\\n) 그대로 추출하여 JSON으로 반환하세요:
-{"propertyDisplay": "1. 토지\\n..."}`;
+
+  const poaPrompt = `당신은 대한민국 부동산 등기위임장 및 등기서류 전문 AI 검수관입니다.
+전달된 등기위임장 문서(또는 추출 텍스트)에서 **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 빠짐없이 추출하여 아래 JSON 형식으로만 반환하세요.
+- 토지/건물 일련번호(1. 토지, 2. 건물 등), 소재지 지번, 도로명주소, 지목, 면적(㎡), 건물 구조 및 층별 면적, 공유자 지분 내역 등을 원문 그대로 줄바꿈(\\n)을 유지하여 정확히 기재하세요.
+
+{
+  "propertyDisplay": "1. 토지\\n...\\n2. 건물\\n..."
+}`;
 
   try {
     let payload;
+
     if (isHwp) {
       const arrayBuffer = await file.arrayBuffer();
-      const hwpExtractedText = await extractTextFromHwpBufferFast(arrayBuffer);
+      const hwpExtractedText = await extractTextFromHwpBuffer(arrayBuffer);
+
       if (!hwpExtractedText || hwpExtractedText.length < 10) {
-        throw new Error("HWP 텍스트 추출 실패. PDF나 이미지로 첨부해 주세요.");
+        throw new Error("HWP 바이너리에서 텍스트를 읽을 수 없습니다. 한글에서 PDF로 저장 후 첨부해 주세요.");
       }
-      payload = {
-        contents: [{
-          role: "user",
-          parts: [{ text: `[위임장 텍스트]\n${hwpExtractedText.substring(0, 10000)}\n\n${poaPrompt}` }]
-        }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
-      };
-    } else {
-      const opt = await optimizeFilePayloadForFastOCR(file);
+
       payload = {
         contents: [{
           role: "user",
           parts: [
-            { inlineData: { mimeType: opt.mimeType, data: opt.base64 } },
+            { text: `[위임장 HWP 추출 텍스트]\n${hwpExtractedText.substring(0, 15000)}\n\n${poaPrompt}` }
+          ]
+        }],
+        generationConfig: { responseMimeType: "application/json" }
+      };
+    } else {
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
+      payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { inlineData: { mimeType, data: base64Data } },
             { text: poaPrompt }
           ]
         }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
+        generationConfig: { responseMimeType: "application/json" }
       };
     }
 
@@ -1536,7 +1495,7 @@ window.downloadAllDocsAsDocx = function() {
 };
 
 // =========================================================================
-// 10. 사업자등록증/등기부등본 초고속 병렬 OCR 엔진
+// 10. 사업자등록증/등기부등본 OCR 업로드 및 거래처 DB 관리
 // =========================================================================
 
 window.triggerFileSelect = function(e) {
@@ -1568,56 +1527,74 @@ function setupFileUploadListeners() {
   if (!dropZone) return;
 
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
-    dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
   });
+
   ['dragenter', 'dragover'].forEach(ev => {
     dropZone.addEventListener(ev, () => dropZone.classList.add('border-cyan-400', 'bg-slate-900'), false);
   });
+
   ['dragleave', 'drop'].forEach(ev => {
     dropZone.addEventListener(ev, () => dropZone.classList.remove('border-cyan-400', 'bg-slate-900'), false);
   });
+
   dropZone.addEventListener('drop', (e) => {
     const files = e.dataTransfer?.files;
-    if (files && files.length > 0) handleSelectedFile(files[0]);
+    if (files && files.length > 0) {
+      handleSelectedFile(files[0]);
+    }
   }, false);
 }
 
-// ★ 병렬 처리 및 경량화: 미리보기 렌더링 때문에 OCR API 호출이 늦어지지 않도록 최적화
 async function handleSelectedFile(file) {
   currentUploadedFile = file;
   document.getElementById('file-preview-card')?.classList.remove('hidden');
   setElText('preview-filename', file.name);
   setElText('preview-file-size', (file.size / 1024).toFixed(1) + ' KB');
-  appendDiagnosticLog(`파일 접수 및 경량화 시작: ${file.name}`);
+  appendDiagnosticLog(`파일 첨부됨: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
 
   const imgEl = document.getElementById('preview-image');
   const canvasEl = document.getElementById('preview-canvas');
   const placeholderEl = document.getElementById('preview-placeholder');
 
-  // 이미지를 경량 JPEG로 변환 (대용량 PDF도 1페이지 고화질 JPEG로 즉시 변환하여 전송 속도 극대화)
-  const optimized = await optimizeFilePayloadForFastOCR(file);
-  cachedFileBase64 = optimized.base64;
-  cachedMimeType = optimized.mimeType;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    cachedFileBase64 = dataUrl.split(',')[1];
+    cachedMimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
-  // 1) OCR API 호출을 대기 없이 즉시 출발!
-  executeHighPrecisionOCR();
+    if (cachedMimeType.startsWith('image/') && imgEl) {
+      imgEl.src = dataUrl;
+      imgEl.classList.remove('hidden');
+      canvasEl?.classList.add('hidden');
+      placeholderEl?.classList.add('hidden');
+    } else if (cachedMimeType === 'application/pdf' && typeof pdfjsLib !== 'undefined' && canvasEl) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.2 });
+        canvasEl.width = viewport.width;
+        canvasEl.height = viewport.height;
+        await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
+        canvasEl.classList.remove('hidden');
+        imgEl?.classList.add('hidden');
+        placeholderEl?.classList.add('hidden');
+      } catch (pdfErr) {
+        canvasEl.classList.add('hidden');
+        imgEl?.classList.add('hidden');
+        placeholderEl?.classList.remove('hidden');
+      }
+    } else {
+      placeholderEl?.classList.remove('hidden');
+    }
 
-  // 2) 화면 미리보기는 비동기로 그리기
-  if (optimized.previewCanvas && canvasEl) {
-    canvasEl.width = optimized.previewCanvas.width;
-    canvasEl.height = optimized.previewCanvas.height;
-    canvasEl.getContext('2d').drawImage(optimized.previewCanvas, 0, 0);
-    canvasEl.classList.remove('hidden');
-    imgEl?.classList.add('hidden');
-    placeholderEl?.classList.add('hidden');
-  } else if (optimized.previewDataUrl && file.type.startsWith('image/') && imgEl) {
-    imgEl.src = optimized.previewDataUrl;
-    imgEl.classList.remove('hidden');
-    canvasEl?.classList.add('hidden');
-    placeholderEl?.classList.add('hidden');
-  } else {
-    placeholderEl?.classList.remove('hidden');
-  }
+    executeHighPrecisionOCR();
+  };
+  reader.readAsDataURL(file);
 }
 
 window.verifyAdminPassword = function() {
@@ -1682,7 +1659,6 @@ function safeExtractJSON(rawText) {
   }
 }
 
-// ★ 초고속 Failover: 과부하(503) 시 0.4초만 대기 후 즉시 쾌적한 다음 모델로 넘어가며, 성공한 모델을 0순위로 기억
 async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
   let lastError = null;
 
@@ -1691,19 +1667,18 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
     const isFallback = mIdx > 0;
 
     if (isFallback) {
-      appendDiagnosticLog(`[고속 우회] "${model}" 모델로 즉시 전환...`, 'warn');
-      if (onStepUpdate) onStepUpdate(`고속 우회: ${model} 호출 중...`);
+      appendDiagnosticLog(`[트래픽 분산 우회] 예비 모델 "${model}"(으)로 전환 시도 중...`, 'warn');
+      if (onStepUpdate) onStepUpdate(`과부하 우회: 예비 모델 (${model}) 호출 중...`);
     } else {
-      appendDiagnosticLog(`AI OCR 요청: "${model}"...`);
-      if (onStepUpdate) onStepUpdate(`Google AI (${model}) 고속 분석 중...`);
+      appendDiagnosticLog(`AI OCR 요청 시작: 모델 "${model}"...`);
+      if (onStepUpdate) onStepUpdate(`Google AI (${model}) 분석 요청 중...`);
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
-    const MAX_RETRIES = 1; // 모델당 재시도는 1회(0.4초)로 최소화하고 즉시 다음 모델로 이동하여 체감 대기시간 단축
+    const MAX_RETRIES = 2;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const startTime = performance.now();
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1712,15 +1687,7 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
 
         if (response.ok) {
           const data = await response.json();
-          const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-          appendDiagnosticLog(`[성공 ${elapsed}초] "${model}" 응답 완료!`, 'success');
-
-          // 성공한 모델을 다음 호출 시 0순위로 배치 (Sticky Fast Model)
-          if (mIdx > 0) {
-            FAILOVER_MODELS.splice(mIdx, 1);
-            FAILOVER_MODELS.unshift(model);
-            refreshApiKeyStatusUI();
-          }
+          appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 정상 응답 수신!`, 'success');
           return { model, data };
         }
 
@@ -1734,19 +1701,25 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
         if (response.status === 503 || response.status === 429) {
           lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
           if (attempt < MAX_RETRIES) {
-            await sleep(400); // 0.4초만 대기 후 재시도
+            const waitMs = (attempt + 1) * 1500;
+            appendDiagnosticLog(`[서버 과부하 ${response.status}] ${waitMs / 1000}초 후 자동 재시도 (${attempt + 1}/${MAX_RETRIES})...`, 'warn');
+            if (onStepUpdate) onStepUpdate(`서버 혼잡 감지: ${waitMs / 1000}초 후 자동 재시도 중...`);
+            await sleep(waitMs);
             continue;
           } else {
-            break; // 즉시 다음 모델로 우회
+            appendDiagnosticLog(`모델 "${model}" 응답 지연 지속. 다음 예비 모델로 즉시 우회합니다.`, 'warn');
+            break;
           }
         } else {
           lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
+          appendDiagnosticLog(`모델 "${model}" 전환 (${response.status}): 다음 모델 시도`, 'warn');
           break;
         }
       } catch (netErr) {
         lastError = netErr;
         if (attempt < MAX_RETRIES) {
-          await sleep(400);
+          appendDiagnosticLog(`네트워크 재시도 중...`, 'warn');
+          await sleep(1500);
           continue;
         } else {
           break;
@@ -1755,17 +1728,17 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
     }
   }
 
-  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다.");
+  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.");
 }
 
 window.testGoogleAPIConnection = async function() {
   const key = getStoredApiKey() || (document.getElementById('gemini-api-key')?.value || '').trim();
   if (!key) { showToast('저장된 API Key가 없습니다.'); return; }
-  appendDiagnosticLog("API 고속 연결 점검 시작...");
+  appendDiagnosticLog("API 연결 테스트 및 자동 우회 점검 시작...");
   try {
     const payload = { contents: [{ parts: [{ text: "ping" }] }] };
     const result = await callWithRetryAndFailover(payload, key);
-    showToast(`연결 성공! (최적 모델: ${result.model})`);
+    showToast(`연결 성공! (활성 모델: ${result.model})`);
     refreshApiKeyStatusUI();
   } catch(e) {
     showToast(`연결 오류: ${e.message.substring(0, 40)}`);
@@ -1801,15 +1774,21 @@ async function executeHighPrecisionOCR() {
   const badge = document.getElementById('ocr-status-badge');
 
   pBar?.classList.remove('hidden');
-  if (pFill) pFill.style.width = '65%';
+  if (pFill) pFill.style.width = '50%';
   if (badge) {
-    badge.textContent = '초고속 AI 분석 중...';
+    badge.textContent = 'AI 분석 및 자동 우회 작동 중...';
     badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
   }
 
-  // 프롬프트를 간결화하여 토큰 생성 시간(TTFT) 단축
-  const promptText = `사업자등록증/등기부등본에서 아래 6개 필드를 추출해 JSON으로만 응답하세요:
-{"companyName":"상호/법인명","representative":"대표자명","corpRegNo":"법인등록번호13자리(없으면생년월일/사업자번호)","address":"본점도로명주소","bizNo":"사업자등록번호10자리","bizType":"업태/종목"}`;
+  const promptText = `대한민국 사업자등록증 및 등기사항전부증명서(등기부등본)의 다음 6가지 정보를 정밀 판독하여 반드시 아래 JSON 형식으로만 반환하세요:
+{
+  "companyName": "법인명 또는 상호명",
+  "representative": "대표자 성명",
+  "corpRegNo": "13자리 법인등록번호(개인사업자는 생년월일 또는 사업자번호)",
+  "address": "본점 소재지 도로명 전체 주소",
+  "bizNo": "10자리 사업자등록번호",
+  "bizType": "업태 및 종목"
+}`;
 
   const payload = {
     contents: [{
@@ -1819,10 +1798,7 @@ async function executeHighPrecisionOCR() {
         { text: promptText }
       ]
     }],
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature: 0.1
-    }
+    generationConfig: { responseMimeType: "application/json" }
   };
 
   try {
@@ -1846,16 +1822,16 @@ async function executeHighPrecisionOCR() {
       badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
     }
     appendDiagnosticLog(`[추출 완료] 상호: ${parsed.companyName} | 대표: ${parsed.representative}`, 'success');
-    showToast(`[${parsed.companyName}] 초고속 추출 완료!`);
+    showToast(`[${parsed.companyName}] 서류 정보 추출 완료!`);
   } catch (err) {
     if (badge) {
       badge.textContent = '파싱 실패';
       badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
     }
-    appendDiagnosticLog(`오류: ${err.message}`, 'error');
+    appendDiagnosticLog(`최종 오류: ${err.message}`, 'error');
     showToast(`오류: ${err.message.substring(0, 45)}...`);
   } finally {
-    setTimeout(() => pBar?.classList.add('hidden'), 400);
+    setTimeout(() => pBar?.classList.add('hidden'), 600);
   }
 }
 
