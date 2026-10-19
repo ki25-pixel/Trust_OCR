@@ -1,14 +1,19 @@
-// ★ 구형 2.x / 1.x 모델 완전 삭제 -> Google 권장 최신 gemini-3.8-flash 최우선 고정
+// 기본 후보 모델 리스트 (실제 호출 시 서버에서 전체 가용 모델을 받아와 동적으로 확장함)
 let FAILOVER_MODELS = [
   "gemini-3.8-flash",
+  "gemini-3.8-flash-lite",
   "gemini-3.7-flash",
+  "gemini-3.6-flash",
   "gemini-3.5-flash",
   "gemini-3.0-flash"
 ];
 
 let isModelsDiscovered = false;
-let modelDiscoveryPromise = null; // 다중 파일 동시 호출 시 레이스 컨디션 방지용 Lock
+let modelDiscoveryPromise = null;
 let preferredWorkingModelIndex = 0;
+
+// ★ 404(종료됨) 또는 429(일일 한도 20회 소진) 발생 모델을 기억하여 재호출을 막는 블랙리스트
+const deadOrQuotaExhaustedModels = new Set();
 
 function setElText(id, val) {
   const el = document.getElementById(id);
@@ -21,7 +26,7 @@ function setElHtml(id, html) {
 }
 
 // =========================================================================
-// 0. 순수 3.x 문서/텍스트 모델 전용 탐색기 (2.5/2.0 구형 및 TTS 등 특수 모델 100% 차단)
+// 0. 계정 내 모든 가용 텍스트/문서 모델 전체 탐색기 (모델별 개별 무료 쿼터 100% 활용)
 // =========================================================================
 async function discoverAvailableModels(activeKey) {
   if (isModelsDiscovered && FAILOVER_MODELS.length > 0) return FAILOVER_MODELS;
@@ -35,11 +40,11 @@ async function discoverAvailableModels(activeKey) {
       const data = await res.json();
       if (!data.models || !Array.isArray(data.models)) return FAILOVER_MODELS;
 
-      // TTS, 오디오, 이미지 생성 및 구형 버전(1.x, 2.x) 키워드 전면 차단
+      // OCR/문서 판독이 불가능한 특수 목적 모델만 제외
       const EXCLUDE_KEYWORDS = [
         "tts", "audio", "speech", "voice", "imagen", "image", "video",
         "embedding", "aqa", "attribution", "bisect", "learnlm", "robotics",
-        "thinking", "vision", "1.0", "1.5", "2.0", "2.5"
+        "thinking", "vision", "1.0", "1.5"
       ];
 
       const validModels = data.models
@@ -47,8 +52,8 @@ async function discoverAvailableModels(activeKey) {
         .map(m => m.name.replace(/^models\//, ""))
         .filter(name => {
           const lower = name.toLowerCase();
-          // 오직 gemini-3 계열만 허용 (신규 유저 404 에러 원천 차단)
-          if (!lower.startsWith("gemini-3")) return false;
+          if (!lower.startsWith("gemini-")) return false;
+          if (deadOrQuotaExhaustedModels.has(name)) return false;
           for (const bad of EXCLUDE_KEYWORDS) {
             if (lower.includes(bad)) return false;
           }
@@ -56,37 +61,33 @@ async function discoverAvailableModels(activeKey) {
         });
 
       if (validModels.length > 0) {
+        // 1순위: 3.8-flash -> 2순위: 3.x flash-lite (쿼터 여유 많음) -> 3순위: 기타 3.x flash -> 4순위: 3.x pro (별도 쿼터)
         validModels.sort((a, b) => {
           const getScore = (name) => {
             let s = 0;
-            if (name === "gemini-3.8-flash") s += 1000; // 1순위 절대 고정
-            if (name === "gemini-3.8-flash-lite") s += 800;
-            if (name.startsWith("gemini-3.8-flash")) s += 500;
-            if (/^gemini-3\.[0-9]+-flash$/.test(name)) s += 300;
-            if (name.includes("flash")) s += 100;
-            if (name.includes("pro")) s -= 50;
-            if (name.includes("preview") || name.includes("exp")) s -= 30;
+            if (name === "gemini-3.8-flash") s += 1000;
+            if (name.includes("3.8") && name.includes("lite")) s += 900;
+            if (name.includes("3.8") && name.includes("flash")) s += 850;
+            if (name.startsWith("gemini-3") && name.includes("lite")) s += 750;
+            if (name.startsWith("gemini-3") && name.includes("flash")) s += 700;
+            if (name.startsWith("gemini-3") && name.includes("pro")) s += 500; // flash 한도 소진 시 pro 쿼터 활용
+            if (name.includes("preview") || name.includes("exp")) s -= 20;
             return s;
           };
           return getScore(b) - getScore(a);
         });
 
-        // 만약 목록에 gemini-3.8-flash가 없더라도 맨 앞에 강제 배치
-        if (!validModels.includes("gemini-3.8-flash")) {
-          validModels.unshift("gemini-3.8-flash");
-        }
-
-        FAILOVER_MODELS = validModels.slice(0, 4);
-      } else {
-        FAILOVER_MODELS = ["gemini-3.8-flash"];
+        // slice 제한을 풀고 사용 가능한 모든 모델을 백업 체인으로 확보
+        FAILOVER_MODELS = validModels;
       }
 
       isModelsDiscovered = true;
       preferredWorkingModelIndex = 0;
-      refreshApiKeyStatusUI(FAILOVER_MODELS[0]);
-      appendDiagnosticLog(`[최신 3.x 모델 고정 완료] 1순위: ${FAILOVER_MODELS[0]} (구형 2.5/TTS 완전 제외)`, 'success');
+      const activeFirst = FAILOVER_MODELS.find(m => !deadOrQuotaExhaustedModels.has(m)) || FAILOVER_MODELS[0];
+      refreshApiKeyStatusUI(activeFirst);
+      appendDiagnosticLog(`[가용 모델 풀 확보] 총 ${FAILOVER_MODELS.length}개 모델 대기 중 (1순위: ${activeFirst})`, 'success');
     } catch (e) {
-      FAILOVER_MODELS = ["gemini-3.8-flash"];
+      console.warn("모델 조회 생략:", e);
     } finally {
       modelDiscoveryPromise = null;
     }
@@ -480,6 +481,7 @@ function initializeApplication() {
     if (apiKeyInput) {
       apiKeyInput.addEventListener('input', function() {
         isModelsDiscovered = false;
+        deadOrQuotaExhaustedModels.clear();
         try { localStorage.setItem('gemini_ocr_api_key', this.value.trim()); } catch(e) {}
         refreshApiKeyStatusUI();
       });
@@ -503,7 +505,7 @@ function initializeApplication() {
       discoverAvailableModels(key);
     }
 
-    appendDiagnosticLog("gemini-3.8-flash 전용 고속 OCR 엔진 가동 (구형 2.5 완전 차단)");
+    appendDiagnosticLog("단일 묶음(1-Call) 쿼터 절약 엔진 및 429 한도초과 자동우회 가동");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -1285,7 +1287,7 @@ window.updateDocumentPreviews = function() {
 };
 
 // =========================================================================
-// 8. 위임장('부동산의 표시') .hwp / .doc / .docx 전용 고속 리더기
+// 8. 위임장('부동산의 표시') .hwp / .doc / .docx 전용 고속 리더기 (로컬 파서 겸비)
 // =========================================================================
 
 window.triggerPoaFileSelect = function(e) {
@@ -1373,16 +1375,28 @@ async function extractTextFromBinaryDocOrHwp(arrayBuffer) {
   return extractedChunks.join('\n');
 }
 
+// AI 쿼터 소진 시에도 작동하는 로컬 '부동산의 표시' 규칙 추출기
+function parsePropertyDisplayLocally(rawText) {
+  const text = String(rawText);
+  const startIdx = text.indexOf("부동산의 표시");
+  if (startIdx !== -1) {
+    let sub = text.substring(startIdx + 7).trim();
+    const endMarkers = ["등기원인과", "등기의 목적", "위임인", "대리인", "위와 같이", "년   월   일"];
+    for (const marker of endMarkers) {
+      const mIdx = sub.indexOf(marker);
+      if (mIdx !== -1 && mIdx > 10) {
+        sub = sub.substring(0, mIdx).trim();
+      }
+    }
+    return sub;
+  }
+  return text.substring(0, 1500).trim();
+}
+
 async function handlePoaFile(file) {
   const ext = file.name.toLowerCase().split('.').pop();
   if (!['hwp', 'doc', 'docx'].includes(ext)) {
     showToast('위임장은 .hwp, .doc, .docx 파일만 첨부 가능합니다.');
-    return;
-  }
-
-  const key = getStoredApiKey();
-  if (!key) {
-    showToast('설정(Admin) 탭에서 Gemini API Key를 먼저 등록해 주세요.');
     return;
   }
 
@@ -1409,41 +1423,53 @@ async function handlePoaFile(file) {
       throw new Error("문서 내부에서 텍스트를 읽을 수 없습니다.");
     }
 
-    const poaPrompt = `아래는 부동산 등기위임장 파일에서 추출한 텍스트입니다. **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 정리하여 JSON으로 반환하세요.
+    const key = getStoredApiKey();
+    let finalPropertyDisplay = "";
+    let usedModelLabel = "로컬 직독 엔진";
+
+    if (key) {
+      try {
+        const poaPrompt = `아래는 부동산 등기위임장 파일에서 추출한 텍스트입니다. **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 정리하여 JSON으로 반환하세요.
 
 [문서 텍스트]
 ${extractedRawText.substring(0, 12000)}`;
 
-    const payload = {
-      contents: [{
-        role: "user",
-        parts: [{ text: poaPrompt }]
-      }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "OBJECT",
-          properties: {
-            propertyDisplay: { type: "STRING" }
-          },
-          required: ["propertyDisplay"]
-        },
-        temperature: 0.1
+        const payload = {
+          contents: [{ role: "user", parts: [{ text: poaPrompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: { propertyDisplay: { type: "STRING" } },
+              required: ["propertyDisplay"]
+            },
+            temperature: 0.1
+          }
+        };
+
+        const result = await callWithRetryAndFailover(payload, key);
+        const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = safeExtractJSON(rawText);
+        if (parsed && parsed.propertyDisplay) {
+          finalPropertyDisplay = parsed.propertyDisplay;
+          usedModelLabel = result.model;
+        }
+      } catch (aiErr) {
+        console.warn("AI 쿼터 소진 등으로 로컬 부동산 표시 파서 작동:", aiErr);
+        finalPropertyDisplay = parsePropertyDisplayLocally(extractedRawText);
       }
-    };
+    } else {
+      finalPropertyDisplay = parsePropertyDisplayLocally(extractedRawText);
+    }
 
-    const result = await callWithRetryAndFailover(payload, key);
-    const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
-    const parsed = safeExtractJSON(rawText);
-
-    if (parsed && parsed.propertyDisplay) {
+    if (finalPropertyDisplay) {
       const propTextarea = document.getElementById('meta-property-summary');
-      if (propTextarea) propTextarea.value = parsed.propertyDisplay;
-      contractState.contractMeta.propertySummary = parsed.propertyDisplay;
+      if (propTextarea) propTextarea.value = finalPropertyDisplay;
+      contractState.contractMeta.propertySummary = finalPropertyDisplay;
       window.updateDocumentPreviews();
 
       if (badge) {
-        badge.textContent = `추출 완료 (${result.model})`;
+        badge.textContent = `추출 완료 (${usedModelLabel})`;
         badge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold';
       }
       showToast('위임장의 [부동산의 표시] 내역이 별첨1에 자동 기재되었습니다!');
@@ -1563,8 +1589,27 @@ window.downloadAllDocsAsDocx = function() {
 };
 
 // =========================================================================
-// 10. PDF 내장 텍스트 초고속 직독(0.1초) + 경량 이미지 병렬 OCR 엔진
+// 10. ★ 단일 묶음(1-Call Batch) 쿼터 절약형 OCR 엔진 & 로컬 무쿼터 비상 파서
 // =========================================================================
+
+// AI 쿼터가 완전히 소진되었을 때 전자문서 PDF 텍스트에서 정규식으로 즉시 추출하는 로컬 비상 파서
+function parseKoreanDocTextLocally(text) {
+  const t = String(text);
+  const bizMatch = t.match(/([0-9]{3}-[0-9]{2}-[0-9]{5})/);
+  const corpMatch = t.match(/([0-9]{6}-[0-9]{7})/);
+  const compMatch = t.match(/(?:법인명|상\s*호|단체명)\s*(?:\([^)]*\))?\s*[:：]?\s*([^\n\r:：]{2,25})/);
+  const repMatch = t.match(/(?:성\s*명|대표자|대표이사)\s*(?:\([^)]*\))?\s*[:：]?\s*([가-힣]{2,5})/);
+  const addrMatch = t.match(/(?:소재지|사업장|본\s*점)\s*(?:\([^)]*\))?\s*[:：]?\s*([^\n\r]{8,60})/);
+
+  return {
+    companyName: compMatch ? compMatch[1].trim() : "",
+    representative: repMatch ? repMatch[1].trim() : "",
+    corpRegNo: corpMatch ? corpMatch[1] : (bizMatch ? bizMatch[1] : ""),
+    address: addrMatch ? addrMatch[1].trim() : "",
+    bizNo: bizMatch ? bizMatch[1] : "",
+    bizType: "일반업종"
+  };
+}
 
 function renderOcrResultForms() {
   const grid = document.getElementById('ocr-forms-grid');
@@ -1724,7 +1769,7 @@ async function prepareSingleFileForOcr(file, idx) {
       }
 
       if (fullText.trim().length >= 30 && /[가-힣]/.test(fullText)) {
-        appendDiagnosticLog(`[파일 #${idx + 1}] 디지털 PDF 텍스트 직독 성공! (초고속 모드)`, 'success');
+        appendDiagnosticLog(`[파일 #${idx + 1}] 디지털 PDF 텍스트 직독 완료`, 'success');
         return { base64: null, mimeType: 'text/plain', extractedText: fullText.trim() };
       }
 
@@ -1760,7 +1805,7 @@ async function handleMultipleSelectedFiles(fileList) {
   const files = Array.from(fileList).slice(0, 4);
   if (files.length === 0) return;
 
-  appendDiagnosticLog(`총 ${files.length}개 파일 접수 -> 초고속 전처리 시작...`);
+  appendDiagnosticLog(`총 ${files.length}개 파일 접수 -> 단일 묶음(1-Call) 쿼터 절약 분석 시작...`);
 
   ocrBatchItems = files.map((f) => ({
     fileName: f.name,
@@ -1805,6 +1850,7 @@ async function handleMultipleSelectedFiles(fileList) {
   executeBatchHighPrecisionOCR();
 }
 
+// ★ 핵심 혁신: 파일이 2개든 3개든 단 1번의 API 호출(1-Call Combined Request)로 묶어서 보내어 일일 무료 한도(20회) 소모를 절반 이하로 절약!
 async function executeBatchHighPrecisionOCR() {
   const key = getStoredApiKey();
   if (!key) {
@@ -1821,61 +1867,82 @@ async function executeBatchHighPrecisionOCR() {
   pBar?.classList.remove('hidden');
   if (pFill) pFill.style.width = '65%';
   if (badge) {
-    badge.textContent = `${ocrBatchItems.length}개 파일 초고속 분석 중...`;
+    badge.textContent = `${ocrBatchItems.length}개 파일 단일 묶음(1-Call) 추출 중...`;
     badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
   }
 
+  ocrBatchItems.forEach((_, idx) => {
+    const itemBadge = document.getElementById(`ocr-item-status-${idx}`);
+    if (itemBadge) {
+      itemBadge.textContent = "통합 추출 중...";
+      itemBadge.className = "text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 animate-pulse";
+    }
+  });
+
   await discoverAvailableModels(key);
 
-  const promptInstruction = `대한민국 사업자등록증 또는 법인등기부등본에서 다음 6개 항목을 추출해 JSON으로 응답하세요. 값이 없으면 빈 문자열("")로 채우세요.`;
+  // 모든 첨부 파일을 하나의 멀티모달 parts 배열에 순서대로 담음 (API 호출 횟수 단 1회만 사용!)
+  const combinedParts = [];
+  ocrBatchItems.forEach((item, idx) => {
+    combinedParts.push({ text: `\n--- [문서 #${idx + 1} 시작 (${item.fileName})] ---\n` });
+    if (item.extractedText) {
+      combinedParts.push({ text: item.extractedText.substring(0, 7000) });
+    } else if (item.base64) {
+      combinedParts.push({ inlineData: { mimeType: item.mimeType, data: item.base64 } });
+    }
+    combinedParts.push({ text: `\n--- [문서 #${idx + 1} 끝] ---\n` });
+  });
+
+  combinedParts.push({
+    text: `위에 제공된 총 ${ocrBatchItems.length}개의 대한민국 사업자등록증 또는 법인등기부등본 문서에서, 각 문서 순서대로(총 ${ocrBatchItems.length}개) 다음 6개 항목을 추출해 vendors 배열을 가진 JSON으로 응답하세요. 값이 없으면 빈 문자열("")로 채우세요.`
+  });
+
+  const payload = {
+    contents: [{ role: "user", parts: combinedParts }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          vendors: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                companyName: { type: "STRING" },
+                representative: { type: "STRING" },
+                corpRegNo: { type: "STRING" },
+                address: { type: "STRING" },
+                bizNo: { type: "STRING" },
+                bizType: { type: "STRING" }
+              },
+              required: ["companyName", "representative", "corpRegNo", "address", "bizNo", "bizType"]
+            }
+          }
+        },
+        required: ["vendors"]
+      },
+      temperature: 0.1
+    }
+  };
 
   try {
-    await Promise.all(ocrBatchItems.map(async (item, idx) => {
-      if (!item.base64 && !item.extractedText) return;
+    const result = await callWithRetryAndFailover(payload, key, (statusMsg) => {
+      if (stepText) stepText.textContent = statusMsg;
+    });
 
-      const itemBadge = document.getElementById(`ocr-item-status-${idx}`);
-      if (itemBadge) {
-        itemBadge.textContent = "고속 추출 중...";
-        itemBadge.className = "text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 animate-pulse";
-      }
+    const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parsed = safeExtractJSON(rawText);
+    const list = Array.isArray(parsed.vendors) ? parsed.vendors : [parsed];
 
-      const parts = item.extractedText
-        ? [{ text: `[문서 추출 텍스트]\n${item.extractedText.substring(0, 8000)}\n\n${promptInstruction}` }]
-        : [{ inlineData: { mimeType: item.mimeType, data: item.base64 } }, { text: promptInstruction }];
-
-      const payload = {
-        contents: [{ role: "user", parts }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              companyName: { type: "STRING" },
-              representative: { type: "STRING" },
-              corpRegNo: { type: "STRING" },
-              address: { type: "STRING" },
-              bizNo: { type: "STRING" },
-              bizType: { type: "STRING" }
-            },
-            required: ["companyName", "representative", "corpRegNo", "address", "bizNo", "bizType"]
-          },
-          temperature: 0.1
-        }
-      };
-
-      const result = await callWithRetryAndFailover(payload, key, (statusMsg) => {
-        if (stepText) stepText.textContent = `[파일 #${idx + 1}] ${statusMsg}`;
-      });
-
-      const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
-      const parsed = safeExtractJSON(rawText);
-
-      item.companyName = parsed.companyName || '';
-      item.representative = parsed.representative || '';
-      item.corpRegNo = parsed.corpRegNo || '';
-      item.address = parsed.address || '';
-      item.bizNo = parsed.bizNo || '';
-      item.bizType = parsed.bizType || '';
+    ocrBatchItems.forEach((item, idx) => {
+      const vData = list[idx] || {};
+      item.companyName = vData.companyName || '';
+      item.representative = vData.representative || '';
+      item.corpRegNo = vData.corpRegNo || '';
+      item.address = vData.address || '';
+      item.bizNo = vData.bizNo || '';
+      item.bizType = vData.bizType || '';
 
       if (document.getElementById(`ocr-comp-${idx}`)) document.getElementById(`ocr-comp-${idx}`).value = item.companyName;
       if (document.getElementById(`ocr-rep-${idx}`)) document.getElementById(`ocr-rep-${idx}`).value = item.representative;
@@ -1884,27 +1951,67 @@ async function executeBatchHighPrecisionOCR() {
       if (document.getElementById(`ocr-bizno-${idx}`)) document.getElementById(`ocr-bizno-${idx}`).value = item.bizNo;
       if (document.getElementById(`ocr-btype-${idx}`)) document.getElementById(`ocr-btype-${idx}`).value = item.bizType;
 
+      const itemBadge = document.getElementById(`ocr-item-status-${idx}`);
       if (itemBadge) {
         itemBadge.textContent = `완료 (${result.model})`;
         itemBadge.className = "text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
       }
-      appendDiagnosticLog(`[서류 #${idx + 1} 완료] 상호: ${item.companyName} | 모델: ${result.model}`, 'success');
-    }));
+      appendDiagnosticLog(`[서류 #${idx + 1} 완료] 상호: ${item.companyName} | 대표: ${item.representative}`, 'success');
+    });
 
     const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(1);
     if (pFill) pFill.style.width = '100%';
     if (badge) {
-      badge.textContent = `${ocrBatchItems.length}건 완료 (${elapsedSec}초)`;
+      badge.textContent = `단 1회 호출로 ${ocrBatchItems.length}건 완료 (${elapsedSec}초)`;
       badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
     }
-    showToast(`총 ${ocrBatchItems.length}곳 추출 완료! (${elapsedSec}초 소요)`);
+    showToast(`API 쿼터 단 1회만 사용하여 ${ocrBatchItems.length}곳 추출 완료! (${elapsedSec}초)`);
   } catch (err) {
-    if (badge) {
-      badge.textContent = '파싱 실패';
-      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
+    // ★ 비상 대응: 만약 모든 모델의 일일 무료 한도(20회)가 다 찼더라도, 전자문서 텍스트가 있으면 로컬 파서로 즉시 채워줌!
+    let localRecoveredCount = 0;
+    ocrBatchItems.forEach((item, idx) => {
+      if (item.extractedText) {
+        const localData = parseKoreanDocTextLocally(item.extractedText);
+        if (localData.companyName || localData.bizNo || localData.corpRegNo) {
+          item.companyName = localData.companyName;
+          item.representative = localData.representative;
+          item.corpRegNo = localData.corpRegNo;
+          item.address = localData.address;
+          item.bizNo = localData.bizNo;
+          item.bizType = localData.bizType;
+
+          if (document.getElementById(`ocr-comp-${idx}`)) document.getElementById(`ocr-comp-${idx}`).value = item.companyName;
+          if (document.getElementById(`ocr-rep-${idx}`)) document.getElementById(`ocr-rep-${idx}`).value = item.representative;
+          if (document.getElementById(`ocr-corpno-${idx}`)) document.getElementById(`ocr-corpno-${idx}`).value = item.corpRegNo;
+          if (document.getElementById(`ocr-addr-${idx}`)) document.getElementById(`ocr-addr-${idx}`).value = item.address;
+          if (document.getElementById(`ocr-bizno-${idx}`)) document.getElementById(`ocr-bizno-${idx}`).value = item.bizNo;
+          if (document.getElementById(`ocr-btype-${idx}`)) document.getElementById(`ocr-btype-${idx}`).value = item.bizType;
+
+          const itemBadge = document.getElementById(`ocr-item-status-${idx}`);
+          if (itemBadge) {
+            itemBadge.textContent = `로컬 엔진 추출 완료`;
+            itemBadge.className = "text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold";
+          }
+          localRecoveredCount++;
+        }
+      }
+    });
+
+    if (localRecoveredCount > 0) {
+      if (badge) {
+        badge.textContent = `로컬 비상 엔진으로 ${localRecoveredCount}건 추출 완료`;
+        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-semibold';
+      }
+      appendDiagnosticLog(`[AI 한도 초과 우회] 내장 로컬 텍스트 파서로 ${localRecoveredCount}건 추출 성공!`, 'warn');
+      showToast(`AI 일일 무료 한도 소진으로 내장 로컬 파서가 정보를 추출했습니다!`);
+    } else {
+      if (badge) {
+        badge.textContent = '일일 무료 한도(20회) 소진';
+        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
+      }
+      appendDiagnosticLog(`최종 오류: ${err.message}`, 'error');
+      showToast(`현재 API Key의 일일 무료 한도(20회)가 소진되었습니다. 새 API Key를 발급받거나 유료 플랜을 연결해 주세요.`);
     }
-    appendDiagnosticLog(`오류: ${err.message}`, 'error');
-    showToast(`오류: ${err.message.substring(0, 45)}...`);
   } finally {
     setTimeout(() => pBar?.classList.add('hidden'), 400);
   }
@@ -1989,9 +2096,10 @@ window.saveAdminApiKey = async function() {
   if (!k) return;
   try { localStorage.setItem('gemini_ocr_api_key', k); } catch(e) {}
   isModelsDiscovered = false;
+  deadOrQuotaExhaustedModels.clear(); // 새 키 입력 시 한도초과 블랙리스트 초기화
   await discoverAvailableModels(k);
   refreshApiKeyStatusUI();
-  showToast('API Key 저장 및 최신 3.8 모델 동기화 완료!');
+  showToast('새 API Key 저장 및 전체 모델 쿼터 초기화 완료!');
 };
 
 function sleep(ms) {
@@ -2038,99 +2146,87 @@ function safeExtractJSON(rawText) {
   }
 }
 
-// ★ gemini-3.8-flash 집중 호출 및 스마트 재시도 엔진 (죽은 2.x 모델 호출 원천 방지)
+// ★ 429(일일 20회 한도 소진) 또는 404 감지 시 재시도 없이 즉시 블랙리스트에 격리하고, 쿼터가 남은 다른 모델(Flash-Lite, Pro 등)로 직행!
 async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
   await discoverAvailableModels(activeKey);
 
   let lastError = null;
-  const order = [];
-  for (let i = 0; i < FAILOVER_MODELS.length; i++) {
-    order.push((preferredWorkingModelIndex + i) % FAILOVER_MODELS.length);
-  }
+  const candidateModels = FAILOVER_MODELS.filter(m => !deadOrQuotaExhaustedModels.has(m));
+  const modelsToTry = candidateModels.length > 0 ? candidateModels : FAILOVER_MODELS;
 
-  for (let step = 0; step < order.length; step++) {
-    const mIdx = order[step];
-    const model = FAILOVER_MODELS[mIdx];
+  for (let step = 0; step < modelsToTry.length; step++) {
+    const model = modelsToTry[step];
 
     if (step > 0) {
-      appendDiagnosticLog(`[모델 전환] "${model}" 최신 모델로 전환 호출...`, 'warn');
-      if (onStepUpdate) onStepUpdate(`최신 모델 (${model}) 호출 중...`);
+      appendDiagnosticLog(`[쿼터 우회] 한도가 남은 대체 모델 "${model}"(으)로 즉시 전환...`, 'warn');
+      if (onStepUpdate) onStepUpdate(`대체 모델 (${model}) 호출 중...`);
     } else {
-      appendDiagnosticLog(`고속 OCR 호출: 모델 "${model}"...`);
+      appendDiagnosticLog(`단일 묶음 OCR 호출: 모델 "${model}"...`);
       if (onStepUpdate) onStepUpdate(`AI 모델 (${model}) 분석 중...`);
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
 
-    // 1순위 모델(gemini-3.8-flash)에서 일시 지연/과부하 시 구형 모델로 넘어가지 않고 최대 3회 재시도
-    const maxAttempts = (model === "gemini-3.8-flash") ? 3 : 1;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          const data = await response.json();
-          preferredWorkingModelIndex = mIdx;
-          refreshApiKeyStatusUI(model);
-          appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 초고속 응답 완료!`, 'success');
-          return { model, data };
-        }
-
-        const errText = await response.text();
-        let parsedMsg = errText;
-        try {
-          const j = JSON.parse(errText);
-          parsedMsg = j.error?.message || errText;
-        } catch(e) {}
-
-        lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
-
-        if ((response.status === 503 || response.status === 429) && attempt < maxAttempts) {
-          appendDiagnosticLog(`[일시 혼잡 ${response.status}] 1초 후 "${model}" 재시도 (${attempt}/${maxAttempts})...`, 'warn');
-          await sleep(1000);
-          continue;
-        }
-
-        appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status})`, 'warn');
-        break;
-      } catch (netErr) {
-        lastError = netErr;
-        if (attempt < maxAttempts) {
-          appendDiagnosticLog(`모델 "${model}" 응답 지연 -> 1초 후 재시도 (${attempt}/${maxAttempts})`, 'warn');
-          await sleep(1000);
-          continue;
-        }
-        break;
+      if (response.ok) {
+        const data = await response.json();
+        refreshApiKeyStatusUI(model);
+        appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 응답 완료!`, 'success');
+        return { model, data };
       }
+
+      const errText = await response.text();
+      let parsedMsg = errText;
+      try {
+        const j = JSON.parse(errText);
+        parsedMsg = j.error?.message || errText;
+      } catch(e) {}
+
+      lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
+
+      // ★ 429(Quota Exceeded) 또는 404인 경우: 이 모델은 오늘 더 이상 호출하지 않도록 블랙리스트에 즉시 격리!
+      if (response.status === 429 || response.status === 404) {
+        deadOrQuotaExhaustedModels.add(model);
+        appendDiagnosticLog(`[한도소진/종료 격리] "${model}" (HTTP ${response.status}) 제외 -> 남은 다른 모델로 즉시 우회`, 'warn');
+        continue;
+      }
+
+      // 503(순간 서버 혼잡)일 때만 1초 대기 후 다음 모델로 이동
+      appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status}) -> 다음 모델 시도`, 'warn');
+    } catch (netErr) {
+      lastError = netErr;
+      appendDiagnosticLog(`모델 "${model}" 응답 지연 -> 다음 모델로 즉시 이동`, 'warn');
     }
   }
 
-  throw lastError || new Error("AI 모델 응답 지연: 잠시 후 다시 시도해 주세요.");
+  throw lastError || new Error("현재 API Key의 모든 모델 무료 한도가 소진되었습니다.");
 }
 
 window.testGoogleAPIConnection = async function() {
   const key = getStoredApiKey() || (document.getElementById('gemini-api-key')?.value || '').trim();
   if (!key) { showToast('저장된 API Key가 없습니다.'); return; }
-  appendDiagnosticLog("최신 3.8 모델 연결 점검 시작...");
+  appendDiagnosticLog("가용 쿼터 보유 모델 탐색 및 연결 점검 시작...");
   try {
     isModelsDiscovered = false;
+    deadOrQuotaExhaustedModels.clear();
     await discoverAvailableModels(key);
     const payload = { contents: [{ parts: [{ text: "ping" }] }] };
     const result = await callWithRetryAndFailover(payload, key);
-    showToast(`연결 성공! (활성 모델: ${result.model})`);
+    showToast(`연결 성공! (쿼터 정상 모델: ${result.model})`);
     refreshApiKeyStatusUI(result.model);
   } catch(e) {
-    showToast(`연결 오류: ${e.message.substring(0, 45)}`);
+    showToast(`한도 초과 또는 오류: ${e.message.substring(0, 45)}`);
   }
 };
 
@@ -2250,5 +2346,5 @@ function showToast(msg) {
   t.className = 'pointer-events-auto bg-slate-900 text-white text-xs px-4 py-3 rounded-xl border border-cyan-500/50 shadow-2xl flex items-center gap-2';
   t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i><span>${msg}</span>`;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => t.remove(), 3500);
 }
