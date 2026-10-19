@@ -3,36 +3,49 @@
   #print-area, #print-area * { visibility: visible; }
   #print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background: white; color: black; }
   .no-print { display: none !important; }
-  .page-break { page-break-before: always; }
+  .word-page-break { page-break-before: always; }
 }
 
 .doc-paper {
   background: #ffffff;
   box-shadow: 0 4px 25px -3px rgba(0, 0, 0, 0.3);
-  font-family: 'Noto Serif KR', 'Batang', serif;
-  color: #111827;
-  line-height: 1.75;
+  font-family: 'Noto Serif KR', 'Batang', '바탕', serif;
+  color: #000000;
+  line-height: 1.7;
+}
+
+.doc-paper p {
+  page-break-before: auto;
+  page-break-inside: auto;
+}
+
+.word-page-break {
+  page-break-before: always;
+  height: 1px;
+  margin: 24px 0;
+  border-top: 1px dashed #cbd5e1;
 }
 
 .doc-table {
   border-collapse: collapse;
   width: 100%;
-  border: 1.5px solid #111827;
-  margin-top: 4px;
-  margin-bottom: 6px;
+  border: 1.5px solid #000000;
+  margin-top: 6px;
+  margin-bottom: 8px;
 }
 
 .doc-table th, .doc-table td {
-  border: 1px solid #4b5563;
-  padding: 5px 8px;
-  font-size: 11px;
+  border: 1px solid #000000;
+  padding: 6px 10px;
+  font-size: 11.5px;
   vertical-align: middle;
   line-height: 1.5;
+  color: #000000;
 }
 
 .doc-table th {
   background-color: #f3f4f6;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
 }
 
