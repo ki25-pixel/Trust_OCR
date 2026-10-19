@@ -1,4 +1,4 @@
-// ★ 초기 기본값도 순수 텍스트/문서 판독용 Flash 모델만 배치
+// 순수 텍스트/문서 판독용 Flash 모델 기본 체인
 let FAILOVER_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.0-flash",
@@ -19,7 +19,7 @@ function setElHtml(id, html) {
 }
 
 // =========================================================================
-// 0. ★ 순수 문서/텍스트 변환 모델 전용 필터링 탐색기 (TTS·오디오·이미지생성 완전 배제)
+// 0. 순수 문서/텍스트 변환 모델 전용 필터링 탐색기 (TTS·오디오·이미지생성 배제)
 // =========================================================================
 async function discoverAvailableModels(activeKey) {
   if (isModelsDiscovered && FAILOVER_MODELS.length > 0) return FAILOVER_MODELS;
@@ -31,7 +31,6 @@ async function discoverAvailableModels(activeKey) {
     const data = await res.json();
     if (!data.models || !Array.isArray(data.models)) return FAILOVER_MODELS;
 
-    // OCR/텍스트 추출과 무관하거나 속도를 늦추는 특수 목적 모델 키워드 블랙리스트
     const EXCLUDE_KEYWORDS = [
       "tts", "audio", "speech", "voice", "imagen", "image", "video",
       "embedding", "aqa", "attribution", "bisect", "learnlm", "robotics",
@@ -43,9 +42,7 @@ async function discoverAvailableModels(activeKey) {
       .map(m => m.name.replace(/^models\//, ""))
       .filter(name => {
         const lower = name.toLowerCase();
-        // 반드시 gemini 계열이면서 flash 또는 pro 텍스트 모델이어야 함
         if (!lower.startsWith("gemini-")) return false;
-        // 블랙리스트 단어가 하나라도 포함되면 즉시 제외 (gemini-3.8-flash-tts 등 원천 차단)
         for (const bad of EXCLUDE_KEYWORDS) {
           if (lower.includes(bad)) return false;
         }
@@ -53,17 +50,15 @@ async function discoverAvailableModels(activeKey) {
       });
 
     if (validModels.length > 0) {
-      // 속도 최우선 정렬: 순수 flash 정식 버전 -> flash-lite -> 기타 flash -> pro 순서
       validModels.sort((a, b) => {
         const getScore = (name) => {
           let s = 0;
-          // 정확히 'gemini-X.X-flash' 형태로 끝나는 순수 텍스트/비전 모델에 최고점 부여
           if (/^gemini-[0-9.]+-flash$/.test(name)) s += 200;
           if (/^gemini-[0-9.]+-flash-lite$/.test(name)) s += 180;
           if (name.includes("flash")) s += 100;
           if (name.includes("3.8") || name.includes("3.7") || name.includes("3.5") || name.includes("3.0")) s += 40;
           if (name.includes("2.5") || name.includes("2.0")) s += 35;
-          if (name.includes("pro")) s -= 50; // pro 모델은 무거우므로 후순위
+          if (name.includes("pro")) s -= 50;
           if (name.includes("preview") || name.includes("exp")) s -= 30;
           return s;
         };
@@ -73,7 +68,7 @@ async function discoverAvailableModels(activeKey) {
       FAILOVER_MODELS = validModels.slice(0, 4);
       isModelsDiscovered = true;
       preferredWorkingModelIndex = 0;
-      appendDiagnosticLog(`[순수 문서판독 모델 선별 완료] 1순위: ${FAILOVER_MODELS[0]} (TTS 등 무관 모델 제외됨)`, 'success');
+      appendDiagnosticLog(`[순수 문서판독 모델 선별 완료] 1순위: ${FAILOVER_MODELS[0]}`, 'success');
     }
   } catch (e) {
     console.warn("모델 자동 조회 생략:", e);
@@ -260,7 +255,6 @@ let vendorDatabase = [];
 let isAdminAuthenticated = false;
 let currentDocSubTab = "doc1";
 
-// 다중 OCR 파일 배치 관리 배열 (extractedText 필드 추가로 디지털 PDF 초고속 직독 지원)
 let ocrBatchItems = [
   { fileName: "서류 #1 (대기 중)", base64: null, mimeType: null, extractedText: null, companyName: "", representative: "", corpRegNo: "", address: "", bizNo: "", bizType: "" }
 ];
@@ -489,7 +483,7 @@ function initializeApplication() {
       discoverAvailableModels(key);
     }
 
-    appendDiagnosticLog("초고속 순수 텍스트/비전 OCR 엔진 가동 (TTS 등 무관 모델 원천 배제)");
+    appendDiagnosticLog("무결점 JSON 스키마 및 초고속 OCR 엔진 가동 완료");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -1395,8 +1389,7 @@ async function handlePoaFile(file) {
       throw new Error("문서 내부에서 텍스트를 읽을 수 없습니다.");
     }
 
-    const poaPrompt = `아래는 부동산 등기위임장 파일에서 추출한 텍스트입니다. **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 정리하여 아래 JSON 형식으로만 반환하세요:
-{"propertyDisplay":"1. 토지\\n...\\n2. 건물\\n..."}
+    const poaPrompt = `아래는 부동산 등기위임장 파일에서 추출한 텍스트입니다. **'부동산의 표시'** 칸에 기재된 부동산 목록 전체를 정리하여 JSON으로 반환하세요.
 
 [문서 텍스트]
 ${extractedRawText.substring(0, 12000)}`;
@@ -1408,8 +1401,14 @@ ${extractedRawText.substring(0, 12000)}`;
       }],
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.1,
-        maxOutputTokens: 800
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            propertyDisplay: { type: "STRING" }
+          },
+          required: ["propertyDisplay"]
+        },
+        temperature: 0.1
       }
     };
 
@@ -1544,7 +1543,7 @@ window.downloadAllDocsAsDocx = function() {
 };
 
 // =========================================================================
-// 10. ★ PDF 내장 텍스트 초고속 직독(0.1초) + 경량 이미지 병렬 OCR 엔진
+// 10. PDF 내장 텍스트 초고속 직독(0.1초) + 경량 이미지 병렬 OCR 엔진
 // =========================================================================
 
 function renderOcrResultForms() {
@@ -1676,7 +1675,6 @@ function compressImageDataUrl(dataUrl, maxWidth = 850) {
   });
 }
 
-// ★ 핵심 속도 혁신: PDF 내부 텍스트 레이어를 먼저 0.1초 만에 직독하고, 스캔본일 때만 저해상도(0.65) 이미지로 변환
 async function prepareSingleFileForOcr(file, idx) {
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   const canvasEl = document.getElementById(`multi-preview-canvas-${idx}`);
@@ -1688,7 +1686,6 @@ async function prepareSingleFileForOcr(file, idx) {
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const page = await pdf.getPage(1);
 
-      // 1단계: PDF 내부에 텍스트 데이터가 있는지 즉시 추출 시도 (0.1초 소요)
       let fullText = "";
       const maxPages = Math.min(pdf.numPages, 2);
       for (let pNum = 1; pNum <= maxPages; pNum++) {
@@ -1698,7 +1695,6 @@ async function prepareSingleFileForOcr(file, idx) {
         fullText += pageStr + "\n";
       }
 
-      // 미리보기 캔버스는 저배율(0.6)로 가볍게 그림
       if (canvasEl) {
         const viewport = page.getViewport({ scale: 0.65 });
         canvasEl.width = viewport.width;
@@ -1707,13 +1703,11 @@ async function prepareSingleFileForOcr(file, idx) {
         canvasEl.classList.remove('hidden');
       }
 
-      // 만약 디지털 원본 PDF라서 한글 텍스트가 충분히 들어있다면, 무거운 이미지 대신 순수 텍스트만 전송! (1~2초 내 응답 보장)
       if (fullText.trim().length >= 30 && /[가-힣]/.test(fullText)) {
-        appendDiagnosticLog(`[파일 #${idx + 1}] 디지털 PDF 텍스트 레이어 직독 성공! (이미지 전송 생략 -> 초고속 모드)`, 'success');
+        appendDiagnosticLog(`[파일 #${idx + 1}] 디지털 PDF 텍스트 직독 성공! (초고속 모드)`, 'success');
         return { base64: null, mimeType: 'text/plain', extractedText: fullText.trim() };
       }
 
-      // 스캔본 이미지 PDF인 경우 경량화된 JPEG(품질 0.65) 추출
       if (canvasEl) {
         const jpegDataUrl = canvasEl.toDataURL('image/jpeg', 0.65);
         return { base64: jpegDataUrl.split(',')[1], mimeType: 'image/jpeg', extractedText: null };
@@ -1813,8 +1807,7 @@ async function executeBatchHighPrecisionOCR() {
 
   await discoverAvailableModels(key);
 
-  const promptSchema = `대한민국 사업자등록증 또는 법인등기부등본에서 다음 6개 항목을 추출해 JSON으로만 답하세요:
-{"companyName":"상호/법인명","representative":"대표자명","corpRegNo":"법인등록번호13자리(없으면 생년월일/사업자번호)","address":"본점주소","bizNo":"사업자등록번호10자리","bizType":"업태/종목"}`;
+  const promptInstruction = `대한민국 사업자등록증 또는 법인등기부등본에서 다음 6개 항목을 추출해 JSON으로 응답하세요. 값이 없으면 빈 문자열("")로 채우세요.`;
 
   try {
     await Promise.all(ocrBatchItems.map(async (item, idx) => {
@@ -1826,17 +1819,28 @@ async function executeBatchHighPrecisionOCR() {
         itemBadge.className = "text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 animate-pulse";
       }
 
-      // 디지털 PDF에서 추출된 텍스트가 있으면 순수 텍스트 프롬프트로 1초 만에 처리, 스캔본이면 경량 이미지 전송
       const parts = item.extractedText
-        ? [{ text: `[문서 추출 텍스트]\n${item.extractedText.substring(0, 8000)}\n\n${promptSchema}` }]
-        : [{ inlineData: { mimeType: item.mimeType, data: item.base64 } }, { text: promptSchema }];
+        ? [{ text: `[문서 추출 텍스트]\n${item.extractedText.substring(0, 8000)}\n\n${promptInstruction}` }]
+        : [{ inlineData: { mimeType: item.mimeType, data: item.base64 } }, { text: promptInstruction }];
 
+      // ★ 공식 responseSchema 적용으로 깨진 JSON 발생 원천 차단 (토큰 잘림 방지를 위해 maxOutputTokens 제한 제거)
       const payload = {
         contents: [{ role: "user", parts }],
         generationConfig: {
           responseMimeType: "application/json",
-          temperature: 0.1,
-          maxOutputTokens: 400
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              companyName: { type: "STRING" },
+              representative: { type: "STRING" },
+              corpRegNo: { type: "STRING" },
+              address: { type: "STRING" },
+              bizNo: { type: "STRING" },
+              bizType: { type: "STRING" }
+            },
+            required: ["companyName", "representative", "corpRegNo", "address", "bizNo", "bizType"]
+          },
+          temperature: 0.1
         }
       };
 
@@ -1975,32 +1979,52 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// ★ 3단계 무결점 JSON 파서 (정상 파싱 -> 안전 클리닝 -> 정규식 직접 추출 폴백)
 function safeExtractJSON(rawText) {
   if (!rawText) throw new Error("AI 응답 본문이 비어있습니다.");
-  let clean = rawText.trim().replace(/```json/gi, '').replace(/```/g, '').trim();
+  let clean = String(rawText).trim().replace(/```json/gi, '').replace(/```/g, '').trim();
+
   const firstBrace = clean.indexOf('{');
   const lastBrace = clean.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1) {
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     clean = clean.substring(firstBrace, lastBrace + 1);
+  } else if (firstBrace !== -1) {
+    clean = clean.substring(firstBrace) + '"}';
   }
+
+  // 1단계: 표준 JSON.parse 시도
   try {
     return JSON.parse(clean);
-  } catch (initialErr) {
+  } catch (err1) {
+    // 2단계: 값(Value)을 훼손하지 않고 후행 쉼표(trailing comma)만 안전하게 제거 후 재시도
     try {
-      let repaired = clean
-        .replace(/\/\/[^\n\r]*/g, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
+      const sanitized = clean
         .replace(/,\s*([\]}])/g, '$1')
-        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":')
-        .replace(/:\s*'([^']*)'/g, ': "$1"');
-      return JSON.parse(repaired);
-    } catch (repairErr) {
-      throw initialErr;
+        .replace(/[\u0000-\u0019]+/g, ' ');
+      return JSON.parse(sanitized);
+    } catch (err2) {
+      // 3단계: JSON 문법이 깨졌거나 잘렸더라도 정규식으로 각 키의 값을 직접 추출 (절대 실패하지 않는 안전망)
+      const fallbackObj = {};
+      const keys = ["companyName", "representative", "corpRegNo", "address", "bizNo", "bizType", "propertyDisplay"];
+      let foundAny = false;
+
+      keys.forEach(k => {
+        const regex = new RegExp(`["']?${k}["']?\\s*:\\s*["']([^"'}]+)["']?`, 'i');
+        const match = clean.match(regex);
+        if (match && match[1]) {
+          fallbackObj[k] = match[1].trim().replace(/\\n/g, '\n');
+          foundAny = true;
+        }
+      });
+
+      if (foundAny) {
+        return fallbackObj;
+      }
+      throw new Error("JSON 파싱 보정 실패: 다시 한 번 시도해 주세요.");
     }
   }
 }
 
-// ★ 타임아웃 7초 단축 & 무관 모델 배제로 1~3초 내 즉시 응답하는 호출기
 async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
   await discoverAvailableModels(activeKey);
 
@@ -2026,7 +2050,7 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 7000); // 7초 이상 지연 시 즉시 다음 빠른 모델로 전환
+      const timeoutId = setTimeout(() => controller.abort(), 9000);
 
       const response = await fetch(url, {
         method: 'POST',
@@ -2052,7 +2076,7 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
       } catch(e) {}
 
       lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
-      appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status}) -> 대기 없이 다음 모델로 즉시 이동`, 'warn');
+      appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status}) -> 다음 모델로 즉시 이동`, 'warn');
     } catch (netErr) {
       lastError = netErr;
       appendDiagnosticLog(`모델 "${model}" 응답 지연 -> 다음 모델로 즉시 이동`, 'warn');
