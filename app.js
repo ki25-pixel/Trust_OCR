@@ -1,4 +1,3 @@
-// ★ 구형 종료 모델(1.5, 2.0, 2.5) 완전 제거 및 최신 3.x 모델만 기본 배치
 let FAILOVER_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.8-pro",
@@ -33,15 +32,12 @@ async function discoverAvailableModels(activeKey) {
     const data = await res.json();
     if (!data.models || !Array.isArray(data.models)) return FAILOVER_MODELS;
 
-    // generateContent를 지원하고 종료되지 않은 모델만 추출
     const validModels = data.models
       .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
       .map(m => m.name.replace(/^models\//, ""))
-      // 404를 유발하는 구형 1.5, 2.0, 2.5 모델 제외
       .filter(name => !name.includes("1.5") && !name.includes("2.0") && !name.includes("2.5") && !name.includes("1.0") && !name.includes("vision"));
 
     if (validModels.length > 0) {
-      // 우선순위 정렬: 1순위 3.8-flash -> 2순위 기타 flash 모델 -> 3순위 pro 모델
       validModels.sort((a, b) => {
         const score = (name) => {
           let s = 0;
@@ -58,10 +54,10 @@ async function discoverAvailableModels(activeKey) {
       FAILOVER_MODELS = validModels.slice(0, 6);
       isModelsDiscovered = true;
       preferredWorkingModelIndex = 0;
-      appendDiagnosticLog(`[모델 자동감지 완료] 사용 가능 최신 모델: ${FAILOVER_MODELS.slice(0, 3).join(', ')}`, 'success');
+      appendDiagnosticLog(`[모델 자동감지] 활성 모델: ${FAILOVER_MODELS.slice(0, 3).join(', ')}`, 'success');
     }
   } catch (e) {
-    console.warn("모델 목록 자동 조회 생략, 기본 체인 사용:", e);
+    console.warn("모델 자동 조회 생략:", e);
   }
   return FAILOVER_MODELS;
 }
@@ -243,10 +239,12 @@ const DEFAULT_SEED_VENDORS = [
 
 let vendorDatabase = [];
 let isAdminAuthenticated = false;
-let currentUploadedFile = null;
-let cachedFileBase64 = null;
-let cachedMimeType = null;
 let currentDocSubTab = "doc1";
+
+// ★ 다중 OCR 파일 배치 관리 배열 (1개 또는 2개 이상 동시 보관)
+let ocrBatchItems = [
+  { fileName: "서류 #1 (대기 중)", base64: null, mimeType: null, companyName: "", representative: "", corpRegNo: "", address: "", bizNo: "", bizType: "" }
+];
 
 let contractState = {
   trusters: [
@@ -448,7 +446,7 @@ function initializeApplication() {
     if (apiKeyInput && key) apiKeyInput.value = key;
     if (apiKeyInput) {
       apiKeyInput.addEventListener('input', function() {
-        isModelsDiscovered = false; // 키 변경 시 모델 재탐색
+        isModelsDiscovered = false;
         try { localStorage.setItem('gemini_ocr_api_key', this.value.trim()); } catch(e) {}
         refreshApiKeyStatusUI();
       });
@@ -456,6 +454,7 @@ function initializeApplication() {
 
     loadPersistentVendorDatabase();
     renderVendorTables();
+    renderOcrResultForms();
     setupFileUploadListeners();
     setupPoaDropZoneListeners();
     setupGlobalClickOutside();
@@ -471,7 +470,7 @@ function initializeApplication() {
       discoverAvailableModels(key);
     }
 
-    appendDiagnosticLog("404 방지 동적 모델 탐색기 및 초고속 OCR 엔진 가동 완료");
+    appendDiagnosticLog("다중 파일 동시 병렬 OCR 엔진 가동 완료");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -1530,8 +1529,63 @@ window.downloadAllDocsAsDocx = function() {
 };
 
 // =========================================================================
-// 10. 초고속 경량 이미지 변환 & 404 없는 스마트 우회 OCR 엔진
+// 10. ★ 다중 파일(2개 이상) 동시 업로드 & 병렬 AI OCR 엔진
 // =========================================================================
+
+// 동적 OCR 결과 폼 렌더링 (1개일 땐 1열, 2개 이상일 땐 2열 나란히 표시)
+function renderOcrResultForms() {
+  const grid = document.getElementById('ocr-forms-grid');
+  if (!grid) return;
+
+  grid.className = ocrBatchItems.length >= 2 
+    ? 'grid grid-cols-1 md:grid-cols-2 gap-4' 
+    : 'grid grid-cols-1 gap-4';
+
+  grid.innerHTML = ocrBatchItems.map((item, idx) => `
+    <div class="bg-slate-950/90 border ${idx === 0 ? 'border-cyan-500/40' : 'border-indigo-500/40'} rounded-xl p-4 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <span class="text-xs font-bold ${idx === 0 ? 'text-cyan-300' : 'text-indigo-300'} flex items-center gap-1.5 truncate">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>거래처 #${idx + 1}: ${item.fileName || `서류 #${idx + 1}`}</span>
+        </span>
+        <span id="ocr-item-status-${idx}" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">대기</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+        <div class="sm:col-span-2">
+          <label class="block text-slate-400 mb-1">회사명 (상호명) *</label>
+          <input type="text" id="ocr-comp-${idx}" value="${item.companyName || ''}" oninput="window.updateOcrBatchField(${idx}, 'companyName', this.value)" placeholder="상호명 자동 입력" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 focus:outline-none focus:border-cyan-500 font-bold">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">대표자 성명 *</label>
+          <input type="text" id="ocr-rep-${idx}" value="${item.representative || ''}" oninput="window.updateOcrBatchField(${idx}, 'representative', this.value)" placeholder="대표자 성명" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 focus:outline-none focus:border-cyan-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">법인등록번호 *</label>
+          <input type="text" id="ocr-corpno-${idx}" value="${item.corpRegNo || ''}" oninput="window.updateOcrBatchField(${idx}, 'corpRegNo', this.value)" placeholder="XXXXXX-XXXXXXX" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 focus:outline-none font-mono">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-slate-400 mb-1">본점 소재지 주소 *</label>
+          <input type="text" id="ocr-addr-${idx}" value="${item.address || ''}" oninput="window.updateOcrBatchField(${idx}, 'address', this.value)" placeholder="도로명 전체 주소" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">사업자등록번호</label>
+          <input type="text" id="ocr-bizno-${idx}" value="${item.bizNo || ''}" oninput="window.updateOcrBatchField(${idx}, 'bizNo', this.value)" placeholder="XXX-XX-XXXXX" class="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-lg p-2 focus:outline-none font-mono">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">업태 / 종목</label>
+          <input type="text" id="ocr-btype-${idx}" value="${item.bizType || ''}" oninput="window.updateOcrBatchField(${idx}, 'bizType', this.value)" placeholder="업태 및 종목" class="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-lg p-2 focus:outline-none">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.updateOcrBatchField = function(idx, field, val) {
+  if (ocrBatchItems[idx]) {
+    ocrBatchItems[idx][field] = val;
+  }
+};
 
 window.triggerFileSelect = function(e) {
   if (e) e.stopPropagation();
@@ -1545,13 +1599,14 @@ window.triggerFileSelect = function(e) {
 window.onFileInputChange = function(e) {
   const files = e.target?.files;
   if (files && files.length > 0) {
-    handleSelectedFile(files[0]);
+    handleMultipleSelectedFiles(files);
   }
 };
 
 window.reRunOCR = function() {
-  if (cachedFileBase64) {
-    executeHighPrecisionOCR();
+  const hasValid = ocrBatchItems.some(item => item.base64);
+  if (hasValid) {
+    executeBatchHighPrecisionOCR();
   } else {
     showToast('먼저 파일을 업로드해 주세요.');
   }
@@ -1579,7 +1634,7 @@ function setupFileUploadListeners() {
   dropZone.addEventListener('drop', (e) => {
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
-      handleSelectedFile(files[0]);
+      handleMultipleSelectedFiles(files);
     }
   }, false);
 }
@@ -1607,18 +1662,11 @@ function compressImageDataUrl(dataUrl, maxWidth = 1000) {
   });
 }
 
-async function handleSelectedFile(file) {
-  currentUploadedFile = file;
-  document.getElementById('file-preview-card')?.classList.remove('hidden');
-  setElText('preview-filename', file.name);
-  setElText('preview-file-size', (file.size / 1024).toFixed(1) + ' KB');
-  appendDiagnosticLog(`파일 접수: ${file.name} (경량 고속 압축 진행 중...)`);
-
-  const imgEl = document.getElementById('preview-image');
-  const canvasEl = document.getElementById('preview-canvas');
-  const placeholderEl = document.getElementById('preview-placeholder');
-
+// 단일 파일을 경량 Base64 이미지로 변환하는 헬퍼
+async function prepareSingleFileForOcr(file, idx) {
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  const canvasEl = document.getElementById(`multi-preview-canvas-${idx}`);
+  const imgEl = document.getElementById(`multi-preview-img-${idx}`);
 
   if (isPdf && typeof pdfjsLib !== 'undefined' && canvasEl) {
     try {
@@ -1629,43 +1677,238 @@ async function handleSelectedFile(file) {
       canvasEl.width = viewport.width;
       canvasEl.height = viewport.height;
       await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
-
       canvasEl.classList.remove('hidden');
-      imgEl?.classList.add('hidden');
-      placeholderEl?.classList.add('hidden');
 
       const jpegDataUrl = canvasEl.toDataURL('image/jpeg', 0.72);
-      cachedFileBase64 = jpegDataUrl.split(',')[1];
-      cachedMimeType = 'image/jpeg';
-
-      appendDiagnosticLog(`PDF 경량 렌더링(비율 0.8) 완료 -> 고속 이미지 변환 성공`);
-      executeHighPrecisionOCR();
-      return;
+      return { base64: jpegDataUrl.split(',')[1], mimeType: 'image/jpeg' };
     } catch (pdfErr) {
-      console.warn("PDF 경량 변환 실패, 원본 전송으로 대체", pdfErr);
+      console.warn("PDF 경량 변환 폴백:", pdfErr);
     }
   }
 
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const dataUrl = reader.result;
-    if (file.type.startsWith('image/')) {
-      if (imgEl) {
-        imgEl.src = dataUrl;
-        imgEl.classList.remove('hidden');
-        canvasEl?.classList.add('hidden');
-        placeholderEl?.classList.add('hidden');
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result;
+      if (file.type.startsWith('image/')) {
+        if (imgEl) {
+          imgEl.src = dataUrl;
+          imgEl.classList.remove('hidden');
+        }
+        const compressed = await compressImageDataUrl(dataUrl, 1000);
+        resolve({ base64: compressed, mimeType: 'image/jpeg' });
+      } else {
+        resolve({ base64: dataUrl.split(',')[1], mimeType: isPdf ? 'application/pdf' : 'image/jpeg' });
       }
-      cachedFileBase64 = await compressImageDataUrl(dataUrl, 1000);
-      cachedMimeType = 'image/jpeg';
-    } else {
-      cachedFileBase64 = dataUrl.split(',')[1];
-      cachedMimeType = isPdf ? 'application/pdf' : 'image/jpeg';
-    }
-    executeHighPrecisionOCR();
-  };
-  reader.readAsDataURL(file);
+    };
+    reader.readAsDataURL(file);
+  });
 }
+
+// 다중 파일(1개 또는 2개 이상) 동시 처리 핸들러
+async function handleMultipleSelectedFiles(fileList) {
+  const files = Array.from(fileList).slice(0, 4); // 최대 4개까지 동시 허용 (일반적으로 2개)
+  if (files.length === 0) return;
+
+  appendDiagnosticLog(`총 ${files.length}개 파일 동시 접수됨 -> 경량 고속 변환 시작...`);
+
+  ocrBatchItems = files.map((f, idx) => ({
+    fileName: f.name,
+    fileSize: (f.size / 1024).toFixed(1) + ' KB',
+    base64: null,
+    mimeType: null,
+    companyName: "",
+    representative: "",
+    corpRegNo: "",
+    address: "",
+    bizNo: "",
+    bizType: ""
+  }));
+
+  // 좌측 미니 프리뷰 카드 렌더링
+  const previewContainer = document.getElementById('multi-preview-container');
+  if (previewContainer) {
+    previewContainer.classList.remove('hidden');
+    previewContainer.innerHTML = ocrBatchItems.map((item, idx) => `
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-semibold text-cyan-300 truncate max-w-[180px]">#${idx + 1}. ${item.fileName}</span>
+          <span class="text-[10px] text-slate-400 font-mono">${item.fileSize}</span>
+        </div>
+        <div class="h-24 bg-slate-950 rounded flex items-center justify-center overflow-hidden p-1">
+          <canvas id="multi-preview-canvas-${idx}" class="max-h-full max-w-full object-contain hidden"></canvas>
+          <img id="multi-preview-img-${idx}" class="max-h-full max-w-full object-contain hidden" alt=" preview">
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 우측 결과 입력 폼 2개(또는 N개) 즉시 생성
+  renderOcrResultForms();
+
+  // 모든 파일을 병렬로 경량 이미지 변환
+  await Promise.all(files.map(async (file, idx) => {
+    const prepared = await prepareSingleFileForOcr(file, idx);
+    ocrBatchItems[idx].base64 = prepared.base64;
+    ocrBatchItems[idx].mimeType = prepared.mimeType;
+  }));
+
+  // 변환 완료 즉시 병렬 AI OCR 실행
+  executeBatchHighPrecisionOCR();
+}
+
+// 다중 파일 병렬 AI OCR 실행기
+async function executeBatchHighPrecisionOCR() {
+  const key = getStoredApiKey();
+  if (!key) {
+    showToast('설정(Admin) 탭에서 API Key를 먼저 등록해 주세요.');
+    return;
+  }
+
+  const startTime = performance.now();
+  const pBar = document.getElementById('ocr-progress-bar');
+  const pFill = document.getElementById('ocr-progress-fill');
+  const stepText = document.getElementById('ocr-step-text');
+  const badge = document.getElementById('ocr-status-badge');
+
+  pBar?.classList.remove('hidden');
+  if (pFill) pFill.style.width = '60%';
+  if (badge) {
+    badge.textContent = `${ocrBatchItems.length}개 파일 동시 분석 중...`;
+    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
+  }
+
+  await discoverAvailableModels(key);
+
+  const promptText = `대한민국 사업자등록증 또는 법인등기부등본에서 다음 6개 항목을 추출해 JSON으로만 답하세요:
+{"companyName":"상호/법인명","representative":"대표자명","corpRegNo":"법인등록번호13자리(없으면 생년월일/사업자번호)","address":"본점주소","bizNo":"사업자등록번호10자리","bizType":"업태/종목"}`;
+
+  try {
+    // Promise.all로 첨부된 모든 파일(2개 이상)을 동시에 병렬 호출
+    await Promise.all(ocrBatchItems.map(async (item, idx) => {
+      if (!item.base64) return;
+
+      const itemBadge = document.getElementById(`ocr-item-status-${idx}`);
+      if (itemBadge) {
+        itemBadge.textContent = "AI 파싱 중...";
+        itemBadge.className = "text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 animate-pulse";
+      }
+
+      const payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: item.mimeType, data: item.base64 } },
+            { text: promptText }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1
+        }
+      };
+
+      const result = await callWithRetryAndFailover(payload, key, (statusMsg) => {
+        if (stepText) stepText.textContent = `[파일 #${idx + 1}] ${statusMsg}`;
+      });
+
+      const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const parsed = safeExtractJSON(rawText);
+
+      item.companyName = parsed.companyName || '';
+      item.representative = parsed.representative || '';
+      item.corpRegNo = parsed.corpRegNo || '';
+      item.address = parsed.address || '';
+      item.bizNo = parsed.bizNo || '';
+      item.bizType = parsed.bizType || '';
+
+      if (document.getElementById(`ocr-comp-${idx}`)) document.getElementById(`ocr-comp-${idx}`).value = item.companyName;
+      if (document.getElementById(`ocr-rep-${idx}`)) document.getElementById(`ocr-rep-${idx}`).value = item.representative;
+      if (document.getElementById(`ocr-corpno-${idx}`)) document.getElementById(`ocr-corpno-${idx}`).value = item.corpRegNo;
+      if (document.getElementById(`ocr-addr-${idx}`)) document.getElementById(`ocr-addr-${idx}`).value = item.address;
+      if (document.getElementById(`ocr-bizno-${idx}`)) document.getElementById(`ocr-bizno-${idx}`).value = item.bizNo;
+      if (document.getElementById(`ocr-btype-${idx}`)) document.getElementById(`ocr-btype-${idx}`).value = item.bizType;
+
+      if (itemBadge) {
+        itemBadge.textContent = `완료 (${result.model})`;
+        itemBadge.className = "text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
+      }
+      appendDiagnosticLog(`[서류 #${idx + 1} 추출 성공] 상호: ${item.companyName} | 대표: ${item.representative}`, 'success');
+    }));
+
+    const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(1);
+    if (pFill) pFill.style.width = '100%';
+    if (badge) {
+      badge.textContent = `${ocrBatchItems.length}건 모두 완료 (${elapsedSec}초)`;
+      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
+    }
+    showToast(`총 ${ocrBatchItems.length}곳의 거래처 정보 동시 추출 완료! (${elapsedSec}초)`);
+  } catch (err) {
+    if (badge) {
+      badge.textContent = '일부 파싱 실패';
+      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
+    }
+    appendDiagnosticLog(`오류: ${err.message}`, 'error');
+    showToast(`오류: ${err.message.substring(0, 45)}...`);
+  } finally {
+    setTimeout(() => pBar?.classList.add('hidden'), 400);
+  }
+}
+
+// 추출된 다중 거래처 전체를 DB에 일괄 저장하고 계약 당사자로 자동 연동
+window.saveExtractedToDB = function() {
+  const validItems = ocrBatchItems.filter(item => item.companyName && item.companyName.trim().length > 0);
+  if (validItems.length === 0) {
+    showToast('저장할 상호명이 입력되지 않았습니다.');
+    return;
+  }
+
+  const savedVendors = [];
+  validItems.forEach((item, idx) => {
+    const comp = item.companyName.trim();
+    const rep = (item.representative || '').trim() || '대표자';
+    const corpNo = (item.corpRegNo || '').trim();
+    const addr = (item.address || '').trim();
+    const bizNo = (item.bizNo || '').trim() || 'N/A';
+    const btype = (item.bizType || '').trim() || '일반업종';
+
+    const newVendor = {
+      id: `VND-2026-${String(vendorDatabase.length + 1 + idx).padStart(3, '0')}`,
+      companyName: comp,
+      representative: rep,
+      corpRegNo: corpNo,
+      bizNo: bizNo,
+      address: addr,
+      bizType: btype,
+      type: "corporation",
+      ceoName: `대표이사 ${rep}`,
+      source: '다중 AI OCR'
+    };
+    vendorDatabase.unshift(newVendor);
+    savedVendors.push(newVendor);
+  });
+
+  saveVendorDatabaseToStorage();
+  renderVendorTables();
+
+  // 1번째 거래처는 위탁자1에, 2번째 거래처가 있으면 채무자(또는 우선수익자)에 자동 바인딩
+  if (savedVendors[0]) {
+    applyVendorToTruster(0, savedVendors[0]);
+  }
+  if (savedVendors[1]) {
+    applyVendorToDebtor(savedVendors[1]);
+  }
+
+  showToast(`총 ${savedVendors.length}곳의 거래처가 DB에 일괄 저장 및 자동 지정되었습니다!`);
+};
+
+window.clearOCRForm = function() {
+  ocrBatchItems = [
+    { fileName: "서류 #1 (대기 중)", base64: null, mimeType: null, companyName: "", representative: "", corpRegNo: "", address: "", bizNo: "", bizType: "" }
+  ];
+  document.getElementById('multi-preview-container')?.classList.add('hidden');
+  renderOcrResultForms();
+};
 
 window.verifyAdminPassword = function() {
   const input = document.getElementById('admin-pw-input')?.value || '';
@@ -1731,9 +1974,7 @@ function safeExtractJSON(rawText) {
   }
 }
 
-// ★ 404 원천 방지 & 503 스마트 재시도 호출기
 async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
-  // 호출 전 내 API Key가 실제 지원하는 최신 모델 목록 동기화
   await discoverAvailableModels(activeKey);
 
   let lastError = null;
@@ -1756,7 +1997,6 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
 
-    // 503 과부하일 때만 해당 모델에서 최대 2회 빠르게 재시도 (1.2초 간격)
     for (let attempt = 0; attempt <= 2; attempt++) {
       try {
         const controller = new AbortController();
@@ -1787,15 +2027,12 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
 
         lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
 
-        // 503 또는 429(일시 과부하)인 경우 1.2초 대기 후 재시도
         if ((response.status === 503 || response.status === 429) && attempt < 2) {
-          appendDiagnosticLog(`[서버 일시 혼잡 ${response.status}] 1.2초 후 "${model}" 즉시 재시도 (${attempt + 1}/2)...`, 'warn');
-          if (onStepUpdate) onStepUpdate(`서버 혼잡: 1.2초 후 자동 재시도 중...`);
+          appendDiagnosticLog(`[서버 일시 혼잡 ${response.status}] 1.2초 후 "${model}" 재시도 (${attempt + 1}/2)...`, 'warn');
           await sleep(1200);
           continue;
         }
 
-        // 404 등 다른 에러면 대기 없이 즉시 다음 활성 모델로 이동
         appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status}) -> 다음 모델 시도`, 'warn');
         break;
       } catch (netErr) {
@@ -1844,102 +2081,6 @@ function appendDiagnosticLog(msg, type = 'info') {
 
 window.clearDiagnosticLog = function() {
   setElHtml('diagnostic-terminal', '');
-};
-
-async function executeHighPrecisionOCR() {
-  if (!cachedFileBase64) return;
-  const key = getStoredApiKey();
-  if (!key) { showToast('설정(Admin) 탭에서 API Key를 먼저 등록해 주세요.'); return; }
-
-  const startTime = performance.now();
-  const pBar = document.getElementById('ocr-progress-bar');
-  const pFill = document.getElementById('ocr-progress-fill');
-  const stepText = document.getElementById('ocr-step-text');
-  const badge = document.getElementById('ocr-status-badge');
-
-  pBar?.classList.remove('hidden');
-  if (pFill) pFill.style.width = '65%';
-  if (badge) {
-    badge.textContent = '초고속 분석 중...';
-    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 animate-pulse';
-  }
-
-  const promptText = `대한민국 사업자등록증 또는 법인등기부등본에서 다음 6개 항목을 추출해 JSON으로만 답하세요:
-{"companyName":"상호/법인명","representative":"대표자명","corpRegNo":"법인등록번호13자리(없으면 생년월일/사업자번호)","address":"본점주소","bizNo":"사업자등록번호10자리","bizType":"업태/종목"}`;
-
-  const payload = {
-    contents: [{
-      role: "user",
-      parts: [
-        { inlineData: { mimeType: cachedMimeType, data: cachedFileBase64 } },
-        { text: promptText }
-      ]
-    }],
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature: 0.1
-    }
-  };
-
-  try {
-    const result = await callWithRetryAndFailover(payload, key, (statusMsg) => {
-      if (stepText) stepText.textContent = statusMsg;
-    });
-
-    const rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text;
-    const parsed = safeExtractJSON(rawText);
-    const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(1);
-
-    if (document.getElementById('ocr-company-name')) document.getElementById('ocr-company-name').value = parsed.companyName || '';
-    if (document.getElementById('ocr-representative')) document.getElementById('ocr-representative').value = parsed.representative || '';
-    if (document.getElementById('ocr-corp-no')) document.getElementById('ocr-corp-no').value = parsed.corpRegNo || '';
-    if (document.getElementById('ocr-address')) document.getElementById('ocr-address').value = parsed.address || '';
-    if (document.getElementById('ocr-biz-no')) document.getElementById('ocr-biz-no').value = parsed.bizNo || '';
-    if (document.getElementById('ocr-biz-type')) document.getElementById('ocr-biz-type').value = parsed.bizType || '';
-
-    if (pFill) pFill.style.width = '100%';
-    if (badge) {
-      badge.textContent = `완료 (${result.model} · ${elapsedSec}초)`;
-      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold';
-    }
-    appendDiagnosticLog(`[초고속 추출 완료: ${elapsedSec}초] 상호: ${parsed.companyName} | 모델: ${result.model}`, 'success');
-    showToast(`[${parsed.companyName}] 추출 완료! (${elapsedSec}초 소요)`);
-  } catch (err) {
-    if (badge) {
-      badge.textContent = '파싱 실패';
-      badge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400';
-    }
-    appendDiagnosticLog(`최종 오류: ${err.message}`, 'error');
-    showToast(`오류: ${err.message.substring(0, 45)}...`);
-  } finally {
-    setTimeout(() => pBar?.classList.add('hidden'), 400);
-  }
-}
-
-window.saveExtractedToDB = function() {
-  const comp = (document.getElementById('ocr-company-name')?.value || '').trim();
-  const rep = (document.getElementById('ocr-representative')?.value || '').trim();
-  const corpNo = (document.getElementById('ocr-corp-no')?.value || '').trim();
-  const addr = (document.getElementById('ocr-address')?.value || '').trim();
-  const bizNo = (document.getElementById('ocr-biz-no')?.value || '').trim();
-  const btype = (document.getElementById('ocr-biz-type')?.value || '').trim();
-  if (!comp || !rep) { showToast('필수 정보를 입력해 주세요.'); return; }
-
-  const newVendor = {
-    id: `VND-2026-${String(vendorDatabase.length + 1).padStart(3, '0')}`,
-    companyName: comp, representative: rep, corpRegNo: corpNo, bizNo: bizNo || 'N/A', address: addr, bizType: btype || '일반업종', type: "corporation", ceoName: `대표이사 ${rep}`, source: 'AI OCR'
-  };
-  vendorDatabase.unshift(newVendor);
-  saveVendorDatabaseToStorage();
-  renderVendorTables();
-  applyVendorToTruster(0, newVendor);
-  showToast(`[${comp}] DB 저장 및 위탁자 자동 지정 완료!`);
-};
-
-window.clearOCRForm = function() {
-  document.getElementById('ocr-result-form')?.reset();
-  document.getElementById('file-preview-card')?.classList.add('hidden');
-  cachedFileBase64 = null;
 };
 
 function renderVendorTables() {
