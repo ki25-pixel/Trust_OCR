@@ -1,11 +1,13 @@
-// 순수 텍스트/문서 판독용 Flash 모델 기본 체인
+// ★ 구형 2.x / 1.x 모델 완전 삭제 -> Google 권장 최신 gemini-3.8-flash 최우선 고정
 let FAILOVER_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3.5-flash",
   "gemini-3.0-flash"
 ];
 
 let isModelsDiscovered = false;
+let modelDiscoveryPromise = null; // 다중 파일 동시 호출 시 레이스 컨디션 방지용 Lock
 let preferredWorkingModelIndex = 0;
 
 function setElText(id, val) {
@@ -19,61 +21,79 @@ function setElHtml(id, html) {
 }
 
 // =========================================================================
-// 0. 순수 문서/텍스트 변환 모델 전용 필터링 탐색기 (TTS·오디오·이미지생성 배제)
+// 0. 순수 3.x 문서/텍스트 모델 전용 탐색기 (2.5/2.0 구형 및 TTS 등 특수 모델 100% 차단)
 // =========================================================================
 async function discoverAvailableModels(activeKey) {
   if (isModelsDiscovered && FAILOVER_MODELS.length > 0) return FAILOVER_MODELS;
+  if (modelDiscoveryPromise) return modelDiscoveryPromise;
 
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(activeKey)}`);
-    if (!res.ok) return FAILOVER_MODELS;
+  modelDiscoveryPromise = (async () => {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(activeKey)}`);
+      if (!res.ok) return FAILOVER_MODELS;
 
-    const data = await res.json();
-    if (!data.models || !Array.isArray(data.models)) return FAILOVER_MODELS;
+      const data = await res.json();
+      if (!data.models || !Array.isArray(data.models)) return FAILOVER_MODELS;
 
-    const EXCLUDE_KEYWORDS = [
-      "tts", "audio", "speech", "voice", "imagen", "image", "video",
-      "embedding", "aqa", "attribution", "bisect", "learnlm", "robotics",
-      "thinking", "exp-0827", "1.0", "1.5-pro", "vision"
-    ];
+      // TTS, 오디오, 이미지 생성 및 구형 버전(1.x, 2.x) 키워드 전면 차단
+      const EXCLUDE_KEYWORDS = [
+        "tts", "audio", "speech", "voice", "imagen", "image", "video",
+        "embedding", "aqa", "attribution", "bisect", "learnlm", "robotics",
+        "thinking", "vision", "1.0", "1.5", "2.0", "2.5"
+      ];
 
-    const validModels = data.models
-      .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
-      .map(m => m.name.replace(/^models\//, ""))
-      .filter(name => {
-        const lower = name.toLowerCase();
-        if (!lower.startsWith("gemini-")) return false;
-        for (const bad of EXCLUDE_KEYWORDS) {
-          if (lower.includes(bad)) return false;
+      const validModels = data.models
+        .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
+        .map(m => m.name.replace(/^models\//, ""))
+        .filter(name => {
+          const lower = name.toLowerCase();
+          // 오직 gemini-3 계열만 허용 (신규 유저 404 에러 원천 차단)
+          if (!lower.startsWith("gemini-3")) return false;
+          for (const bad of EXCLUDE_KEYWORDS) {
+            if (lower.includes(bad)) return false;
+          }
+          return true;
+        });
+
+      if (validModels.length > 0) {
+        validModels.sort((a, b) => {
+          const getScore = (name) => {
+            let s = 0;
+            if (name === "gemini-3.8-flash") s += 1000; // 1순위 절대 고정
+            if (name === "gemini-3.8-flash-lite") s += 800;
+            if (name.startsWith("gemini-3.8-flash")) s += 500;
+            if (/^gemini-3\.[0-9]+-flash$/.test(name)) s += 300;
+            if (name.includes("flash")) s += 100;
+            if (name.includes("pro")) s -= 50;
+            if (name.includes("preview") || name.includes("exp")) s -= 30;
+            return s;
+          };
+          return getScore(b) - getScore(a);
+        });
+
+        // 만약 목록에 gemini-3.8-flash가 없더라도 맨 앞에 강제 배치
+        if (!validModels.includes("gemini-3.8-flash")) {
+          validModels.unshift("gemini-3.8-flash");
         }
-        return true;
-      });
 
-    if (validModels.length > 0) {
-      validModels.sort((a, b) => {
-        const getScore = (name) => {
-          let s = 0;
-          if (/^gemini-[0-9.]+-flash$/.test(name)) s += 200;
-          if (/^gemini-[0-9.]+-flash-lite$/.test(name)) s += 180;
-          if (name.includes("flash")) s += 100;
-          if (name.includes("3.8") || name.includes("3.7") || name.includes("3.5") || name.includes("3.0")) s += 40;
-          if (name.includes("2.5") || name.includes("2.0")) s += 35;
-          if (name.includes("pro")) s -= 50;
-          if (name.includes("preview") || name.includes("exp")) s -= 30;
-          return s;
-        };
-        return getScore(b) - getScore(a);
-      });
+        FAILOVER_MODELS = validModels.slice(0, 4);
+      } else {
+        FAILOVER_MODELS = ["gemini-3.8-flash"];
+      }
 
-      FAILOVER_MODELS = validModels.slice(0, 4);
       isModelsDiscovered = true;
       preferredWorkingModelIndex = 0;
-      appendDiagnosticLog(`[순수 문서판독 모델 선별 완료] 1순위: ${FAILOVER_MODELS[0]}`, 'success');
+      refreshApiKeyStatusUI(FAILOVER_MODELS[0]);
+      appendDiagnosticLog(`[최신 3.x 모델 고정 완료] 1순위: ${FAILOVER_MODELS[0]} (구형 2.5/TTS 완전 제외)`, 'success');
+    } catch (e) {
+      FAILOVER_MODELS = ["gemini-3.8-flash"];
+    } finally {
+      modelDiscoveryPromise = null;
     }
-  } catch (e) {
-    console.warn("모델 자동 조회 생략:", e);
-  }
-  return FAILOVER_MODELS;
+    return FAILOVER_MODELS;
+  })();
+
+  return modelDiscoveryPromise;
 }
 
 // =========================================================================
@@ -483,7 +503,7 @@ function initializeApplication() {
       discoverAvailableModels(key);
     }
 
-    appendDiagnosticLog("무결점 JSON 스키마 및 초고속 OCR 엔진 가동 완료");
+    appendDiagnosticLog("gemini-3.8-flash 전용 고속 OCR 엔진 가동 (구형 2.5 완전 차단)");
   } catch (initErr) {
     console.error("초기화 오류:", initErr);
   }
@@ -504,7 +524,7 @@ function refreshApiKeyStatusUI(activeModelName) {
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2';
     if (badge) {
       badge.className = 'text-emerald-400 ml-1 font-mono font-bold';
-      badge.textContent = activeModelName || FAILOVER_MODELS[preferredWorkingModelIndex] || "gemini-flash";
+      badge.textContent = activeModelName || FAILOVER_MODELS[preferredWorkingModelIndex] || "gemini-3.8-flash";
     }
   } else {
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 mr-2';
@@ -1823,7 +1843,6 @@ async function executeBatchHighPrecisionOCR() {
         ? [{ text: `[문서 추출 텍스트]\n${item.extractedText.substring(0, 8000)}\n\n${promptInstruction}` }]
         : [{ inlineData: { mimeType: item.mimeType, data: item.base64 } }, { text: promptInstruction }];
 
-      // ★ 공식 responseSchema 적용으로 깨진 JSON 발생 원천 차단 (토큰 잘림 방지를 위해 maxOutputTokens 제한 제거)
       const payload = {
         contents: [{ role: "user", parts }],
         generationConfig: {
@@ -1972,14 +1991,13 @@ window.saveAdminApiKey = async function() {
   isModelsDiscovered = false;
   await discoverAvailableModels(k);
   refreshApiKeyStatusUI();
-  showToast('API Key 저장 및 순수 문서판독 모델 동기화 완료!');
+  showToast('API Key 저장 및 최신 3.8 모델 동기화 완료!');
 };
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ★ 3단계 무결점 JSON 파서 (정상 파싱 -> 안전 클리닝 -> 정규식 직접 추출 폴백)
 function safeExtractJSON(rawText) {
   if (!rawText) throw new Error("AI 응답 본문이 비어있습니다.");
   let clean = String(rawText).trim().replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -1992,18 +2010,15 @@ function safeExtractJSON(rawText) {
     clean = clean.substring(firstBrace) + '"}';
   }
 
-  // 1단계: 표준 JSON.parse 시도
   try {
     return JSON.parse(clean);
   } catch (err1) {
-    // 2단계: 값(Value)을 훼손하지 않고 후행 쉼표(trailing comma)만 안전하게 제거 후 재시도
     try {
       const sanitized = clean
         .replace(/,\s*([\]}])/g, '$1')
         .replace(/[\u0000-\u0019]+/g, ' ');
       return JSON.parse(sanitized);
     } catch (err2) {
-      // 3단계: JSON 문법이 깨졌거나 잘렸더라도 정규식으로 각 키의 값을 직접 추출 (절대 실패하지 않는 안전망)
       const fallbackObj = {};
       const keys = ["companyName", "representative", "corpRegNo", "address", "bizNo", "bizType", "propertyDisplay"];
       let foundAny = false;
@@ -2017,14 +2032,13 @@ function safeExtractJSON(rawText) {
         }
       });
 
-      if (foundAny) {
-        return fallbackObj;
-      }
-      throw new Error("JSON 파싱 보정 실패: 다시 한 번 시도해 주세요.");
+      if (foundAny) return fallbackObj;
+      throw new Error("JSON 파싱 보정 실패: 다시 시도해 주세요.");
     }
   }
 }
 
+// ★ gemini-3.8-flash 집중 호출 및 스마트 재시도 엔진 (죽은 2.x 모델 호출 원천 방지)
 async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
   await discoverAvailableModels(activeKey);
 
@@ -2039,8 +2053,8 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
     const model = FAILOVER_MODELS[mIdx];
 
     if (step > 0) {
-      appendDiagnosticLog(`[고속 전환] "${model}" 모델로 즉시 전환 호출...`, 'warn');
-      if (onStepUpdate) onStepUpdate(`고속 모델 (${model}) 전환 호출 중...`);
+      appendDiagnosticLog(`[모델 전환] "${model}" 최신 모델로 전환 호출...`, 'warn');
+      if (onStepUpdate) onStepUpdate(`최신 모델 (${model}) 호출 중...`);
     } else {
       appendDiagnosticLog(`고속 OCR 호출: 모델 "${model}"...`);
       if (onStepUpdate) onStepUpdate(`AI 모델 (${model}) 분석 중...`);
@@ -2048,54 +2062,72 @@ async function callWithRetryAndFailover(payload, activeKey, onStepUpdate) {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 9000);
+    // 1순위 모델(gemini-3.8-flash)에서 일시 지연/과부하 시 구형 모델로 넘어가지 않고 최대 3회 재시도
+    const maxAttempts = (model === "gemini-3.8-flash") ? 3 : 1;
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        preferredWorkingModelIndex = mIdx;
-        refreshApiKeyStatusUI(model);
-        appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 초고속 응답 완료!`, 'success');
-        return { model, data };
-      }
-
-      const errText = await response.text();
-      let parsedMsg = errText;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const j = JSON.parse(errText);
-        parsedMsg = j.error?.message || errText;
-      } catch(e) {}
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
-      appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status}) -> 다음 모델로 즉시 이동`, 'warn');
-    } catch (netErr) {
-      lastError = netErr;
-      appendDiagnosticLog(`모델 "${model}" 응답 지연 -> 다음 모델로 즉시 이동`, 'warn');
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          preferredWorkingModelIndex = mIdx;
+          refreshApiKeyStatusUI(model);
+          appendDiagnosticLog(`[성공 200 OK] 모델 "${model}" 초고속 응답 완료!`, 'success');
+          return { model, data };
+        }
+
+        const errText = await response.text();
+        let parsedMsg = errText;
+        try {
+          const j = JSON.parse(errText);
+          parsedMsg = j.error?.message || errText;
+        } catch(e) {}
+
+        lastError = new Error(`HTTP ${response.status} (${model}): ${parsedMsg}`);
+
+        if ((response.status === 503 || response.status === 429) && attempt < maxAttempts) {
+          appendDiagnosticLog(`[일시 혼잡 ${response.status}] 1초 후 "${model}" 재시도 (${attempt}/${maxAttempts})...`, 'warn');
+          await sleep(1000);
+          continue;
+        }
+
+        appendDiagnosticLog(`모델 "${model}" 응답 불가(HTTP ${response.status})`, 'warn');
+        break;
+      } catch (netErr) {
+        lastError = netErr;
+        if (attempt < maxAttempts) {
+          appendDiagnosticLog(`모델 "${model}" 응답 지연 -> 1초 후 재시도 (${attempt}/${maxAttempts})`, 'warn');
+          await sleep(1000);
+          continue;
+        }
+        break;
+      }
     }
   }
 
-  throw lastError || new Error("모든 AI 모델에서 응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  throw lastError || new Error("AI 모델 응답 지연: 잠시 후 다시 시도해 주세요.");
 }
 
 window.testGoogleAPIConnection = async function() {
   const key = getStoredApiKey() || (document.getElementById('gemini-api-key')?.value || '').trim();
   if (!key) { showToast('저장된 API Key가 없습니다.'); return; }
-  appendDiagnosticLog("순수 문서판독 모델 선별 및 연결 점검 시작...");
+  appendDiagnosticLog("최신 3.8 모델 연결 점검 시작...");
   try {
     isModelsDiscovered = false;
     await discoverAvailableModels(key);
     const payload = { contents: [{ parts: [{ text: "ping" }] }] };
     const result = await callWithRetryAndFailover(payload, key);
-    showToast(`연결 성공! (최적 모델: ${result.model})`);
+    showToast(`연결 성공! (활성 모델: ${result.model})`);
     refreshApiKeyStatusUI(result.model);
   } catch(e) {
     showToast(`연결 오류: ${e.message.substring(0, 45)}`);
