@@ -166,7 +166,6 @@
         <!-- 좌측: 다중 업로드 드롭존 및 미니 프리뷰 리스트 (4 Cols) -->
         <div class="lg:col-span-4 space-y-4">
           <div id="drop-zone" onclick="window.triggerFileSelect(event)" class="border-2 border-dashed border-slate-700 hover:border-cyan-400 bg-slate-900/60 hover:bg-slate-900 rounded-2xl p-5 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[210px] select-none">
-            <!-- multiple 속성 추가로 2개 이상 동시 선택 허용 -->
             <input type="file" id="file-input" accept="application/pdf,image/*" multiple onchange="window.onFileInputChange(event)" class="hidden">
             <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-2 text-2xl border border-cyan-500/20 pointer-events-none">
               <i class="fa-solid fa-copy"></i>
@@ -179,9 +178,7 @@
           </div>
 
           <!-- 첨부된 다중 파일 미리보기 컨테이너 -->
-          <div id="multi-preview-container" class="hidden space-y-3">
-            <!-- JS에서 파일별로 미니 프리뷰 카드를 동적 생성 -->
-          </div>
+          <div id="multi-preview-container" class="hidden space-y-3"></div>
 
           <!-- 진단 터미널 -->
           <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1">
@@ -224,10 +221,8 @@
               </div>
             </div>
 
-            <!-- 동적 결과 Form 그리드 (1개일 땐 1열, 2개일 땐 2열 배치) -->
-            <div id="ocr-forms-grid" class="grid grid-cols-1 gap-4">
-              <!-- 초기 기본 1개 폼 (app.js에서 동적 렌더링) -->
-            </div>
+            <!-- 동적 결과 Form 그리드 -->
+            <div id="ocr-forms-grid" class="grid grid-cols-1 gap-4"></div>
           </div>
 
           <div class="border-t border-slate-800 pt-4 flex items-center justify-between">
@@ -302,7 +297,7 @@
               <i class="fa-solid fa-file-word text-blue-400"></i> 담보신탁 및 부속서류 계약 관계자 동적 구성
             </h3>
             <p class="text-xs text-slate-400 mt-0.5">
-              하단 6개 세부 탭을 통해 **담보신탁계약서**, **고객거래확인서(위탁자 개인용/법인용/우선수익자용)**, **실제소유자확인서(위탁자 법인/우선수익자)**가 각각 자동 생성됩니다.
+              하단 6개 세부 탭을 통해 **담보신탁계약서(전문)**, **고객거래확인서(위탁자 개인용/법인용/우선수익자용)**, **실제소유자확인서(위탁자 법인/우선수익자)**가 각각 자동 생성됩니다.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -588,8 +583,9 @@
 
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- 분리된 법률 서식 템플릿 및 메인 로직 스크립트 연결 -->
-  <script src="templates.js"></script>
+  <!-- 분리된 법률 서식 템플릿(확인서용 / 계약서용) 및 메인 로직 스크립트 연결 -->
+  <script src="template-kyc.js"></script>
+  <script src="template-contract.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
