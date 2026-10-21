@@ -1,13 +1,12 @@
 // =========================================================================
 // [모듈 1] 고객거래확인서 및 실제소유자확인서 전용 템플릿 (template-kyc.js)
-// - app.js의 updateDocumentPreviews()와 100% 호환 연동
 // =========================================================================
 
-// 1. 고객거래확인서 [개인·개인사업자 用] (위탁자 개인용)
 window.buildIndividualCddHtml = function(party, roleLabel, formattedDate, isPageBreak) {
   const name = party.name || '';
-  const idNum = party.idNumber ? String(party.idNumber).substring(0, 8) : '[RRN Omitted]';
+  const idNum = party.idNumber ? String(party.idNumber).substring(0, 8) : '';
   const addr = party.address || '';
+  const rawDate = formattedDate || "        년     월     일";
 
   return `
     <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
@@ -48,7 +47,7 @@ window.buildIndividualCddHtml = function(party, roleLabel, formattedDate, isPage
           <th>자택/직장 구분</th>
           <td>▣ 자택 &nbsp;&nbsp; □ 직장</td>
           <th>연락처</th>
-          <td>자택/직장: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 휴대전화: 010-****-****</td>
+          <td>자택/직장: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 휴대전화: </td>
         </tr>
         <tr>
           <th>주소</th>
@@ -117,23 +116,23 @@ window.buildIndividualCddHtml = function(party, roleLabel, formattedDate, isPage
       </div>
 
       <div class="text-right pt-4 text-[12px] space-y-1.5">
-        <p class="font-bold text-slate-900">${formattedDate}</p>
+        <p class="font-bold text-slate-900">${rawDate}</p>
         <p>[본인 작성 시] &nbsp;&nbsp; 성명 : <strong class="underline text-sm font-bold">${name}</strong> &nbsp;&nbsp; (서명 또는 인)</p>
       </div>
     </div>
   `;
 };
 
-// 2. 고객거래확인서 [법인·단체 用] (위탁자 법인용 & 우선수익자 금융기관용 공통)
 window.buildCorpCddHtml = function(party, roleLabel, isFinancial, formattedDate, isPageBreak) {
   const name = party.name || '';
   const bizNo = party.bizNo && party.bizNo !== 'N/A' ? party.bizNo : (party.corpNumber || party.idNumber || '');
   const corpNo = party.corpNumber || party.idNumber || '';
   const addr = party.address || '';
-  const bizType = isFinancial ? '금융업 / 여신 및 대금업' : (party.bizType || '부동산업 / 신탁 및 자산관리 등');
-  const rawCeo = party.ceoName || party.name || '대표이사';
+  const bizType = isFinancial ? '금융업 / 여신 및 대금업' : (party.bizType || '');
+  const rawCeo = party.ceoName || party.name || '';
   const pureCeo = String(rawCeo).replace(/^(대표이사|대표자|은행장|이사장)\s*/, '').trim() || rawCeo;
-  const fullSig = `${name} ${rawCeo.includes(pureCeo) ? rawCeo : (isFinancial ? '대표자 ' : '대표이사 ') + pureCeo}`;
+  const fullSig = name ? `${name} ${rawCeo.includes(pureCeo) ? rawCeo : (isFinancial ? '대표자 ' : '대표이사 ') + pureCeo}` : '';
+  const rawDate = formattedDate || "        년     월     일";
 
   return `
     <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
@@ -168,7 +167,7 @@ window.buildCorpCddHtml = function(party, roleLabel, isFinancial, formattedDate,
           <th class="w-1/5">법인(단체)명</th>
           <td class="w-1/3">한글: <strong>${name}</strong><br><span class="text-[10px] text-slate-400">영문:</span></td>
           <th class="w-1/5">사업자등록번호<br>(법인등록번호)</th>
-          <td>${bizNo}<br><span class="text-[10px] text-slate-500">(${corpNo})</span></td>
+          <td>${bizNo}<br><span class="text-[10px] text-slate-500">${corpNo ? '(' + corpNo + ')' : ''}</span></td>
         </tr>
         <tr>
           <th>본점 소재지 주소</th>
@@ -182,7 +181,7 @@ window.buildCorpCddHtml = function(party, roleLabel, isFinancial, formattedDate,
           <th>업종 (업태/종목)</th>
           <td>${bizType}</td>
           <th>설립목적 / 연락처</th>
-          <td>${isFinancial ? '금융 및 여신업' : '영리사업 및 부동산개발'}</td>
+          <td>${isFinancial ? '금융 및 여신업' : ''}</td>
         </tr>
       </table>
 
@@ -223,24 +222,23 @@ window.buildCorpCddHtml = function(party, roleLabel, isFinancial, formattedDate,
       </div>
 
       <div class="text-right pt-4 text-[12px] space-y-1.5">
-        <p class="font-bold text-slate-900">${formattedDate}</p>
+        <p class="font-bold text-slate-900">${rawDate}</p>
         <p>[대표자 작성 시] &nbsp;&nbsp; <strong class="underline text-sm font-bold">${fullSig}</strong> &nbsp;&nbsp; (인)</p>
       </div>
     </div>
   `;
 };
 
-// 3. 실제소유자확인서 [법인·단체 用] (위탁자 법인 미대상 vs 우선수익자 금융기관 생략대상 자동 분기)
 window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, formattedDate, isPageBreak) {
   const name = party.name || '';
   const bizNo = party.bizNo && party.bizNo !== 'N/A' ? party.bizNo : (party.corpNumber || party.idNumber || '');
-  const rawCeo = party.ceoName || party.name || '대표이사';
+  const rawCeo = party.ceoName || party.name || '';
   const pureCeo = String(rawCeo).replace(/^(대표이사|대표자|은행장|이사장)\s*/, '').trim() || rawCeo;
-  const fullSig = `${name} ${rawCeo.includes(pureCeo) ? rawCeo : (isFinancial ? '대표자 ' : '대표이사 ') + pureCeo}`;
-  const shareRatio = party.shareRatio ? `${party.shareRatio}%` : '100%';
+  const fullSig = name ? `${name} ${rawCeo.includes(pureCeo) ? rawCeo : (isFinancial ? '대표자 ' : '대표이사 ') + pureCeo}` : '';
+  const shareRatio = party.shareRatio ? `${party.shareRatio}%` : '';
+  const rawDate = formattedDate || "        년     월     일";
 
   if (!isFinancial) {
-    // [3-①] 일반 영리법인 (위탁자 법인 - 확인 미대상, 1~3단계 체크리스트 및 주주명부 기준)
     return `
       <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
@@ -275,7 +273,7 @@ window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, format
           <tr>
             <th>실제소유자 확인 생략 여부</th>
             <td colspan="3">
-              □ 대상 (□ 국가·지방자치단체 &nbsp; □ 공공단체 &nbsp; □ 금융회사등 &nbsp; □ 사업보고서 제출대상법인)<br>
+              □ 대상 (□ 국가·지자체 □ 공공단체 □ 금융회사등 □ 사업보고서 제출대상법인)<br>
               <strong>■ 미대상</strong> (자본시장법 제159조 제출대상 외 일반영리법인)
             </td>
           </tr>
@@ -325,7 +323,7 @@ window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, format
           </tr>
           <tr>
             <th>생년월일 / 식별정보</th>
-            <td>-</td>
+            <td></td>
             <th>지분율 (%)</th>
             <td><strong>${shareRatio}</strong></td>
           </tr>
@@ -346,13 +344,12 @@ window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, format
         </div>
 
         <div class="text-right pt-4 text-[12px] space-y-1.5">
-          <p class="font-bold text-slate-900">${formattedDate}</p>
+          <p class="font-bold text-slate-900">${rawDate}</p>
           <p>작성자 : &nbsp;&nbsp; <strong class="underline text-sm font-bold">${fullSig}</strong> &nbsp;&nbsp; (인)</p>
         </div>
       </div>
     `;
   } else {
-    // [3-②] 금융기관 (우선수익자 - 금융회사등 확인 생략 대상)
     return `
       <div class="${isPageBreak ? 'page-break pt-8 mt-8 border-t-2 border-dashed border-slate-300' : ''}">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
@@ -438,7 +435,7 @@ window.buildBeneficialOwnerHtml = function(party, roleLabel, isFinancial, format
         </div>
 
         <div class="text-right pt-4 text-[12px] space-y-1.5">
-          <p class="font-bold text-slate-900">${formattedDate}</p>
+          <p class="font-bold text-slate-900">${rawDate}</p>
           <p>작성자 : &nbsp;&nbsp; <strong class="underline text-sm font-bold">${fullSig}</strong> &nbsp;&nbsp; (인)</p>
         </div>
       </div>
